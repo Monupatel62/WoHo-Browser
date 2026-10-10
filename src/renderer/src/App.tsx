@@ -203,6 +203,16 @@ export default function App() {
     }
   }
 
+  async function clearFinishedDownloads() {
+    if (!window.confirm('Remove finished download records? Downloaded files on disk will not be deleted.')) return;
+    setError('');
+    try {
+      setDownloads(await window.wohoBrowser.clearFinishedDownloads());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not clear finished download records.');
+    }
+  }
+
   return <main className="browser-chrome">
     <div className="tab-strip">
       <div className="brand"><span className="brand-mark">W</span><span>WoHo</span>{active?.isPrivate && <span className="private-badge">Private</span>}</div>
@@ -243,6 +253,7 @@ export default function App() {
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}</strong>
         <div>
           {panel === 'history' && <><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear site data</button></>}
+          {panel === 'downloads' && <button className="panel-action" onClick={() => void clearFinishedDownloads()} disabled={!downloads.some((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'interrupted')}>Clear finished</button>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
         </div>
       </header>
