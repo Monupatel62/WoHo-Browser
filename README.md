@@ -1,10 +1,10 @@
 # WoHo Browser
 
-WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsing, privacy-conscious design, and an optional AI assistant.
+WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and privacy-conscious design. AI assistant and AI integrations are explicitly out of scope; the application does not call AI services.
 
 ## Project status
 
-**Release 0 prototype in progress.** The branch `feat/release-0-browser-prototype` now contains the first Electron/Chromium browser shell and navigation slice. Runtime, CI, and security verification are still pending; do not treat it as production-ready.
+**Release 0 prototype in progress.** The Electron/Chromium browser shell, navigation, baseline security controls, and Windows packaging CI are in place. Bookmarks and local history persistence are now being added. Passing CI is not a substitute for Windows runtime and security review.
 
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
@@ -31,7 +31,7 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 - [Accessibility and localization](docs/accessibility-localization.md)
 - [Cross-feature acceptance matrix](docs/cross-feature-acceptance-matrix.md)
 
-## Security, privacy, and AI
+## Security and privacy
 - [Security model](docs/security-model.md)
 - [Threat model](docs/threat-model.md)
 - [IPC contract](docs/ipc-contract.md)
