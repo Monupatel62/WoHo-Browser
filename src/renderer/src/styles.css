@@ -32,3 +32,5 @@
 .download-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .download-actions .panel-action{background:#202a40;border:1px solid #34415b;white-space:nowrap}
 .download-actions .panel-action:hover{background:#2d3b56}
+
+.download-progress.indeterminate>span{animation:download-indeterminate 1.2s ease-in-out infinite alternate}@keyframes download-indeterminate{from{transform:translateX(-10%)}to{transform:translateX(190%)}}
