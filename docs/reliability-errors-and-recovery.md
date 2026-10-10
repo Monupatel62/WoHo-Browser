@@ -1,6 +1,6 @@
 # Reliability, Error States, and Recovery Specification
 
-**Status:** Planned.
+**Status:** Partially implemented; renderer/app crash recovery, network/TLS error UX, and several advanced recovery paths remain planned.
 
 ## Reliability goal
 Fail visibly and recover safely rather than hang silently, lose data, or weaken security. Quantitative budgets are defined in the performance document and must be measured on declared hardware.
@@ -15,7 +15,7 @@ Retries must be bounded and understandable. Do not automatically repeat form sub
 Detect renderer/app crash and present trusted recovery UI. Restore only safe URLs and approved metadata; never replay POSTs or privileged actions. Corrupt session data must not prevent a clean window from opening. Preserve safe backups where possible. Never restore private tabs into normal browsing. Prevent crash loops from repeatedly reopening the same broken page without user choice.
 
 ## Storage failures
-Use transactions and versioned migrations. If a write fails, state which operation was not saved. Do not silently discard bookmarks/history/settings. A read-only recovery mode may be considered if safe.
+Implemented: browser profile JSON and download-history corruption/unsupported-version recovery preserve the original file, show a warning, and switch to a separate recovery file (or a uniquely named fallback if that file is also unreadable). Unit tests cover preserving malformed data and selecting a fallback. Still planned: forced disk-full/write-failure testing, backup strategy, user-driven data export/recovery, and Windows runtime verification. Do not silently discard bookmarks/history/settings.
 
 ## Updater failures
 Signature validation, rollback, partial-download cleanup, offline behavior, disk-full, and failed launch after update follow the update/signing specification. Never silently install an unsigned or unverified update.
