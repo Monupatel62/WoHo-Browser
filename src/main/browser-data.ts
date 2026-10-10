@@ -36,13 +36,17 @@ function safeTitle(value: string): string {
 }
 
 function validateUrl(value: string): string {
-  if (value.length > MAX_URL_LENGTH || !isSafeWebUrl(value)) {
+  if (value.length > MAX_URL_LENGTH) {
     throw new Error('Only valid HTTP and HTTPS URLs can be saved.');
   }
-  const url = new URL(value);
+  let url: URL;
+  try { url = new URL(value); } catch {
+    throw new Error('Only valid HTTP and HTTPS URLs can be saved.');
+  }
   if (url.username || url.password) {
     throw new Error('URLs containing embedded credentials cannot be saved.');
   }
+  if (!isSafeWebUrl(value)) throw new Error('Only valid HTTP and HTTPS URLs can be saved.');
   return url.toString();
 }
 
