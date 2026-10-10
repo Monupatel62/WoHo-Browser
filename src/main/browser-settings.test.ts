@@ -32,6 +32,7 @@ describe('BrowserSettingsStore', () => {
     const { store } = await createStore();
     await expect(store.update({ searchProvider: 'custom', homePageUrl: 'https://example.com/', restoreSession: false })).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', restoreSession: false, surprise: true } as never)).rejects.toThrow(/unknown keys/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', restoreSession: 'yes' } as never)).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'file:///secret', restoreSession: false })).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://user:pass@example.com/', restoreSession: false })).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/' + 'x'.repeat(2100), restoreSession: false })).rejects.toThrow(/unsupported/);
