@@ -61,6 +61,16 @@ export class DownloadHistoryStore {
 
   constructor(private readonly filePath: string) {}
 
+  private rememberRemovedId(id: string): void {
+    this.removedIds.add(id);
+    // The store is bounded; keep tombstones bounded too while covering in-flight writes.
+    while (this.removedIds.size > MAX_RECORDS * 2) {
+      const oldest = this.removedIds.values().next().value;
+      if (oldest === undefined) break;
+      this.removedIds.delete(oldest);
+    }
+  }
+
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
     if (!this.loading) {
@@ -127,7 +137,7 @@ export class DownloadHistoryStore {
   }
 
   async remove(id: string): Promise<void> {
-    this.removedIds.add(id);
+    this.rememberRemovedId(id);
     await this.ensureLoaded();
     const next = this.records.filter((record) => record.id !== id);
     if (next.length === this.records.length) return;
