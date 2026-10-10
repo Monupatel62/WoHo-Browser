@@ -113,7 +113,7 @@ function parseData(raw: string): { data: PersistedBrowserData; historyRedacted: 
   return { data: { version: DATA_VERSION, bookmarks, history }, historyRedacted };
 }
 
-async function atomicWrite(filePath: string, contents: string): Promise<void> {
+export async function atomicWriteFile(filePath: string, contents: string): Promise<void> {
   const directory = dirname(filePath);
   await mkdir(directory, { recursive: true });
   const tempPath = join(directory, '.' + basename(filePath) + '.' + randomUUID() + '.tmp');
@@ -162,7 +162,7 @@ export class BrowserDataStore {
         if (parsed.historyRedacted) {
           // Keep migration writes outside the missing-source-file catch: a failed
           // migration must reject loading instead of silently looking like no data.
-          await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
+          await atomicWriteFile(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
         }
         this.loaded = true;
       })();
@@ -177,7 +177,7 @@ export class BrowserDataStore {
 
   private persist(): Promise<void> {
     const snapshot = JSON.stringify(this.data, null, 2) + '\n';
-    const pendingWrite = this.writeQueue.catch(() => undefined).then(() => atomicWrite(this.filePath, snapshot));
+    const pendingWrite = this.writeQueue.catch(() => undefined).then(() => atomicWriteFile(this.filePath, snapshot));
     this.writeQueue = pendingWrite;
     return pendingWrite;
   }
