@@ -29,6 +29,9 @@ export default function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
+  const [editingBookmarkId, setEditingBookmarkId] = useState<string | null>(null);
+  const [bookmarkEditTitle, setBookmarkEditTitle] = useState('');
+  const [bookmarkEditUrl, setBookmarkEditUrl] = useState('');
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historyStartDate, setHistoryStartDate] = useState('');
   const [historyEndDate, setHistoryEndDate] = useState('');
@@ -133,6 +136,7 @@ export default function App() {
     setError('');
     setSavedSearch('');
     setSelectedHistoryIds([]);
+    setEditingBookmarkId(null);
     if (panel === next) { setPanel(null); return; }
     try {
       if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
@@ -178,6 +182,31 @@ export default function App() {
         ? await window.wohoBrowser.removeBookmark(existing.id)
         : await window.wohoBrowser.addBookmark(active.title, active.url);
       setBookmarks(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update bookmark.');
+    }
+  }
+
+  function startEditingBookmark(bookmark: BookmarkRecord) {
+    setEditingBookmarkId(bookmark.id);
+    setBookmarkEditTitle(bookmark.title);
+    setBookmarkEditUrl(bookmark.url);
+    setError('');
+  }
+
+  function cancelEditingBookmark() {
+    setEditingBookmarkId(null);
+    setBookmarkEditTitle('');
+    setBookmarkEditUrl('');
+  }
+
+  async function saveBookmarkEdit(id: string) {
+    setError(''); setNotice('');
+    try {
+      const next = await window.wohoBrowser.updateBookmark(id, bookmarkEditTitle, bookmarkEditUrl);
+      setBookmarks(next);
+      cancelEditingBookmark();
+      setNotice('Bookmark updated.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not update bookmark.');
     }
@@ -459,9 +488,16 @@ export default function App() {
         </div>
       </li>)}</ul> : <p className="empty-data">No site permission decisions yet. Sites must ask through the browser’s trusted prompt.</p>)}
       {panel === 'bookmarks' && (bookmarks.length ? (visibleBookmarks.length ? <ul className="saved-list">{visibleBookmarks.map((bookmark) => <li key={bookmark.id}>
-        <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
-        <button className="panel-action" aria-label={`Open bookmark ${bookmark.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(bookmark.url)}>New tab</button>
-        <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
+        {editingBookmarkId === bookmark.id ? <form className="bookmark-edit-form" onSubmit={(event) => { event.preventDefault(); void saveBookmarkEdit(bookmark.id); }}>
+          <label>Title<input value={bookmarkEditTitle} onChange={(event) => setBookmarkEditTitle(event.target.value.slice(0, 512))} maxLength={512} /></label>
+          <label>URL<input value={bookmarkEditUrl} onChange={(event) => setBookmarkEditUrl(event.target.value.slice(0, 2048))} maxLength={2048} spellCheck={false} /></label>
+          <div><button type="submit" className="panel-action">Save</button><button type="button" className="panel-action" onClick={cancelEditingBookmark}>Cancel</button></div>
+        </form> : <>
+          <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
+          <button className="panel-action" aria-label={`Open bookmark ${bookmark.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(bookmark.url)}>New tab</button>
+          <button className="panel-action" aria-label={`Edit bookmark ${bookmark.title}`} onClick={() => startEditingBookmark(bookmark)}>Edit</button>
+          <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
+        </>}
       </li>)}</ul> : <p className="empty-data">No bookmarks match your search.</p>) : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
       {panel === 'history' && (history.length ? (visibleHistory.length ? <ul className="saved-list">{visibleHistory.map((entry) => <li key={entry.id}>
         <label className="history-select-entry"><input type="checkbox" checked={selectedHistoryIds.includes(entry.id)} onChange={(event) => toggleHistorySelection(entry.id, event.target.checked)} aria-label={`Select history entry ${entry.title}`} /></label>

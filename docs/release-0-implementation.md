@@ -14,7 +14,7 @@
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
-- Bookmark add/remove/list UI, duplicate-URL handling, opening saved bookmarks/history in current or new tabs (new tabs inherit private mode), and versioned JSON bookmark import/export with bounded input, URL validation, transactional merge, and a warning before exporting potentially sensitive URLs.
+- Bookmark add/edit/remove/list UI, duplicate-URL handling, opening saved bookmarks/history in current or new tabs (new tabs inherit private mode), and versioned JSON bookmark import/export with bounded input, URL validation, transactional merge, and a warning before exporting potentially sensitive URLs.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
 - Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, a “Clear finished” action, and per-item removal of finished records without deleting saved files. Private downloads are excluded from the normal store.

@@ -72,3 +72,11 @@
 .settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .settings-actions .panel-action{border:1px solid #34415b;background:#202a40}
 .settings-actions .panel-action:hover:not(:disabled){background:#2d3b56}
+
+
+.bookmark-edit-form{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;padding:10px}
+.bookmark-edit-form label{display:flex;flex-direction:column;gap:4px;color:#aab8d0;font-size:11px}
+.bookmark-edit-form input{width:100%;min-width:0;height:32px;padding:0 8px;border:1px solid #34415b;border-radius:7px;background:#202a40;color:#e8edf7;font:inherit;font-size:12px;user-select:text}
+.bookmark-edit-form input:focus{outline:2px solid #719dff;outline-offset:1px}
+.bookmark-edit-form>div{display:flex;gap:6px}
+.bookmark-edit-form .panel-action{border:1px solid #34415b;background:#202a40}

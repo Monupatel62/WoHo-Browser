@@ -67,6 +67,35 @@ describe('BrowserDataStore', () => {
     await expect(store.importBookmarksJson(JSON.stringify({ version: 99, bookmarks: [] }))).rejects.toThrow(/unsupported/);
   });
 
+  it('edits bookmark title and URL while preserving ID and creation time', async () => {
+    const { store, file } = await createStore();
+    const created = await store.addBookmark('Original', 'https://example.com/old');
+    const original = created[0];
+    const updated = await store.updateBookmark(original.id, 'Updated title', 'https://example.com/new');
+    expect(updated).toMatchObject([{
+      id: original.id,
+      title: 'Updated title',
+      url: 'https://example.com/new',
+      createdAt: original.createdAt,
+    }]);
+    expect(Date.parse(updated[0].updatedAt)).toBeGreaterThanOrEqual(Date.parse(original.updatedAt));
+    expect(await new BrowserDataStore(file).listBookmarks()).toMatchObject([{ id: original.id, url: 'https://example.com/new' }]);
+  });
+
+  it('rejects duplicate URLs and unsafe edits without changing the bookmark', async () => {
+    const { store } = await createStore();
+    const first = (await store.addBookmark('First', 'https://example.com/one'))[0];
+    await store.addBookmark('Second', 'https://example.com/two');
+    await expect(store.updateBookmark(first.id, 'Changed', 'https://example.com/two')).rejects.toThrow(/already uses this URL/);
+    await expect(store.updateBookmark(first.id, 'Changed', 'javascript:alert(1)')).rejects.toThrow(/HTTP and HTTPS/);
+    expect((await store.listBookmarks()).find((item) => item.id === first.id)).toMatchObject({ id: first.id, title: 'First', url: 'https://example.com/one' });
+  });
+
+  it('rejects edits for missing bookmark IDs', async () => {
+    const { store } = await createStore();
+    await expect(store.updateBookmark('missing', 'Title', 'https://example.com/')).rejects.toThrow(/no longer exists/);
+  });
+
   it('persists bookmarks across store instances and deduplicates URLs', async () => {
     const { store, file } = await createStore();
     const first = await store.addBookmark('Example', 'https://example.com');
