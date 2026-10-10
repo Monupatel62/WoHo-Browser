@@ -154,6 +154,7 @@ export default function App() {
   }
 
   async function exportBookmarks() {
+    if (!window.confirm('Export saved bookmarks to a JSON file? The export may contain sensitive URLs. Keep the file in a secure location.')) return;
     setError(''); setNotice('');
     try {
       if (await window.wohoBrowser.exportBookmarks()) setNotice('Bookmarks exported successfully.');
