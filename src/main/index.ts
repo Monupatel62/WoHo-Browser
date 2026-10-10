@@ -1,6 +1,6 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
-import { readFile, stat } from 'node:fs/promises';
+import { readFileBounded } from './bounded-file-read';
 import { randomUUID } from 'node:crypto';
 import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './browser-data';
 import { openRecoverableBrowserDataStore } from './recoverable-browser-data';
@@ -496,12 +496,16 @@ function registerIpc(): void {
     });
     if (choice.canceled || !choice.filePaths[0]) return null;
     const filePath = choice.filePaths[0];
-    const metadata = await stat(filePath);
-    if (metadata.size > MAX_BOOKMARK_IMPORT_BYTES) {
-      throw new Error('Bookmark import file exceeds the 1 MiB limit.');
+    let raw: Buffer;
+    try {
+      raw = await readFileBounded(filePath, MAX_BOOKMARK_IMPORT_BYTES);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('byte limit')) {
+        throw new Error('Bookmark import file exceeds the 1 MiB limit.');
+      }
+      throw error;
     }
-    const raw = await readFile(filePath, 'utf8');
-    return browserDataStore.importBookmarksJson(raw);
+    return browserDataStore.importBookmarksJson(raw.toString('utf8'));
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
