@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { BrowserSettingsStore } from './browser-settings';
+import { parseBrowserSettingsImport } from '../shared/browser-settings';
 
 const directories: string[] = [];
 async function createStore() {
@@ -12,6 +13,26 @@ async function createStore() {
 }
 afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
+
+describe('parseBrowserSettingsImport', () => {
+  it('accepts current settings exports and migrates version 1 exports with restore disabled', () => {
+    expect(parseBrowserSettingsImport(JSON.stringify({
+      version: 2,
+      settings: { searchProvider: 'bing', homePageUrl: 'https://example.com/', restoreSession: true },
+    }))).toEqual({ searchProvider: 'bing', homePageUrl: 'https://example.com/', restoreSession: true });
+    expect(parseBrowserSettingsImport(JSON.stringify({
+      version: 1,
+      settings: { searchProvider: 'duckduckgo', homePageUrl: 'https://example.org/' },
+    }))).toEqual({ searchProvider: 'duckduckgo', homePageUrl: 'https://example.org/', restoreSession: false });
+  });
+
+  it('rejects malformed, unsupported, oversized, and unknown-field imports', () => {
+    expect(() => parseBrowserSettingsImport('{bad')).toThrow(/valid JSON/);
+    expect(() => parseBrowserSettingsImport(JSON.stringify({ version: 99, settings: {} }))).toThrow(/unsupported/);
+    expect(() => parseBrowserSettingsImport(JSON.stringify({ version: 2, settings: {}, extra: true }))).toThrow(/unsupported/);
+    expect(() => parseBrowserSettingsImport('x'.repeat(16 * 1024 + 1))).toThrow(/16 KiB/);
+  });
 });
 
 describe('BrowserSettingsStore', () => {
