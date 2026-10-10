@@ -40,10 +40,10 @@ function setDownloadStatus(id: string, status: DownloadStatus): void {
   publishDownloads();
 }
 
-function pruneDownloadRecords(): void {
-  if (downloads.size <= MAX_DOWNLOAD_RECORDS) return;
+function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): void {
+  if (downloads.size <= maxRecords) return;
   for (const [id, record] of downloads) {
-    if (downloads.size <= MAX_DOWNLOAD_RECORDS) break;
+    if (downloads.size <= maxRecords) break;
     if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') downloads.delete(id);
   }
 }
@@ -52,6 +52,8 @@ function registerDownloadHandling(): void {
   browserSession.on('will-download', (event, item) => {
     const safeUrl = safeDownloadUrl(item.getURL());
     if (!safeUrl) { event.preventDefault(); return; }
+    pruneDownloadRecords(MAX_DOWNLOAD_RECORDS - 1);
+    if (downloads.size >= MAX_DOWNLOAD_RECORDS) { event.preventDefault(); return; }
     const id = randomUUID();
     const record: DownloadRecord = {
       id,
@@ -345,6 +347,7 @@ function createWindow(): void {
   mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
     mainWindow = null;
+    overlayPanelOpen = false;
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
