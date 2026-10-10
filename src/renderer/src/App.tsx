@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
+import { shouldOpenNewTabPrivately } from '../../shared/privacy-policy';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
 type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'find' | null;
@@ -73,7 +74,9 @@ export default function App() {
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
         event.preventDefault(); addressRef.current?.focus(); addressRef.current?.select();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 't') {
-        event.preventDefault(); void window.wohoBrowser.openTab();
+        event.preventDefault();
+        if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) void window.wohoBrowser.openPrivateTab();
+        else void window.wohoBrowser.openTab();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w') {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
@@ -224,7 +227,7 @@ export default function App() {
           <button className="tab-close" aria-label={`Close ${tab.title}`} onClick={() => void window.wohoBrowser.closeTab(tab.id)}>×</button>
         </div>)}
       </div>
-      <button className="new-tab" aria-label="New tab" title="New tab (Ctrl+T)" onClick={() => void window.wohoBrowser.openTab()}>+</button>
+      <button className="new-tab" aria-label={active?.isPrivate ? 'New private tab' : 'New tab'} title={active?.isPrivate ? 'New private tab (Ctrl+T)' : 'New tab (Ctrl+T)'} onClick={() => { if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) void window.wohoBrowser.openPrivateTab(); else void window.wohoBrowser.openTab(); }}>+</button>
       <button className="private-tab-button" aria-label="New private tab" title="Open an isolated private tab" onClick={() => void window.wohoBrowser.openPrivateTab()}>Private</button>
     </div>
     <div className="toolbar">
