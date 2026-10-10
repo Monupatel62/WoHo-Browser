@@ -15,10 +15,12 @@ export function safeDownloadUrl(value: string): string | null {
 export function safeDownloadFilename(value: string): string {
   const leaf = value.split('/').pop()?.split(String.fromCharCode(92)).pop() ?? '';
   const forbidden = '<>:' + String.fromCharCode(34) + '/\\|?*';
-  const safe = [...leaf]
+  let safe = [...leaf]
     .map((character) => character < ' ' || forbidden.includes(character) ? '_' : character)
     .join('')
     .replace(/[. ]+$/g, '')
     .trim();
+  const deviceName = (safe.split('.')[0] ?? '').replace(/[. ]+$/g, '').toUpperCase();
+  if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]|COM[¹²³]|LPT[¹²³])$/.test(deviceName)) safe = '_' + safe;
   return (safe || 'download').slice(0, 255);
 }

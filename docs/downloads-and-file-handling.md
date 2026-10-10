@@ -8,7 +8,7 @@ Downloads are handled through Electron's download lifecycle. The app asks for a 
 
 ## Destination and names
 
-Implemented: each download opens a Save dialog; path components, common Windows-invalid characters, control characters, trailing dots/spaces, and excessive filename length are sanitized. Full reserved-device-name and Unicode normalization handling remain to be added. Prevent path traversal and destination escape. Handle collisions with an explicit rename/overwrite-confirm/cancel choice. Keep partial files separate from completed files and clean them safely.
+Implemented: each download opens a Save dialog; path components, common Windows-invalid characters, control characters, trailing dots/spaces, excessive filename length, and common Windows reserved device names (including names with extensions) are sanitized. Unicode normalization handling remains to be added. Prevent path traversal and destination escape. Handle collisions with an explicit rename/overwrite-confirm/cancel choice. Keep partial files separate from completed files and clean them safely.
 
 ## Security
 
