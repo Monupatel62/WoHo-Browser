@@ -20,7 +20,7 @@
 - Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, a “Clear finished” action, and per-item removal of finished records without deleting saved files. Private downloads are excluded from the normal store.
 - Startup recovery for corrupt or unsupported browser profile data and download-history files: the original file is preserved, a warning is shown, and the browser can continue using a separate recovery file (with a uniquely named fallback if the recovery file is also unreadable).
 - Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
-- Chronological history UI, navigation from history, and clear-all history.
+- Chronological history UI, navigation from history, search, local-date filtering, individual deletion, inclusive date-range deletion, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
 - Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, browser-data startup recovery fallback, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, IPC sender/main-frame authorization, frame navigation scheme policy, and private-tab history exclusion through WebContents destruction.
@@ -32,7 +32,7 @@
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer.
-- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, bookmark editing/reordering, import preview/per-row import reporting, history time filters, multi-select deletion, and clear-range controls are not implemented yet.
+- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, bookmark editing/reordering, import preview/per-row import reporting, history multi-select deletion and additional retention controls are not implemented yet.
 - Download history is persisted locally and bounded; retry, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
