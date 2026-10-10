@@ -16,12 +16,14 @@
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
 - Bookmark add/remove/list UI and duplicate-URL handling.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
-- Initial download manager: Save dialog per download, progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
+- Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
+- Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, and a “Clear finished” action that removes records without deleting saved files. Private downloads are excluded from the normal store.
+- Startup recovery for corrupt or unsupported download-history files: the original file is preserved, a warning is shown, and the browser can continue using a separate recovery file.
 - Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
 - Chronological history UI, navigation from history, and clear-all history.
-- Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, and duplicate bookmark IDs.
+- Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation, browser data persistence/validation, download URL/filename safety policy, find-query validation, and site permission origin/allowlist policy.
+- Unit tests for navigation, browser data persistence/validation and URL-redaction migration, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
@@ -31,7 +33,7 @@
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer.
 - Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.
-- Download history is in-memory only; no retry, remove-from-list, or open-after-completion controls yet.
+- Download history is persisted locally and bounded; retry, per-item remove-from-list, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
 ## Storage design
@@ -42,7 +44,7 @@ The first milestone uses a versioned JSON document in Electron's user-data direc
 
 - CI and CodeQL must pass for the exact pull-request head.
 - Permission UI behavior has CI coverage through build/typecheck and permission-origin policy tests, but end-to-end native permission prompt/revocation behavior still needs Windows runtime testing.
-- Private browsing has a unit test for the history-persistence policy; Electron session isolation, on-disk cleanup, private downloads, and Windows runtime behavior still require manual verification.
+- Private browsing has automated tests for history exclusion while a private tab is closing; Electron session isolation, on-disk cleanup, private download destination behavior, and Windows runtime behavior still require manual verification.
 - Inspect the generated unsigned Windows installer artifact; successful packaging is not proof of a clean install or correct runtime behavior.
 - Launch on Windows and test initial navigation, tab switching/closing, resize, history navigation, bookmark persistence after restart, history clearing after restart, popup denial, and unsupported schemes.
 - Add IPC negative tests and automated main-process navigation/permission tests.
