@@ -203,16 +203,17 @@ export default function App() {
 
   return <main className="browser-chrome">
     <div className="tab-strip">
-      <div className="brand"><span className="brand-mark">W</span><span>WoHo</span></div>
+      <div className="brand"><span className="brand-mark">W</span><span>WoHo</span>{active?.isPrivate && <span className="private-badge">Private</span>}</div>
       <div className="tabs" role="tablist" aria-label="Browser tabs">
         {state.tabs.map((tab) => <div className={`tab ${tab.isActive ? 'active' : ''}`} key={tab.id} role="presentation">
           <button className="tab-select" role="tab" aria-selected={tab.isActive} title={tab.title} onClick={() => void window.wohoBrowser.selectTab(tab.id)}>
-            <span className={`tab-dot ${tab.loading ? 'loading' : ''}`}></span><span className="tab-title">{tab.title}</span>
+            <span className={`tab-dot ${tab.loading ? 'loading' : ''}`}></span><span className="tab-title">{tab.isPrivate ? '◈ ' : ''}{tab.title}</span>
           </button>
           <button className="tab-close" aria-label={`Close ${tab.title}`} onClick={() => void window.wohoBrowser.closeTab(tab.id)}>×</button>
         </div>)}
       </div>
       <button className="new-tab" aria-label="New tab" title="New tab (Ctrl+T)" onClick={() => void window.wohoBrowser.openTab()}>+</button>
+      <button className="private-tab-button" aria-label="New private tab" title="Open an isolated private tab" onClick={() => void window.wohoBrowser.openPrivateTab()}>Private</button>
     </div>
     <div className="toolbar">
       <div className="nav-actions">
