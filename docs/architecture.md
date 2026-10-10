@@ -64,7 +64,7 @@ The Release 0 spike will evaluate and prototype Electron's supported WebContents
 ### Process boundaries
 - **Main process:** lifecycle, trusted window creation, navigation policy, permission mediation, downloads, updates, and narrowly scoped IPC handlers.
 - **Chrome renderer:** browser controls and settings only. It must not host arbitrary websites.
-- **Website web contents:** untrusted origin-specific page content with Node integration disabled, context isolation, and sandboxing where supported.
+- **Website web contents:** untrusted origin-specific page content with Node integration disabled, context isolation enabled, and sandboxing enabled. Any unsupported control requires a documented, reviewed exception and blocks release until the residual risk is addressed.
 - **AI broker:** separate module/service boundary; it receives only explicitly approved context and has no unrestricted shell or filesystem capability.
 - **Utility process:** only for work that needs process isolation; a utility process alone is not an OS sandbox.
 
