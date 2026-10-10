@@ -68,6 +68,14 @@ describe('DownloadHistoryStore', () => {
     expect(JSON.parse(await readFile(file, 'utf8')).downloads).toEqual([]);
   });
 
+  it('rejects empty IDs in persisted records without overwriting the file', async () => {
+    const { store, file } = await createStore();
+    const invalid = JSON.stringify({ version: 1, downloads: [record({ id: '' })] });
+    await writeFile(file, invalid, 'utf8');
+    await expect(store.list()).rejects.toThrow(/invalid/);
+    expect(await readFile(file, 'utf8')).toBe(invalid);
+  });
+
   it('preserves malformed files instead of silently overwriting them', async () => {
     const { store, file } = await createStore();
     await writeFile(file, '{broken', 'utf8');
