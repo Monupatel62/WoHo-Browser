@@ -46,7 +46,7 @@ describe('BrowserDataStore', () => {
     expect(remaining).toHaveLength(1);
     expect(remaining[0].id).toBe(before[1].id);
     expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
-      { id: before[1].id, url: 'https://example.org/two' },
+      { id: before[1].id, url: 'https://example.com/one' },
     ]);
   });
 
