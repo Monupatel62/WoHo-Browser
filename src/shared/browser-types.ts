@@ -20,6 +20,7 @@ export interface WoHoBrowserApi {
   removeBookmark(id: string): Promise<BookmarkRecord[]>;
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
+  clearSiteData(): Promise<void>;
   listDownloads(): Promise<DownloadRecord[]>;
   pauseDownload(id: string): Promise<void>;
   resumeDownload(id: string): Promise<void>;
