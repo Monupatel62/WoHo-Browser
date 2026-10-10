@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
 import { shouldOpenNewTabPrivately } from '../../shared/privacy-policy';
+import { filterSavedEntries } from '../../shared/saved-entry-search';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
 type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'find' | null;
@@ -22,6 +23,7 @@ export default function App() {
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [sitePermissions, setSitePermissions] = useState<SitePermissionDecision[]>([]);
   const [panel, setPanel] = useState<DataPanel>(null);
+  const [savedSearch, setSavedSearch] = useState('');
   const [findQuery, setFindQuery] = useState('');
   const [findMatches, setFindMatches] = useState(0);
   const [findOrdinal, setFindOrdinal] = useState(0);
@@ -31,6 +33,8 @@ export default function App() {
   const addressRef = useRef<HTMLInputElement>(null);
   const active = state.tabs.find((tab) => tab.id === state.activeTabId);
   const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
+  const visibleBookmarks = filterSavedEntries(bookmarks, savedSearch);
+  const visibleHistory = filterSavedEntries(history, savedSearch);
   activeTabIdRef.current = active?.id ?? null;
 
   useEffect(() => {
@@ -103,6 +107,7 @@ export default function App() {
 
   async function showPanel(next: Exclude<DataPanel, null>) {
     setError('');
+    setSavedSearch('');
     if (panel === next) { setPanel(null); return; }
     try {
       if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
@@ -260,6 +265,10 @@ export default function App() {
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
         </div>
       </header>
+      {(panel === 'bookmarks' || panel === 'history') && <div className="find-controls">
+        <input value={savedSearch} onChange={(event) => setSavedSearch(event.target.value.slice(0, 200))} aria-label={panel === 'bookmarks' ? 'Search bookmarks' : 'Search browsing history'} placeholder={panel === 'bookmarks' ? 'Search bookmarks' : 'Search history'} maxLength={200} />
+        <button type="button" className="panel-action" disabled={!savedSearch} onClick={() => setSavedSearch('')}>Clear</button>
+      </div>}
       {panel === 'find' && <form className="find-controls" onSubmit={(event) => { event.preventDefault(); void runFind(findQuery, true, true); }}>
         <input ref={findInputRef} value={findQuery} onChange={(event) => { setFindQuery(event.target.value); void runFind(event.target.value, true, false); }} aria-label="Find text on current page" placeholder="Find on this page" maxLength={500} />
         <span className="find-count">{findMatches ? `${findOrdinal} of ${findMatches}` : findQuery ? 'No matches' : 'Enter text'}</span>
@@ -277,14 +286,14 @@ export default function App() {
           <button className="panel-action" onClick={() => void updateSitePermission('forget', decision)}>Forget</button>
         </div>
       </li>)}</ul> : <p className="empty-data">No site permission decisions yet. Sites must ask through the browser’s trusted prompt.</p>)}
-      {panel === 'bookmarks' && (bookmarks.length ? <ul className="saved-list">{bookmarks.map((bookmark) => <li key={bookmark.id}>
+      {panel === 'bookmarks' && (bookmarks.length ? (visibleBookmarks.length ? <ul className="saved-list">{visibleBookmarks.map((bookmark) => <li key={bookmark.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
         <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
-      </li>)}</ul> : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
-      {panel === 'history' && (history.length ? <ul className="saved-list">{history.map((entry) => <li key={entry.id}>
+      </li>)}</ul> : <p className="empty-data">No bookmarks match your search.</p>) : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
+      {panel === 'history' && (history.length ? (visibleHistory.length ? <ul className="saved-list">{visibleHistory.map((entry) => <li key={entry.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(entry.url)}><strong>{entry.title}</strong><span>{entry.url}</span><small>{new Date(entry.visitedAt).toLocaleString()}</small></button>
         <button className="saved-remove" aria-label={`Delete history entry ${entry.title}`} onClick={() => void window.wohoBrowser.removeHistory(entry.id).then(setHistory).catch(() => setError('Could not delete history entry.'))}>×</button>
-      </li>)}</ul> : <p className="empty-data">No browsing history saved.</p>)}
+      </li>)}</ul> : <p className="empty-data">No history entries match your search.</p>) : <p className="empty-data">No browsing history saved.</p>)}
       {panel === 'downloads' && (downloads.length ? <ul className="download-list">{[...downloads].reverse().map((item) => {
         const progress = item.totalBytes > 0 ? Math.min(100, Math.round(item.receivedBytes / item.totalBytes * 100)) : 0;
         const activeDownload = item.status === 'waiting' || item.status === 'progressing' || item.status === 'paused';
