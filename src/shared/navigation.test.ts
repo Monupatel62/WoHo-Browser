@@ -15,6 +15,11 @@ describe('resolveAddressInput', () => {
   it('turns text into a search query', () => {
     expect(resolveAddressInput('hello world')).toBe('https://www.google.com/search?q=hello%20world');
   });
+  it('uses the configured search provider prefix without changing URL navigation', () => {
+    expect(resolveAddressInput('hello world', 'https://www.bing.com/search?q=')).toBe('https://www.bing.com/search?q=hello%20world');
+    expect(resolveAddressInput('cats & dogs', 'https://duckduckgo.com/?q=')).toBe('https://duckduckgo.com/?q=cats%20%26%20dogs');
+    expect(resolveAddressInput('https://example.com/path', 'https://www.bing.com/search?q=')).toBe('https://example.com/path');
+  });
   it.each(['javascript:alert(1)', 'file:///etc/passwd', 'data:text/html,hello', 'chrome://settings', 'https://user:secret@example.com'])(
     'blocks unsafe scheme: %s',
     (value) => expect(() => resolveAddressInput(value)).toThrow(),
