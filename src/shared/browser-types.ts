@@ -1,4 +1,4 @@
-export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; }
+export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
@@ -9,6 +9,7 @@ export interface FindResult { tabId: string; requestId: number; activeMatchOrdin
 export interface WoHoBrowserApi {
   getState(): Promise<BrowserState>;
   openTab(url?: string): Promise<void>;
+  openPrivateTab(url?: string): Promise<void>;
   closeTab(id: string): Promise<void>;
   selectTab(id: string): Promise<void>;
   navigate(url: string): Promise<void>;
