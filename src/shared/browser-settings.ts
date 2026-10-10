@@ -48,3 +48,30 @@ export function validateBrowserSettings(value: unknown): BrowserSettings {
   }
   return { searchProvider: candidate.searchProvider, homePageUrl: home.toString(), restoreSession: candidate.restoreSession };
 }
+
+export const MAX_SETTINGS_IMPORT_BYTES = 16 * 1024;
+
+/** Parse a bounded settings export, including the previous schema version. */
+export function parseBrowserSettingsImport(raw: string): BrowserSettings {
+  if (new TextEncoder().encode(raw).byteLength > MAX_SETTINGS_IMPORT_BYTES) {
+    throw new Error('Settings import exceeds the 16 KiB limit.');
+  }
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch {
+    throw new Error('Settings import is not valid JSON.');
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('Settings import structure is unsupported.');
+  }
+  const document = parsed as Record<string, unknown>;
+  if (Object.keys(document).some((key) => key !== 'version' && key !== 'settings') ||
+      !isSearchProviderId('google') ||
+      (document.version !== 1 && document.version !== 2) ||
+      typeof document.settings !== 'object' || document.settings === null || Array.isArray(document.settings)) {
+    throw new Error('Settings import structure or version is unsupported.');
+  }
+  const candidate = document.version === 1
+    ? { ...(document.settings as Record<string, unknown>), restoreSession: false }
+    : document.settings;
+  return validateBrowserSettings(candidate);
+}
