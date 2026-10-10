@@ -1,6 +1,6 @@
 # WoHo Browser Architecture
 
-**Status:** Proposed; validate against the first working prototype.  
+**Status:** Proposed; validate against the first working prototype. This is an architecture proposal, not implemented behavior.  
 **Scope:** Initial Windows desktop browser with optional AI assistance.
 
 ## 1. Architecture goals
@@ -55,7 +55,7 @@ Use versioned schemas and migrations. Store only the data required for the selec
 The first prototype must launch, open an HTTPS URL, navigate back/forward, display load failures safely, and close cleanly. Add tabs only after the security boundaries and basic lifecycle are tested.
 
 ## 9. Architecture decision records
-For each major choice record: context, requirements, options considered, decision, security impact, trade-offs, and revisit conditions. Keep framework and engine selection marked OPEN until a prototype and comparison are reviewed.
+For each major choice record: context, requirements, options considered, decision, security impact, trade-offs, and revisit conditions. Keep the **production** framework/engine commitment open until the Release 0 prototype and comparison are reviewed. ADR-0001 records the accepted prototype choice.
 
 
 ## 10. Concrete process and view model (review update)
