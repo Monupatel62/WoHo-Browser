@@ -19,7 +19,9 @@ function assertTrustedChrome(event: IpcMainInvokeEvent): void {
   const senderUrl = event.sender.getURL();
   const devUrl = process.env.ELECTRON_RENDERER_URL;
   if (devUrl) {
-    if (new URL(senderUrl).origin !== new URL(devUrl).origin) throw new Error('IPC sender origin rejected.');
+    const actual = new URL(senderUrl);
+    const expected = new URL(devUrl);
+    if (actual.origin !== expected.origin || actual.pathname !== expected.pathname) throw new Error('IPC sender origin rejected.');
   } else if (!senderUrl.startsWith('file://') || !senderUrl.endsWith('/out/renderer/index.html')) {
     throw new Error('IPC sender origin rejected.');
   }
@@ -183,7 +185,9 @@ function createWindow(): void {
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
   const isTrustedRendererUrl = (value: string) => {
     if (rendererUrl) {
-      try { return new URL(value).origin === new URL(rendererUrl).origin; } catch { return false; }
+      try { const actual = new URL(value);
+      const expected = new URL(rendererUrl);
+      return actual.origin === expected.origin && actual.pathname === expected.pathname; } catch { return false; }
     }
     return value.startsWith('file://') && value.endsWith('/out/renderer/index.html');
   };
