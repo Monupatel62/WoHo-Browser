@@ -112,29 +112,36 @@ async function atomicWrite(filePath: string, contents: string): Promise<void> {
 export class BrowserDataStore {
   private data: PersistedBrowserData = { version: DATA_VERSION, bookmarks: [], history: [] };
   private loaded = false;
+  private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly filePath: string) {}
 
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
-    try {
-      const raw = await readFile(this.filePath);
-      if (raw.byteLength > MAX_FILE_BYTES) {
-        throw new Error('Browser data file is too large; original data was preserved.');
-      }
-      this.data = parseData(raw.toString('utf8'));
-    } catch (error) {
-      if (!isRecord(error) || error.code !== 'ENOENT') throw error;
-      this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
+    if (!this.loading) {
+      this.loading = (async () => {
+        try {
+          const raw = await readFile(this.filePath);
+          if (raw.byteLength > MAX_FILE_BYTES) {
+            throw new Error('Browser data file is too large; original data was preserved.');
+          }
+          this.data = parseData(raw.toString('utf8'));
+        } catch (error) {
+          if (!isRecord(error) || error.code !== 'ENOENT') throw error;
+          this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
+        }
+        this.loaded = true;
+      })();
     }
-    this.loaded = true;
+    await this.loading;
   }
 
   private persist(): Promise<void> {
     const snapshot = JSON.stringify(this.data, null, 2) + '\n';
-    this.writeQueue = this.writeQueue.then(() => atomicWrite(this.filePath, snapshot));
-    return this.writeQueue;
+    const pendingWrite = this.writeQueue.catch(() => undefined).then(() => atomicWrite(this.filePath, snapshot));
+    this.writeQueue = pendingWrite;
+    return pendingWrite;
   }
 
   async listBookmarks(): Promise<BookmarkRecord[]> {
