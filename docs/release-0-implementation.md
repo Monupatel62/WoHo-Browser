@@ -18,7 +18,7 @@
 ## Not implemented / not yet verified
 
 - No local build or test run has been executed by this change authoring environment. CI must run against the branch and failures must be fixed.
-- No release installer or signed artifact has been produced.
+- CI now attempts to create an unsigned Windows NSIS installer and upload it as a short-lived workflow artifact. Successful packaging and clean install/uninstall must be verified from the run; it is not signed.
 - No updater, Safe Browsing/phishing reputation integration, download manager, bookmarks/history UI, private sessions, extension system, sync, or AI assistant yet.
 - No security audit, compatibility certification, or production security claim.
 - Permission requests are denied globally in this first slice; there is no user-facing per-site permission manager yet.
