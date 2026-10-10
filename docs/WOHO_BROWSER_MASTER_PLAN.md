@@ -298,12 +298,12 @@ Update this table only with verified repository evidence.
 | Security model | Partially implemented; automated checks verified on the audited commit | Navigation/popup restrictions, secure-origin permission policy, private-session isolation, bounded profile reads, download URL/name hardening; full threat-model and Windows runtime review remain |
 | Windows MVP | In-progress prototype | Navigation, home button, tabs, bookmarks/history, downloads, permissions, private tabs, settings, opt-in session restore and failure feedback exist; clean Windows runtime, signed installer and release gates remain |
 | AI assistant | Out of scope for the current browser build | No AI integration or AI service calls; revisit only through a separate approved roadmap decision |
-| CI and release | CI and CodeQL workflows implemented; current `main` checks passed on the audited commit | Windows lint/typecheck/tests/build and unsigned installer packaging run in CI; code signing, updater, clean-machine install/uninstall and runtime evidence remain |
+| CI and release | CI and CodeQL workflows implemented; PR-head checks passed for the latest code change, fresh `main` checks pending | Windows lint/typecheck/tests/build and unsigned installer packaging run in CI; code signing, updater, clean-machine install/uninstall and runtime evidence remain |
 | Monetization | Hypotheses only | Interview target users and validate willingness to pay |
 
 ### Status-ledger changelog
 
-- **2026-10-11:** Replaced stale “documentation stage” and “no workflows found” entries with verified implementation status. The audited `main` commit was `aa18425c6a6d84e3503dec5f881e835ddfa1a885`; its Windows CI and CodeQL runs passed. This is not a production-readiness claim: Windows runtime testing, signing, updater integrity, and the full release/security review remain open.
+- **2026-10-11:** Replaced stale “documentation stage” and “no workflows found” entries with verified implementation status. The audited `main` commit was `aa18425c6a6d84e3503dec5f881e835ddfa1a885`. The filename-hardening PR head passed Windows CI and CodeQL; fresh checks on that merge commit were still queued. This is not a production-readiness claim: Windows runtime testing, signing, updater integrity, and the full release/security review remain open.
 
 ## 14. Working agreement for future updates
 
