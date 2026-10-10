@@ -21,9 +21,6 @@ function validateSessionUrls(value: unknown): string[] {
     }
     return new URL(item).toString();
   });
-  if (new Set(urls).size !== urls.length) {
-    throw new Error('Saved session contains duplicate URLs; original data was preserved.');
-  }
   return urls;
 }
 
