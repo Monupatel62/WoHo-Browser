@@ -42,6 +42,10 @@ export default function App() {
   useEffect(() => { setAddress(active?.url ?? ''); }, [active?.id, active?.url]);
 
   useEffect(() => {
+    void window.wohoBrowser.setOverlayPanelOpen(Boolean(panel)).catch(() => setError('Could not update browser panel layout.'));
+  }, [panel]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
         event.preventDefault(); addressRef.current?.focus(); addressRef.current?.select();
