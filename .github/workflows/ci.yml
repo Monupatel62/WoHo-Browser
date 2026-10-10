@@ -25,7 +25,7 @@ jobs:
         run: |
           npm audit --json > npm-audit.json
           if ($LASTEXITCODE -ne 0) {
-            node -e "const a = require('./npm-audit.json'); for (const [name, v] of Object.entries(a.vulnerabilities || {})) { if (true) console.log(name + ': ' + v.severity + ' fix=' + JSON.stringify(v.fixAvailable) + ' via=' + v.via.map(x => typeof x === 'string' ? x : x.name + ' ' + x.range).join(', ')); }"
+            node -e "const a = require('./npm-audit.json'); for (const [name, v] of Object.entries(a.vulnerabilities || {})) console.log(name + ': ' + v.severity + ' fix=' + JSON.stringify(v.fixAvailable) + ' via=' + v.via.map(x => typeof x === 'string' ? x : x.name + ' ' + x.range).join(', '));"
           }
       - name: Enforce high and critical dependency audit
         run: npm audit --audit-level=high
