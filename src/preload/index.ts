@@ -10,6 +10,7 @@ const api: WoHoBrowserApi = {
   goBack: () => ipcRenderer.invoke('browser:back'),
   goForward: () => ipcRenderer.invoke('browser:forward'),
   reload: () => ipcRenderer.invoke('browser:reload'),
+  stop: () => ipcRenderer.invoke('browser:stop'),
   onStateChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, state: BrowserState) => callback(state);
     ipcRenderer.on('browser:state', listener);
