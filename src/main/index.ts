@@ -7,6 +7,8 @@ import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/naviga
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
+const DATA_PANEL_HEIGHT = 360;
+let overlayPanelOpen = false;
 const HOME_URL = 'https://www.google.com/';
 let mainWindow: BrowserWindow | null = null;
 let browserSession: Electron.Session;
@@ -151,9 +153,9 @@ function layoutViews(): void {
     view.setVisible(id === activeTabId);
     view.setBounds({
       x: 0,
-      y: CHROME_HEIGHT,
+      y: CHROME_HEIGHT + (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0),
       width: Math.max(0, width),
-      height: Math.max(0, height - CHROME_HEIGHT),
+      height: Math.max(0, height - CHROME_HEIGHT - (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0)),
     });
   }
 }
@@ -227,6 +229,11 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
+  handle('browser:set-overlay-panel-open', (_event, open: unknown) => {
+    if (typeof open !== 'boolean') throw new Error('Invalid panel state.');
+    overlayPanelOpen = open;
+    layoutViews();
+  });
   handle('browser:open-tab', (_event, url?: unknown) => {
     if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
     return createTab(typeof url === 'string' ? url : HOME_URL);
