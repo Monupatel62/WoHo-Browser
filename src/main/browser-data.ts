@@ -138,23 +138,30 @@ export class BrowserDataStore {
     if (this.loaded) return;
     if (!this.loading) {
       this.loading = (async () => {
+        let raw: Buffer;
         try {
           const metadata = await stat(this.filePath);
           if (metadata.size > MAX_FILE_BYTES) {
             throw new Error('Browser data file is too large; original data was preserved.');
           }
-          const raw = await readFile(this.filePath);
-          if (raw.byteLength > MAX_FILE_BYTES) {
-            throw new Error('Browser data file is too large; original data was preserved.');
-          }
-          const parsed = parseData(raw.toString('utf8'));
-          this.data = parsed.data;
-          if (parsed.historyRedacted) {
-            await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
-          }
+          raw = await readFile(this.filePath);
         } catch (error) {
-          if (!isRecord(error) || error.code !== 'ENOENT') throw error;
-          this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
+          if (isRecord(error) && error.code === 'ENOENT') {
+            this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
+            this.loaded = true;
+            return;
+          }
+          throw error;
+        }
+        if (raw.byteLength > MAX_FILE_BYTES) {
+          throw new Error('Browser data file is too large; original data was preserved.');
+        }
+        const parsed = parseData(raw.toString('utf8'));
+        this.data = parsed.data;
+        if (parsed.historyRedacted) {
+          // Keep migration writes outside the missing-source-file catch: a failed
+          // migration must reject loading instead of silently looking like no data.
+          await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
         }
         this.loaded = true;
       })();
