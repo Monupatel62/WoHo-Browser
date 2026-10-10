@@ -488,7 +488,7 @@ function registerIpc(): void {
     });
     if (choice.canceled || !choice.filePath) return false;
     const payload = { version: 2, settings: await browserSettingsStore.get() };
-    await atomicWriteFile(choice.filePath, JSON.stringify(payload, null, 2) + '\\n');
+    await atomicWriteFile(choice.filePath, JSON.stringify(payload, null, 2) + '\n');
     return true;
   });
   handle('browser:import-settings', async () => {
