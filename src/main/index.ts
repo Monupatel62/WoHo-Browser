@@ -26,6 +26,31 @@ const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
 const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
 const privateTabIds = new Set<string>();
+const privateSessionsByTab = new Map<string, Electron.Session>();
+const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
+
+async function disposePrivateSession(tabId: string): Promise<void> {
+  const privateSession = privateSessionsByTab.get(tabId);
+  if (!privateSession) return;
+  privateSessionsByTab.delete(tabId);
+  privateTabIds.delete(tabId);
+  const activeItems = privateDownloadItemsBySession.get(privateSession);
+  if (activeItems) {
+    for (const item of activeItems) {
+      try { item.cancel(); } catch { /* The download may already have completed. */ }
+    }
+    activeItems.clear();
+  }
+  try {
+    await Promise.all([
+      privateSession.clearStorageData(),
+      privateSession.clearCache(),
+      privateSession.clearAuthCache(),
+    ]);
+  } catch (error) {
+    console.error('Could not fully clear private session data:', error instanceof Error ? error.message : 'Unknown cleanup error');
+  }
+}
 
 function permissionDecisions(targetSession: Electron.Session): Map<string, boolean> {
   let decisions = permissionDecisionsBySession.get(targetSession);
@@ -65,6 +90,10 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
 function registerPrivateDownloadHandling(privateSession: Electron.Session): void {
   privateSession.on('will-download', (event, item) => {
     if (!safeDownloadUrl(item.getURL())) { event.preventDefault(); return; }
+    let activeItems = privateDownloadItemsBySession.get(privateSession);
+    if (!activeItems) { activeItems = new Set<DownloadItem>(); privateDownloadItemsBySession.set(privateSession, activeItems); }
+    activeItems.add(item);
+    item.once('done', () => { activeItems?.delete(item); });
     void (async () => {
       if (!mainWindow || mainWindow.isDestroyed()) { item.cancel(); return; }
       const choice = await dialog.showSaveDialog(mainWindow, {
@@ -278,7 +307,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   wc.on('destroyed', () => {
     views.delete(id);
-    privateTabIds.delete(id);
+    void disposePrivateSession(id);
     const index = tabOrder.indexOf(id);
     if (index >= 0) tabOrder.splice(index, 1);
     if (activeTabId === id) activeTabId = tabOrder[Math.max(0, index - 1)] ?? tabOrder[0] ?? null;
@@ -293,6 +322,7 @@ async function createTab(target = HOME_URL, isPrivate = false): Promise<void> {
   const tabSession = isPrivate ? session.fromPartition('woho-private-' + randomUUID()) : browserSession;
   if (isPrivate) {
     privateTabIds.add(id);
+    privateSessionsByTab.set(id, tabSession);
     configurePermissionHandlers(tabSession);
     registerPrivateDownloadHandling(tabSession);
   }
@@ -362,6 +392,7 @@ function registerIpc(): void {
     const index = tabOrder.indexOf(id);
     mainWindow?.contentView.removeChildView(view);
     views.delete(id);
+    void disposePrivateSession(id);
     if (index >= 0) tabOrder.splice(index, 1);
     if (activeTabId === id) activeTabId = tabOrder[Math.max(0, index - 1)] ?? tabOrder[0] ?? null;
     if (!view.webContents.isDestroyed()) view.webContents.close();
