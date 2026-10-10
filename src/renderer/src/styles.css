@@ -5,7 +5,7 @@
 .bookmark-toggle.saved{color:#ffd36a}
 .bookmark-toggle:disabled{opacity:.4;cursor:default}
 .data-button:hover,.data-button.selected{background:#2d3b56;border-color:#6688c5}
-.data-panel{position:absolute;top:108px;right:12px;width:min(440px,calc(100vw - 24px));max-height:min(72vh,620px);overflow:auto;z-index:20;border:1px solid #34415b;border-radius:0 0 14px 14px;background:#111a2c;color:#e8edf7;box-shadow:0 18px 48px #0008}
+.data-panel{position:absolute;top:108px;right:12px;width:min(440px,calc(100vw - 24px));height:min(360px,calc(100vh - 128px));max-height:calc(100vh - 128px);overflow:auto;z-index:20;border:1px solid #34415b;border-radius:0 0 14px 14px;background:#111a2c;color:#e8edf7;box-shadow:0 18px 48px #0008}
 .data-panel-header{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid #29364e;background:#151f33}
 .data-panel-header>div{display:flex;align-items:center;gap:8px}
 .panel-action,.panel-close,.saved-remove{border:0;border-radius:7px;background:transparent;color:#b8c5dc;cursor:pointer;font:inherit}
