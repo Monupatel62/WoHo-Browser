@@ -9,6 +9,7 @@ import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permiss
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
+import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -26,6 +27,7 @@ const downloads = new Map<string, DownloadRecord>();
 const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
 const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
+const pendingPermissionPromptsBySession = new WeakMap<Electron.Session, Map<string, Promise<boolean>>>();
 const privateTabIds = new Set<string>();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
@@ -61,6 +63,12 @@ function permissionDecisions(targetSession: Electron.Session): Map<string, boole
   return decisions;
 }
 
+function pendingPermissionPrompts(targetSession: Electron.Session): Map<string, Promise<boolean>> {
+  let prompts = pendingPermissionPromptsBySession.get(targetSession);
+  if (!prompts) { prompts = new Map<string, Promise<boolean>>(); pendingPermissionPromptsBySession.set(targetSession, prompts); }
+  return prompts;
+}
+
 function configurePermissionHandlers(targetSession: Electron.Session): void {
   targetSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     if (disposedPrivateSessions.has(targetSession)) { callback(false); return; }
@@ -72,17 +80,21 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
     if (existingDecision !== undefined) { callback(existingDecision); return; }
     const label = PERMISSION_LABELS[permission];
     if (!label) { callback(false); return; }
-    void dialog.showMessageBox(mainWindow, {
-      type: 'question', title: 'Website permission request',
-      message: origin + ' wants access to ' + label + '.',
-      detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
-      buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
-    }).then(({ response }) => {
-      if (disposedPrivateSessions.has(targetSession)) { callback(false); return; }
+    const promptWindow = mainWindow;
+    const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, async () => {
+      if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+      const { response } = await dialog.showMessageBox(promptWindow, {
+        type: 'question', title: 'Website permission request',
+        message: origin + ' wants access to ' + label + '.',
+        detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
+        buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
+      });
+      if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
       const allowed = response === 0;
       decisions.set(key, allowed);
-      callback(allowed);
-    }).catch(() => callback(false));
+      return allowed;
+    });
+    void prompt.then((allowed) => callback(disposedPrivateSessions.has(targetSession) ? false : allowed)).catch(() => callback(false));
   });
   targetSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
     if (!webContents) return false;
