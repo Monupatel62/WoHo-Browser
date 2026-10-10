@@ -36,7 +36,7 @@ describe('openRecoverableBrowserSettingsStore', () => {
     await writeFile(recovery, '{bad recovery', 'utf8');
     const warn = vi.fn(async () => undefined);
     const store = await openRecoverableBrowserSettingsStore(primary, recovery, () => fallback, warn);
-    await store.update({ searchProvider: 'bing', homePageUrl: 'https://example.com/' });
+    await store.update({ searchProvider: 'bing', homePageUrl: 'https://example.com/', restoreSession: false });
     expect(await readFile(primary, 'utf8')).toBe('{bad primary');
     expect(await readFile(recovery, 'utf8')).toBe('{bad recovery');
     expect(JSON.parse(await readFile(fallback, 'utf8')).settings.searchProvider).toBe('bing');

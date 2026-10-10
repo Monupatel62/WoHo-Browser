@@ -474,7 +474,9 @@ export default function App() {
         <label htmlFor="settings-home-page">Home page and new-tab address</label>
         <input id="settings-home-page" value={settingsDraft.homePageUrl} onChange={(event) => setSettingsDraft((current) => ({ ...current, homePageUrl: event.target.value.slice(0, 2048) }))} maxLength={2048} placeholder="https://example.com/" spellCheck={false} />
         <p>Use an HTTP or HTTPS URL. Search-provider and home-page changes are saved locally and apply to future searches and tabs; already-open tabs are unchanged.</p>
-        <div className="settings-actions"><button className="panel-action" onClick={() => void saveSettings()} disabled={settingsDraft.searchProvider === settings.searchProvider && settingsDraft.homePageUrl === settings.homePageUrl}>Save settings</button><button className="panel-action" onClick={() => void resetSettings()}>Reset defaults</button></div>
+        <label className="settings-toggle"><input type="checkbox" checked={settingsDraft.restoreSession} onChange={(event) => setSettingsDraft((current) => ({ ...current, restoreSession: event.target.checked }))} /> Restore normal tabs on startup</label>
+        <p>When enabled, WoHo Browser saves up to 50 normal-tab HTTP(S) URLs locally and restores them next time. Private tabs are never saved. URLs can contain sensitive query values. This option is off by default.</p>
+        <div className="settings-actions"><button className="panel-action" onClick={() => void saveSettings()} disabled={settingsDraft.searchProvider === settings.searchProvider && settingsDraft.homePageUrl === settings.homePageUrl && settingsDraft.restoreSession === settings.restoreSession}>Save settings</button><button className="panel-action" onClick={() => void resetSettings()}>Reset defaults</button></div>
       </div>}
       {panel === 'permissions' && (sitePermissions.length ? <ul className="saved-list">{sitePermissions.map((decision) => <li key={decision.origin + '::' + decision.permission}>
         <div className="permission-entry">

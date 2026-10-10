@@ -7,7 +7,7 @@ import {
   type BrowserSettings,
 } from '../shared/browser-settings';
 
-const SETTINGS_VERSION = 1;
+const SETTINGS_VERSION = 2;
 const MAX_SETTINGS_BYTES = 16 * 1024;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,10 +45,17 @@ export class BrowserSettingsStore {
         try { parsed = JSON.parse(raw.toString('utf8')); } catch {
           throw new Error('Browser settings file is unreadable; original data was preserved.');
         }
-        if (!isRecord(parsed) || parsed.version !== SETTINGS_VERSION || !isRecord(parsed.settings)) {
+        if (!isRecord(parsed) || !isRecord(parsed.settings) ||
+            (parsed.version !== 1 && parsed.version !== SETTINGS_VERSION)) {
           throw new Error('Browser settings structure is unsupported; original data was preserved.');
         }
-        this.settings = validateBrowserSettings(parsed.settings);
+        const candidate = parsed.version === 1
+          ? { ...parsed.settings, restoreSession: false }
+          : parsed.settings;
+        this.settings = validateBrowserSettings(candidate);
+        if (parsed.version === 1) {
+          await atomicWriteFile(this.filePath, JSON.stringify({ version: SETTINGS_VERSION, settings: this.settings }, null, 2) + '\n');
+        }
         this.loaded = true;
       })();
     }

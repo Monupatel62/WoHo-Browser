@@ -1,6 +1,6 @@
 # Reliability, Error States, and Recovery Specification
 
-**Status:** Partially implemented. Renderer-process crashes are now shown in the active tab with a user-triggered reload action; automatic session restore, app-crash restore, and network/TLS error UX remain planned.
+**Status:** Partially implemented. Renderer-process crashes are shown in the affected tab with a user-triggered reload action. Optional normal-tab URL restore is implemented and off by default; full app-crash/Windows runtime verification and network/TLS error UX remain outstanding.
 
 ## Reliability goal
 Fail visibly and recover safely rather than hang silently, lose data, or weaken security. Quantitative budgets are defined in the performance document and must be measured on declared hardware.

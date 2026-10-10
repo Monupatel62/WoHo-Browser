@@ -6,7 +6,7 @@
 
 - Electron desktop shell with React/TypeScript browser chrome.
 - Electron `WebContentsView` per tab using a dedicated persistent browser session.
-- Address bar with HTTPS-by-default bare hostnames and configurable Google, Bing, or DuckDuckGo search fallback. A Settings panel persists a validated HTTP(S) home/new-tab URL and selected search provider locally; invalid or corrupt settings use a separate recovery file without overwriting the original.
+- Address bar with HTTPS-by-default bare hostnames and configurable Google, Bing, or DuckDuckGo search fallback. A Settings panel persists a validated HTTP(S) home/new-tab URL, selected search provider, and an opt-in normal-tab session-restore setting locally; settings and session files use validation and separate recovery files without overwriting corrupt originals.
 - Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, keyboard shortcuts (including Ctrl+F), and per-tab renderer-crash indication with a user-triggered reload action.
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.

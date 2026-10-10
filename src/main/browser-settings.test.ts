@@ -17,24 +17,39 @@ afterEach(async () => {
 describe('BrowserSettingsStore', () => {
   it('returns safe defaults when no settings file exists', async () => {
     const { store } = await createStore();
-    await expect(store.load()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/' });
+    await expect(store.load()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/', restoreSession: false });
   });
 
   it('persists validated settings across store instances', async () => {
     const { store, file } = await createStore();
-    await store.update({ searchProvider: 'duckduckgo', homePageUrl: 'https://example.com/start' });
+    await store.update({ searchProvider: 'duckduckgo', homePageUrl: 'https://example.com/start', restoreSession: true });
     await expect(new BrowserSettingsStore(file).load()).resolves.toEqual({
-      searchProvider: 'duckduckgo', homePageUrl: 'https://example.com/start',
+      searchProvider: 'duckduckgo', homePageUrl: 'https://example.com/start', restoreSession: true,
     });
   });
 
   it('rejects unsupported providers, unsafe URLs, credentials, and oversized values', async () => {
     const { store } = await createStore();
-    await expect(store.update({ searchProvider: 'custom', homePageUrl: 'https://example.com/' })).rejects.toThrow(/unsupported/);
-    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', surprise: true } as never)).rejects.toThrow(/unknown keys/);
-    await expect(store.update({ searchProvider: 'google', homePageUrl: 'file:///secret' })).rejects.toThrow(/unsupported/);
-    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://user:pass@example.com/' })).rejects.toThrow(/unsupported/);
-    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/' + 'x'.repeat(2100) })).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'custom', homePageUrl: 'https://example.com/', restoreSession: false })).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', restoreSession: false, surprise: true } as never)).rejects.toThrow(/unknown keys/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', restoreSession: 'yes' } as never)).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'file:///secret', restoreSession: false })).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://user:pass@example.com/', restoreSession: false })).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/' + 'x'.repeat(2100), restoreSession: false })).rejects.toThrow(/unsupported/);
+  });
+
+  it('migrates version 1 settings with session restore disabled by default', async () => {
+    const { store, file } = await createStore();
+    await writeFile(file, JSON.stringify({
+      version: 1,
+      settings: { searchProvider: 'bing', homePageUrl: 'https://example.org/' },
+    }), 'utf8');
+    await expect(store.load()).resolves.toEqual({
+      searchProvider: 'bing', homePageUrl: 'https://example.org/', restoreSession: false,
+    });
+    const persisted = JSON.parse(await readFile(file, 'utf8'));
+    expect(persisted.version).toBe(2);
+    expect(persisted.settings.restoreSession).toBe(false);
   });
 
   it('preserves malformed settings instead of silently replacing them', async () => {
@@ -46,7 +61,7 @@ describe('BrowserSettingsStore', () => {
 
   it('reset restores the documented defaults', async () => {
     const { store } = await createStore();
-    await store.update({ searchProvider: 'bing', homePageUrl: 'https://example.org/' });
-    await expect(store.reset()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/' });
+    await store.update({ searchProvider: 'bing', homePageUrl: 'https://example.org/', restoreSession: true });
+    await expect(store.reset()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/', restoreSession: false });
   });
 });
