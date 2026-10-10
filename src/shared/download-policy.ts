@@ -21,7 +21,7 @@ export function safeDownloadFilename(value: string): string {
   // code units, so an excessive server-provided suffix is never needed.
   const leaf = value.slice(lastSeparator + 1).slice(0, 1024)
     .normalize('NFC')
-    .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
+    .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u206F]/g, '');
   const forbidden = '<>:' + String.fromCharCode(34) + '/\\|?*';
   let safe = [...leaf]
     .map((character) => character < ' ' || forbidden.includes(character) ? '_' : character)
