@@ -33,6 +33,10 @@ export default function App() {
         event.preventDefault(); void window.wohoBrowser.openTab();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w') {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
+        event.preventDefault(); void window.wohoBrowser.reload();
+      } else if (event.key === 'Escape' && active?.loading) {
+        event.preventDefault(); void window.wohoBrowser.stop();
       } else if (event.altKey && event.key === 'ArrowLeft') {
         event.preventDefault(); void window.wohoBrowser.goBack();
       } else if (event.altKey && event.key === 'ArrowRight') {
@@ -66,7 +70,7 @@ export default function App() {
       <div className="nav-actions">
         <button className="icon-button" title="Back (Alt+Left)" aria-label="Back" disabled={!active?.canGoBack} onClick={() => void window.wohoBrowser.goBack()}>‹</button>
         <button className="icon-button" title="Forward (Alt+Right)" aria-label="Forward" disabled={!active?.canGoForward} onClick={() => void window.wohoBrowser.goForward()}>›</button>
-        <button className="icon-button" title="Reload" aria-label="Reload" onClick={() => void window.wohoBrowser.reload()}>{active?.loading ? '×' : '↻'}</button>
+        <button className="icon-button" title={active?.loading ? 'Stop loading (Esc)' : 'Reload (Ctrl+R)'} aria-label={active?.loading ? 'Stop loading' : 'Reload'} onClick={() => void (active?.loading ? window.wohoBrowser.stop() : window.wohoBrowser.reload())}>{active?.loading ? '×' : '↻'}</button>
       </div>
       <form className="address-form" onSubmit={submitAddress}>
         <span className="security-icon" aria-hidden="true">{active?.url.startsWith('https://') ? '◆' : '○'}</span>
