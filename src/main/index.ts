@@ -9,7 +9,7 @@ import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
-import { getDownloadIdsToPrune } from '../shared/download-retention';
+import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
@@ -504,8 +504,7 @@ function registerIpc(): void {
   });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:clear-finished-downloads', async () => {
-    const finished = [...downloads.values()].filter((record) =>
-      record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted');
+    const finished = [...downloads.values()].filter((record) => isFinishedDownloadStatus(record.status));
     for (const record of finished) {
       downloads.delete(record.id);
       downloadItems.delete(record.id);
@@ -513,6 +512,19 @@ function registerIpc(): void {
     await Promise.all(finished.map((record) => downloadHistoryStore.remove(record.id)));
     publishDownloads();
     return [...downloads.values()].map((record) => ({ ...record }));
+  });
+  handle('browser:remove-download-record', async (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid download ID.');
+    const record = downloads.get(id);
+    if (!record) throw new Error('Download record no longer exists.');
+    if (!isFinishedDownloadStatus(record.status)) {
+      throw new Error('Active downloads cannot be removed from the list.');
+    }
+    downloads.delete(id);
+    downloadItems.delete(id);
+    await downloadHistoryStore.remove(id);
+    publishDownloads();
+    return [...downloads.values()].map((item) => ({ ...item }));
   });
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');

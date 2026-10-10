@@ -221,6 +221,15 @@ export default function App() {
     }
   }
 
+  async function removeDownloadRecord(id: string) {
+    setError('');
+    try {
+      setDownloads(await window.wohoBrowser.removeDownloadRecord(id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not remove download record.');
+    }
+  }
+
   return <main className="browser-chrome">
     <div className="tab-strip">
       <div className="brand"><span className="brand-mark">W</span><span>WoHo</span>{active?.isPrivate && <span className="private-badge">Private</span>}</div>
@@ -306,6 +315,7 @@ export default function App() {
             {item.status === 'paused' && item.canResume && <button className="panel-action" onClick={() => void runDownloadAction('resume', item.id)}>Resume</button>}
             {activeDownload && <button className="panel-action" onClick={() => void runDownloadAction('cancel', item.id)}>Cancel</button>}
             {item.status === 'completed' && <button className="panel-action" onClick={() => void runDownloadAction('reveal', item.id)}>Show in folder</button>}
+            {!activeDownload && <button className="panel-action" aria-label={`Remove download record ${item.filename}; saved file will remain`} title="Remove this record only; the file on disk will remain" onClick={() => void removeDownloadRecord(item.id)}>Remove</button>}
           </div>
         </li>;
       })}</ul> : <p className="empty-data">No downloads yet. Files will appear here when a website starts a download.</p>)}
