@@ -10,7 +10,7 @@
 - Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, and keyboard shortcuts (including Ctrl+F).
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
-- HTTP/HTTPS-only navigation targets, denied popups, and deny-by-default site permissions.
+- HTTP/HTTPS-only navigation targets and denied popups. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Bookmark add/remove/list UI and duplicate-URL handling.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
@@ -19,7 +19,7 @@
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, and duplicate bookmark IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation, browser data persistence/validation, download URL/filename safety policy, and find-query validation.
+- Unit tests for navigation, browser data persistence/validation, download URL/filename safety policy, find-query validation, and site permission origin/allowlist policy.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
