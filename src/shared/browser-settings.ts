@@ -11,11 +11,13 @@ export type SearchProviderId = keyof typeof SEARCH_PROVIDERS;
 export interface BrowserSettings {
   searchProvider: SearchProviderId;
   homePageUrl: string;
+  restoreSession: boolean;
 }
 
 export const DEFAULT_BROWSER_SETTINGS: BrowserSettings = {
   searchProvider: 'google',
   homePageUrl: 'https://www.google.com/',
+  restoreSession: false,
 };
 
 export function isSearchProviderId(value: unknown): value is SearchProviderId {
@@ -31,18 +33,18 @@ export function validateBrowserSettings(value: unknown): BrowserSettings {
     throw new Error('Browser settings are invalid.');
   }
   const candidate = value as Record<string, unknown>;
-  if (Object.keys(candidate).some((key) => key !== 'searchProvider' && key !== 'homePageUrl')) {
+  if (Object.keys(candidate).some((key) => key !== 'searchProvider' && key !== 'homePageUrl' && key !== 'restoreSession')) {
     throw new Error('Browser settings contain unknown keys.');
   }
   if (!isSearchProviderId(candidate.searchProvider) ||
       typeof candidate.homePageUrl !== 'string' ||
       candidate.homePageUrl.length > 2048 ||
-      !isSafeWebUrl(candidate.homePageUrl)) {
+      !isSafeWebUrl(candidate.homePageUrl) || typeof candidate.restoreSession !== 'boolean') {
     throw new Error('Browser settings contain an unsupported search provider or invalid HTTP(S) home page URL.');
   }
   const home = new URL(candidate.homePageUrl);
   if (home.username || home.password) {
     throw new Error('Home page URLs cannot contain embedded credentials.');
   }
-  return { searchProvider: candidate.searchProvider, homePageUrl: home.toString() };
+  return { searchProvider: candidate.searchProvider, homePageUrl: home.toString(), restoreSession: candidate.restoreSession };
 }
