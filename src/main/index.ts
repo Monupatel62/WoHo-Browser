@@ -1,11 +1,14 @@
-import { app, BrowserWindow, WebContentsView, ipcMain, session, type IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
+import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
-import type { BrowserState, BrowserTabState } from '../shared/browser-types';
+import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
+const DATA_PANEL_HEIGHT = 360;
+let overlayPanelOpen = false;
 const HOME_URL = 'https://www.google.com/';
 let mainWindow: BrowserWindow | null = null;
 let browserSession: Electron.Session;
@@ -13,6 +16,96 @@ let activeTabId: string | null = null;
 const tabOrder: string[] = [];
 const views = new Map<string, WebContentsView>();
 let browserDataStore: BrowserDataStore;
+const downloads = new Map<string, DownloadRecord>();
+const downloadItems = new Map<string, DownloadItem>();
+const MAX_DOWNLOAD_RECORDS = 100;
+
+function publishDownloads(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('browser:downloads', [...downloads.values()].map((record) => ({ ...record })));
+  }
+}
+
+function setDownloadStatus(id: string, status: DownloadStatus): void {
+  const record = downloads.get(id);
+  if (!record) return;
+  record.status = status;
+  const item = downloadItems.get(id);
+  if (item) {
+    record.receivedBytes = item.getReceivedBytes();
+    record.totalBytes = item.getTotalBytes();
+    record.canResume = item.canResume();
+    if (item.getSavePath()) record.savePath = item.getSavePath();
+  }
+  publishDownloads();
+}
+
+function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): void {
+  if (downloads.size <= maxRecords) return;
+  for (const [id, record] of downloads) {
+    if (downloads.size <= maxRecords) break;
+    if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') downloads.delete(id);
+  }
+}
+
+function registerDownloadHandling(): void {
+  browserSession.on('will-download', (event, item) => {
+    const safeUrl = safeDownloadUrl(item.getURL());
+    if (!safeUrl) { event.preventDefault(); return; }
+    pruneDownloadRecords(MAX_DOWNLOAD_RECORDS - 1);
+    if (downloads.size >= MAX_DOWNLOAD_RECORDS) { event.preventDefault(); return; }
+    const id = randomUUID();
+    const record: DownloadRecord = {
+      id,
+      filename: safeDownloadFilename(item.getFilename()),
+      url: safeUrl,
+      status: 'waiting',
+      receivedBytes: 0,
+      totalBytes: item.getTotalBytes(),
+      canResume: item.canResume(),
+      startedAt: new Date().toISOString(),
+    };
+    downloads.set(id, record);
+    downloadItems.set(id, item);
+    pruneDownloadRecords();
+    publishDownloads();
+    item.on('updated', (_updateEvent, state) => {
+      if (state === 'interrupted') setDownloadStatus(id, 'interrupted');
+      else if (item.isPaused()) setDownloadStatus(id, 'paused');
+      else setDownloadStatus(id, 'progressing');
+    });
+    item.once('done', (_doneEvent, state) => {
+      if (state === 'completed') setDownloadStatus(id, 'completed');
+      else if (state === 'cancelled') setDownloadStatus(id, 'cancelled');
+      else setDownloadStatus(id, 'interrupted');
+      downloadItems.delete(id);
+      pruneDownloadRecords();
+      publishDownloads();
+    });
+    void (async () => {
+      if (!mainWindow || mainWindow.isDestroyed()) { item.cancel(); return; }
+      const choice = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save download',
+        defaultPath: record.filename,
+        buttonLabel: 'Save',
+      });
+      if (choice.canceled || !choice.filePath) {
+        if (downloadItems.get(id) === item) item.cancel();
+        return;
+      }
+      if (downloadItems.get(id) !== item) return;
+      record.savePath = choice.filePath;
+      item.setSavePath(choice.filePath);
+      setDownloadStatus(id, item.isPaused() ? 'paused' : 'progressing');
+    })().catch((error: unknown) => {
+      console.error('Could not prepare download:', error instanceof Error ? error.message : 'Unknown download error');
+      if (downloadItems.get(id) === item) {
+        item.cancel();
+        setDownloadStatus(id, 'interrupted');
+      }
+    });
+  });
+}
 
 function assertTrustedChrome(event: IpcMainInvokeEvent): void {
   if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== event.sender.mainFrame) {
@@ -62,9 +155,9 @@ function layoutViews(): void {
     view.setVisible(id === activeTabId);
     view.setBounds({
       x: 0,
-      y: CHROME_HEIGHT,
+      y: CHROME_HEIGHT + (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0),
       width: Math.max(0, width),
-      height: Math.max(0, height - CHROME_HEIGHT),
+      height: Math.max(0, height - CHROME_HEIGHT - (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0)),
     });
   }
 }
@@ -138,6 +231,11 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
+  handle('browser:set-overlay-panel-open', (_event, open: unknown) => {
+    if (typeof open !== 'boolean') throw new Error('Invalid panel state.');
+    overlayPanelOpen = open;
+    layoutViews();
+  });
   handle('browser:open-tab', (_event, url?: unknown) => {
     if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
     return createTab(typeof url === 'string' ? url : HOME_URL);
@@ -184,6 +282,34 @@ function registerIpc(): void {
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
+  handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
+  handle('browser:pause-download', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
+    const item = downloadItems.get(id);
+    if (!item || item.isPaused() || downloads.get(id)?.status !== 'progressing') throw new Error('Download cannot be paused.');
+    item.pause();
+    setDownloadStatus(id, 'paused');
+  });
+  handle('browser:resume-download', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
+    const item = downloadItems.get(id);
+    if (!item || !item.isPaused() || downloads.get(id)?.status !== 'paused' || !item.canResume()) throw new Error('Download cannot be resumed.');
+    item.resume();
+    setDownloadStatus(id, 'progressing');
+  });
+  handle('browser:cancel-download', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
+    const item = downloadItems.get(id);
+    if (!item) throw new Error('Download is no longer active.');
+    item.cancel();
+    setDownloadStatus(id, 'cancelled');
+  });
+  handle('browser:reveal-download', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
+    const record = downloads.get(id);
+    if (!record || record.status !== 'completed' || !record.savePath) throw new Error('Only completed downloads can be revealed.');
+    shell.showItemInFolder(record.savePath);
+  });
 }
 
 function createWindow(): void {
@@ -221,6 +347,7 @@ function createWindow(): void {
   mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
     mainWindow = null;
+    overlayPanelOpen = false;
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
@@ -233,6 +360,7 @@ app.whenReady().then(() => {
   browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
   browserSession = session.fromPartition('persist:woho-browser');
   browserSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  registerDownloadHandling();
   browserSession.setPermissionCheckHandler(() => false);
   registerIpc();
   createWindow();

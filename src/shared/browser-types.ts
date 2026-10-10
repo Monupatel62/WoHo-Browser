@@ -2,6 +2,8 @@ export interface BrowserTabState { id: string; title: string; url: string; loadi
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
+export type DownloadStatus = 'waiting' | 'progressing' | 'paused' | 'completed' | 'cancelled' | 'interrupted';
+export interface DownloadRecord { id: string; filename: string; url: string; status: DownloadStatus; receivedBytes: number; totalBytes: number; canResume: boolean; savePath?: string; startedAt: string; }
 export interface WoHoBrowserApi {
   getState(): Promise<BrowserState>;
   openTab(url?: string): Promise<void>;
@@ -17,6 +19,13 @@ export interface WoHoBrowserApi {
   removeBookmark(id: string): Promise<BookmarkRecord[]>;
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
+  listDownloads(): Promise<DownloadRecord[]>;
+  pauseDownload(id: string): Promise<void>;
+  resumeDownload(id: string): Promise<void>;
+  cancelDownload(id: string): Promise<void>;
+  revealDownload(id: string): Promise<void>;
+  setOverlayPanelOpen(open: boolean): Promise<void>;
+  onDownloadsChanged(callback: (downloads: DownloadRecord[]) => void): () => void;
   onStateChanged(callback: (state: BrowserState) => void): () => void;
 }
 declare global { interface Window { wohoBrowser: WoHoBrowserApi; } }
