@@ -1,7 +1,8 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { BrowserDataStore } from './browser-data';
+import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './browser-data';
 import { openRecoverableBrowserDataStore } from './recoverable-browser-data';
 import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
@@ -473,6 +474,34 @@ function registerIpc(): void {
   handle('browser:remove-bookmark', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid bookmark ID.');
     return browserDataStore.removeBookmark(id);
+  });
+  handle('browser:export-bookmarks', async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Browser window is unavailable.');
+    const choice = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export bookmarks',
+      defaultPath: 'WoHo-Bookmarks.json',
+      buttonLabel: 'Export',
+      filters: [{ name: 'WoHo Bookmarks', extensions: ['json'] }],
+    });
+    if (choice.canceled || !choice.filePath) return false;
+    await atomicWriteFile(choice.filePath, await browserDataStore.exportBookmarksJson());
+    return true;
+  });
+  handle('browser:import-bookmarks', async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Browser window is unavailable.');
+    const choice = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import bookmarks',
+      properties: ['openFile'],
+      filters: [{ name: 'WoHo Bookmarks', extensions: ['json'] }],
+    });
+    if (choice.canceled || !choice.filePaths[0]) return null;
+    const filePath = choice.filePaths[0];
+    const metadata = await stat(filePath);
+    if (metadata.size > MAX_BOOKMARK_IMPORT_BYTES) {
+      throw new Error('Bookmark import file exceeds the 1 MiB limit.');
+    }
+    const raw = await readFile(filePath, 'utf8');
+    return browserDataStore.importBookmarksJson(raw);
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
