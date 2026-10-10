@@ -19,6 +19,7 @@ const DATA_PANEL_HEIGHT = 360;
 let overlayPanelHeight = 0;
 const HOME_URL = 'https://www.google.com/';
 let mainWindow: BrowserWindow | null = null;
+let startupComplete = false;
 let browserSession: Electron.Session;
 let activeTabId: string | null = null;
 const tabOrder: string[] = [];
@@ -556,6 +557,8 @@ if (!hasSingleInstanceLock) {
 } else {
   app.on('second-instance', () => {
     if (!mainWindow || mainWindow.isDestroyed()) {
+      // The initial ready handler creates the first window; avoid racing it.
+      if (!startupComplete) return;
       createWindow();
       void createTab(HOME_URL);
       return;
@@ -605,6 +608,7 @@ if (!hasSingleInstanceLock) {
   registerIpc();
   createWindow();
   void createTab(HOME_URL);
+  startupComplete = true;
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(HOME_URL); } });
   });
 }
