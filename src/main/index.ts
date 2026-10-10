@@ -10,6 +10,7 @@ import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/naviga
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
+import { isTrustedRendererUrl } from './trusted-renderer';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -233,12 +234,8 @@ function assertTrustedChrome(event: IpcMainInvokeEvent): void {
     throw new Error('Untrusted IPC sender.');
   }
   const senderUrl = event.sender.getURL();
-  const devUrl = process.env.ELECTRON_RENDERER_URL;
-  if (devUrl) {
-    const actual = new URL(senderUrl);
-    const expected = new URL(devUrl);
-    if (actual.origin !== expected.origin || actual.pathname !== expected.pathname) throw new Error('IPC sender origin rejected.');
-  } else if (!senderUrl.startsWith('file://') || !senderUrl.endsWith('/out/renderer/index.html')) {
+  const expectedRendererPath = join(__dirname, '../renderer/index.html');
+  if (!isTrustedRendererUrl(senderUrl, process.env.ELECTRON_RENDERER_URL, expectedRendererPath)) {
     throw new Error('IPC sender origin rejected.');
   }
 }
@@ -520,19 +517,14 @@ function createWindow(): void {
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
-  const isTrustedRendererUrl = (value: string) => {
-    if (rendererUrl) {
-      try { const actual = new URL(value);
-      const expected = new URL(rendererUrl);
-      return actual.origin === expected.origin && actual.pathname === expected.pathname; } catch { return false; }
-    }
-    return value.startsWith('file://') && value.endsWith('/out/renderer/index.html');
-  };
+  const expectedRendererPath = join(__dirname, '../renderer/index.html');
+  const isAllowedChromeNavigation = (value: string) =>
+    isTrustedRendererUrl(value, rendererUrl, expectedRendererPath);
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isTrustedRendererUrl(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) event.preventDefault();
   });
   mainWindow.webContents.on('will-redirect', (event, url) => {
-    if (!isTrustedRendererUrl(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) event.preventDefault();
   });
   mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
