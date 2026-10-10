@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { BrowserState } from '../../shared/browser-types';
+import type { BookmarkRecord, BrowserState, HistoryRecord } from '../../shared/browser-types';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
+type DataPanel = 'bookmarks' | 'history' | null;
 
 export default function App() {
   const [state, setState] = useState<BrowserState>(emptyState);
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
+  const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [panel, setPanel] = useState<DataPanel>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const active = state.tabs.find((tab) => tab.id === state.activeTabId);
+  const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
 
   useEffect(() => {
     let mounted = true;
     void window.wohoBrowser.getState().then((next) => { if (mounted) setState(next); }).catch(() => setError('Could not connect to the browser process.'));
+    void window.wohoBrowser.listBookmarks().then((items) => { if (mounted) setBookmarks(items); }).catch(() => setError('Could not load bookmarks.'));
     const unsubscribe = window.wohoBrowser.onStateChanged((next) => {
       setState(next);
       if (document.activeElement !== addressRef.current) {
@@ -35,22 +41,69 @@ export default function App() {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
         event.preventDefault(); void window.wohoBrowser.reload();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'h') {
+        event.preventDefault(); void showPanel('history');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault(); void showPanel('bookmarks');
       } else if (event.key === 'Escape' && active?.loading) {
         event.preventDefault(); void window.wohoBrowser.stop();
       } else if (event.altKey && event.key === 'ArrowLeft') {
         event.preventDefault(); void window.wohoBrowser.goBack();
       } else if (event.altKey && event.key === 'ArrowRight') {
         event.preventDefault(); void window.wohoBrowser.goForward();
+      } else if (event.key === 'Escape' && panel) {
+        setPanel(null);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active]);
+  }, [active, panel]);
+
+  async function showPanel(next: Exclude<DataPanel, null>) {
+    setError('');
+    if (panel === next) { setPanel(null); return; }
+    try {
+      if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
+      else setHistory(await window.wohoBrowser.listHistory());
+      setPanel(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load browser data.');
+    }
+  }
+
+  async function toggleBookmark() {
+    if (!active || !/^https?:\/\//i.test(active.url)) return;
+    setError('');
+    try {
+      const existing = bookmarks.find((bookmark) => bookmark.url === active.url);
+      const next = existing
+        ? await window.wohoBrowser.removeBookmark(existing.id)
+        : await window.wohoBrowser.addBookmark(active.title, active.url);
+      setBookmarks(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update bookmark.');
+    }
+  }
 
   async function submitAddress(event: FormEvent) {
     event.preventDefault(); setError('');
-    try { await window.wohoBrowser.navigate(address); addressRef.current?.blur(); }
+    try { await window.wohoBrowser.navigate(address); addressRef.current?.blur(); setPanel(null); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Navigation failed.'); }
+  }
+
+  async function openSavedUrl(url: string) {
+    try { await window.wohoBrowser.navigate(url); setPanel(null); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not open saved page.'); }
+  }
+
+  async function clearHistory() {
+    if (!window.confirm('Clear all saved browsing history? This cannot be undone.')) return;
+    try {
+      await window.wohoBrowser.clearHistory();
+      setHistory([]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not clear history.');
+    }
   }
 
   return <main className="browser-chrome">
@@ -78,8 +131,26 @@ export default function App() {
         {address && <button type="button" className="clear-address" aria-label="Clear address" onClick={() => { setAddress(''); addressRef.current?.focus(); }}>×</button>}
         <button type="submit" className="go-button">Go</button>
       </form>
-      <button className="profile-button" aria-label="Browser profile" title="Profile settings are not implemented">●</button>
+      <button className={`bookmark-toggle ${isBookmarked ? 'saved' : ''}`} aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'} title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'} disabled={!active?.url || !/^https?:\/\//i.test(active.url)} onClick={() => void toggleBookmark()}>{isBookmarked ? '★' : '☆'}</button>
+      <button className={`data-button ${panel === 'bookmarks' ? 'selected' : ''}`} onClick={() => void showPanel('bookmarks')} title="Bookmarks (Ctrl+B)">Bookmarks</button>
+      <button className={`data-button ${panel === 'history' ? 'selected' : ''}`} onClick={() => void showPanel('history')} title="History (Ctrl+H)">History</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
+    {panel && <section className="data-panel" aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : 'Browsing history'}>
+      <header className="data-panel-header">
+        <strong>{panel === 'bookmarks' ? 'Bookmarks' : 'History'}</strong>
+        <div>
+          {panel === 'history' && <button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear all</button>}
+          <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
+        </div>
+      </header>
+      {panel === 'bookmarks' && (bookmarks.length ? <ul className="saved-list">{bookmarks.map((bookmark) => <li key={bookmark.id}>
+        <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
+        <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
+      </li>)}</ul> : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
+      {panel === 'history' && (history.length ? <ul className="saved-list">{history.map((entry) => <li key={entry.id}>
+        <button className="saved-open" onClick={() => void openSavedUrl(entry.url)}><strong>{entry.title}</strong><span>{entry.url}</span><small>{new Date(entry.visitedAt).toLocaleString()}</small></button>
+      </li>)}</ul> : <p className="empty-data">No browsing history saved.</p>)}
+    </section>}
   </main>;
 }

@@ -1,10 +1,10 @@
 # WoHo Browser
 
-WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsing, privacy-conscious design, and an optional AI assistant.
+WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and privacy-conscious design. AI assistant and AI integrations are explicitly out of scope; the application does not call AI services.
 
 ## Project status
 
-**Release 0 prototype in progress.** The branch `feat/release-0-browser-prototype` now contains the first Electron/Chromium browser shell and navigation slice. Runtime, CI, and security verification are still pending; do not treat it as production-ready.
+**Release 0 prototype in progress.** The Electron/Chromium shell, navigation, baseline security controls, bookmarks, local history, and Windows packaging CI are implemented in code. CI verification is required for this feature branch; Windows runtime and security review remain outstanding.
 
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
@@ -25,22 +25,18 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 - [Downloads and file handling](docs/downloads-and-file-handling.md)
 - [Site permissions and private browsing](docs/site-permissions-and-private-browsing.md)
 - [Network security and content safety](docs/network-security-and-content-safety.md)
-- [AI assistant user journeys](docs/ai-assistant-user-flows.md)
 - [Settings and import/export](docs/settings-import-export.md)
 - [Reliability, errors, and recovery](docs/reliability-errors-and-recovery.md)
 - [Accessibility and localization](docs/accessibility-localization.md)
 - [Cross-feature acceptance matrix](docs/cross-feature-acceptance-matrix.md)
 
-## Security, privacy, and AI
+## Security and privacy
 - [Security model](docs/security-model.md)
 - [Threat model](docs/threat-model.md)
 - [IPC contract](docs/ipc-contract.md)
 - [Privacy requirements](docs/privacy.md)
 - [Data model and retention](docs/data-model-and-retention.md)
 - [Telemetry policy](docs/telemetry-policy.md)
-- [AI broker specification](docs/ai-broker-spec.md)
-- [WoHo AI DevKit integration](docs/devkit-integration-spec.md)
-- [Future agent security design](docs/agent-security-design.md)
 
 ## Product and release engineering
 - [UI/UX and trusted UI](docs/ui-ux-spec.md)
@@ -85,4 +81,4 @@ Build bundles with `npm run build`. On Windows, `npm run package:win` creates an
 Electron + TypeScript + React is selected for the Release 0 prototype only. The final production decision depends on the feasibility spike. This does not promise full Chrome extension compatibility, DRM, sync, or Chrome feature parity.
 
 ## Important
-This branch contains an initial working-code prototype, but it has not yet been built or run in this authoring environment. CI must pass and Windows runtime behavior must be tested before calling the prototype verified. Do not treat the product as production-ready until security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.
+This project intentionally excludes AI assistant features and AI service integrations. The browser prototype has CI-based build/package verification, but a clean Windows install and runtime behavior must still be tested before calling the product verified. Do not treat the product as production-ready until security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.

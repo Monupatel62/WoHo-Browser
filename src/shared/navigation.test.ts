@@ -15,7 +15,7 @@ describe('resolveAddressInput', () => {
   it('turns text into a search query', () => {
     expect(resolveAddressInput('hello world')).toBe('https://www.google.com/search?q=hello%20world');
   });
-  it.each(['javascript:alert(1)', 'file:///etc/passwd', 'data:text/html,hello', 'chrome://settings'])(
+  it.each(['javascript:alert(1)', 'file:///etc/passwd', 'data:text/html,hello', 'chrome://settings', 'https://user:secret@example.com'])(
     'blocks unsafe scheme: %s',
     (value) => expect(() => resolveAddressInput(value)).toThrow(),
   );
@@ -31,6 +31,7 @@ describe('isAllowedNavigationTarget', () => {
   it('allows only HTTP and HTTPS', () => {
     expect(isAllowedNavigationTarget('https://example.com')).toBe(true);
     expect(isAllowedNavigationTarget('http://example.com')).toBe(true);
+    expect(isAllowedNavigationTarget('https://user:secret@example.com')).toBe(false);
     expect(isAllowedNavigationTarget('file:///tmp/a')).toBe(false);
     expect(isAllowedNavigationTarget('javascript:alert(1)')).toBe(false);
   });

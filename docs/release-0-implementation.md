@@ -1,47 +1,42 @@
 # Release 0 Implementation Status
 
-**Status:** Initial code scaffold and browser navigation vertical slice committed on `feat/release-0-browser-prototype`. This is not yet a production-ready browser.
+**Status:** Browser shell and first bookmarks/history milestone implemented in code. This is a development prototype, not a production-ready browser.
 
-## Implemented in this branch (code present; runtime verification pending)
+## Implemented in code
 
 - Electron desktop shell with React/TypeScript browser chrome.
-- Electron `WebContentsView` per tab using a dedicated browser session.
+- Electron `WebContentsView` per tab using a dedicated persistent browser session.
 - Address bar with HTTPS-by-default bare hostnames and Google search fallback.
-- Back, forward, reload/stop, open tab, close tab, and select tab controls, including Ctrl+R and Escape shortcuts.
+- Back, forward, reload/stop, open/close/select tabs, and keyboard shortcuts.
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
-- HTTP/HTTPS-only navigation targets and denied popup windows.
-- Site permission request/check handlers default to deny.
-- Unit tests for address parsing and allowed protocols.
-- Windows CI workflow for typecheck, tests, and application build.
+- HTTP/HTTPS-only navigation targets, denied popups, and deny-by-default site permissions.
+- Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
+- Bookmark add/remove/list UI and duplicate-URL handling.
+- Chronological history UI, navigation from history, and clear-all history.
+- Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, and duplicate bookmark IDs.
+- Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
+- Unit tests for navigation and browser data persistence/validation.
+- Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
+- CodeQL workflow.
 
-## Not implemented / not yet verified
+## Explicitly out of scope
 
-- No local build or test run has been executed by this change authoring environment. CI must run against the branch and failures must be fixed.
-- CI now attempts to create an unsigned Windows NSIS installer and upload it as a short-lived workflow artifact. Successful packaging and clean install/uninstall must be verified from the run; it is not signed.
-- No updater, Safe Browsing/phishing reputation integration, download manager, bookmarks/history UI, private sessions, extension system, sync, or AI assistant yet.
-- No security audit, compatibility certification, or production security claim.
-- Permission requests are denied globally in this first slice; there is no user-facing per-site permission manager yet.
-- The default search provider is currently Google and must be documented as a configurable setting before MVP.
+- No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
+- No password manager or credential storage.
+- No sync, private browsing, extension system, Safe Browsing integration, updater, or signed installer.
+- Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.
+- History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
-## Local development
+## Storage design
 
-Requirements: Node.js 24 LTS (Electron 44 embeds Node 24) and npm.
+The first milestone uses a versioned JSON document in Electron's user-data directory. Writes use a uniquely named temporary file followed by a rename, and queued writes are serialized. Unknown schema versions and malformed data are surfaced as errors rather than silently reset. SQLite remains a future option if query volume, transaction needs, or migrations outgrow this model. Passwords and API keys must never be stored in this file.
 
-```bash
-npm install
-npm run typecheck
-npm test
-npm run dev
-```
+## Verification and remaining gates
 
-Build the app bundles with `npm run build`. On Windows, build an unsigned development installer with `npm run package:win`. Signing, update delivery, and production release are deliberately not configured.
-
-## Release 0 acceptance gates
-
-1. CI typecheck, tests, and build pass on the branch.
-2. Launch the desktop app on Windows and confirm initial HTTPS navigation works.
-3. Confirm tab selection/close, history navigation, reload, resizing, and popup denial.
-4. Add negative tests for IPC sender rejection and unsupported schemes.
-5. Verify packaged runtime paths and test clean install/uninstall before calling the installer usable.
-6. Complete threat-model review before exposing additional capabilities.
+- CI and CodeQL must pass for the exact pull-request head.
+- Inspect the generated unsigned Windows installer artifact; successful packaging is not proof of a clean install or correct runtime behavior.
+- Launch on Windows and test initial navigation, tab switching/closing, resize, history navigation, bookmark persistence after restart, history clearing after restart, popup denial, and unsupported schemes.
+- Add IPC negative tests and automated main-process navigation/permission tests.
+- Complete threat-model review and dependency/license review before production release.
+- Signing, update delivery, compatibility certification, and production security review are not complete.
