@@ -550,7 +550,22 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => { layoutViews(); publishState(); });
 }
 
-app.whenReady().then(async () => {
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow();
+      void createTab(HOME_URL);
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData');
   browserDataStore = new BrowserDataStore(join(userDataPath, 'browser-data.json'));
   const primaryDownloadHistoryPath = join(userDataPath, 'download-history.json');
@@ -591,6 +606,7 @@ app.whenReady().then(async () => {
   createWindow();
   void createTab(HOME_URL);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(HOME_URL); } });
-});
+  });
+}
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
