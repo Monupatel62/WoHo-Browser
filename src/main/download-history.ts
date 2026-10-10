@@ -13,7 +13,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function parseDownload(value: unknown): DownloadRecord {
-  if (!isRecord(value) || typeof value.id !== 'string' || value.id.length > 100 ||
+  if (!isRecord(value) || typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 100 ||
       typeof value.filename !== 'string' || value.filename.length > 255 ||
       typeof value.url !== 'string' || typeof value.status !== 'string' || !STATUSES.has(value.status as DownloadStatus) ||
       !Number.isSafeInteger(value.receivedBytes) || (value.receivedBytes as number) < 0 ||
