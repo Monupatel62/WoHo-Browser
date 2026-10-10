@@ -1,7 +1,8 @@
-import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isSafeWebUrl } from '../shared/navigation';
+import { readFileBounded } from './bounded-file-read';
 
 export interface BookmarkRecord {
   id: string;
@@ -145,7 +146,7 @@ export class BrowserDataStore {
           if (metadata.size > MAX_FILE_BYTES) {
             throw new Error('Browser data file is too large; original data was preserved.');
           }
-          raw = await readFile(this.filePath);
+          raw = await readFileBounded(this.filePath, MAX_FILE_BYTES);
         } catch (error) {
           if (isRecord(error) && error.code === 'ENOENT') {
             this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
