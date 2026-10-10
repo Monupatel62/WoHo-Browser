@@ -25,7 +25,7 @@ export interface WoHoBrowserApi {
   resumeDownload(id: string): Promise<void>;
   cancelDownload(id: string): Promise<void>;
   revealDownload(id: string): Promise<void>;
-  setOverlayPanelOpen(open: boolean): Promise<void>;
+  setOverlayPanelOpen(open: boolean, height: number): Promise<void>;
   findInPage(query: string, forward: boolean, findNext: boolean): Promise<number>;
   stopFindInPage(): Promise<void>;
   onFindResults(callback: (result: FindResult) => void): () => void;
