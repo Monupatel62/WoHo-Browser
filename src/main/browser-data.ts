@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isSafeWebUrl } from '../shared/navigation';
@@ -26,10 +26,10 @@ interface PersistedBrowserData {
 
 const DATA_VERSION = 1 as const;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
-const MAX_BOOKMARKS = 5000;
-const MAX_HISTORY = 1000;
+const MAX_BOOKMARKS = 500;
+const MAX_HISTORY = 500;
 const MAX_TITLE_LENGTH = 512;
-const MAX_URL_LENGTH = 4096;
+const MAX_URL_LENGTH = 2048;
 
 function safeTitle(value: string): string {
   return value.trim().slice(0, MAX_TITLE_LENGTH) || 'Untitled';
@@ -100,7 +100,7 @@ async function atomicWrite(filePath: string, contents: string): Promise<void> {
   await mkdir(directory, { recursive: true });
   const tempPath = join(directory, '.' + basename(filePath) + '.' + randomUUID() + '.tmp');
   try {
-    await writeFile(tempPath, contents, { encoding: 'utf8', flag: 'wx' });
+    await writeFile(tempPath, contents, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
     await rename(tempPath, filePath);
   } catch (error) {
     await rm(tempPath, { force: true }).catch(() => undefined);
@@ -122,6 +122,10 @@ export class BrowserDataStore {
     if (!this.loading) {
       this.loading = (async () => {
         try {
+          const metadata = await stat(this.filePath);
+          if (metadata.size > MAX_FILE_BYTES) {
+            throw new Error('Browser data file is too large; original data was preserved.');
+          }
           const raw = await readFile(this.filePath);
           if (raw.byteLength > MAX_FILE_BYTES) {
             throw new Error('Browser data file is too large; original data was preserved.');
@@ -134,7 +138,12 @@ export class BrowserDataStore {
         this.loaded = true;
       })();
     }
-    await this.loading;
+    try {
+      await this.loading;
+    } catch (error) {
+      this.loading = null;
+      throw error;
+    }
   }
 
   private persist(): Promise<void> {
