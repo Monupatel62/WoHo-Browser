@@ -85,3 +85,7 @@
 .tab-dot.crashed{background:#ff7b88;box-shadow:0 0 0 3px #ff7b8822;animation:none}
 .error-banner .panel-action{flex:none;border:1px solid #ffb3bd;border-radius:7px;padding:6px 9px;background:#682f3a;color:#fff;font-size:12px;white-space:nowrap}
 .error-banner .panel-action:hover{background:#7d3a47}
+
+
+.settings-toggle{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;padding:8px 0}
+.settings-toggle input{width:16px;height:16px;flex:none;accent-color:#719dff}
