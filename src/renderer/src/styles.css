@@ -34,3 +34,11 @@
 .download-actions .panel-action:hover{background:#2d3b56}
 
 .download-progress.indeterminate>span{animation:download-indeterminate 1.2s ease-in-out infinite alternate}@keyframes download-indeterminate{from{transform:translateX(-10%)}to{transform:translateX(190%)}}
+
+.data-panel.find-panel{height:min(100px,calc(100vh - 128px))}
+.find-controls{display:flex;align-items:center;gap:7px;padding:10px;min-height:51px}
+.find-controls input{flex:1;min-width:0;height:31px;padding:0 9px;border:1px solid #34415b;border-radius:8px;outline:0;background:#202a40;color:#e8edf7;font:inherit;font-size:12px}
+.find-controls input:focus{border-color:#719dff;box-shadow:0 0 0 2px #719dff20}
+.find-count{min-width:58px;text-align:center;color:#91a0bb;font-size:11px;white-space:nowrap}
+.find-controls .panel-action{border:1px solid #34415b;background:#202a40;width:29px;height:29px;padding:0;font-size:15px}
+.find-controls .panel-action:disabled{opacity:.4;cursor:default}
