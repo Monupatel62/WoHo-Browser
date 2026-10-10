@@ -6,8 +6,7 @@ export function getOrCreatePermissionPrompt<T>(
 ): Promise<T> {
   const existing = pending.get(key);
   if (existing) return existing;
-  let prompt: Promise<T>;
-  prompt = Promise.resolve()
+  const prompt = Promise.resolve()
     .then(create)
     .finally(() => {
       if (pending.get(key) === prompt) pending.delete(key);
