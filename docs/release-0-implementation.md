@@ -17,7 +17,7 @@
 - Bookmark add/remove/list UI and duplicate-URL handling.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
-- Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, and a “Clear finished” action that removes records without deleting saved files. Private downloads are excluded from the normal store.
+- Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, a “Clear finished” action, and per-item removal of finished records without deleting saved files. Private downloads are excluded from the normal store.
 - Startup recovery for corrupt or unsupported browser profile data and download-history files: the original file is preserved, a warning is shown, and the browser can continue using a separate recovery file (with a uniquely named fallback if the recovery file is also unreadable).
 - Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
 - Chronological history UI, navigation from history, and clear-all history.
@@ -33,7 +33,7 @@
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer.
 - Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, import/export, bookmark editing/reordering, history time filters, multi-select deletion, and clear-range controls are not implemented yet.
-- Download history is persisted locally and bounded; retry, per-item remove-from-list, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
+- Download history is persisted locally and bounded; retry, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
 ## Storage design
