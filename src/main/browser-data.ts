@@ -225,6 +225,13 @@ export class BrowserDataStore {
     await this.persist();
   }
 
+  async removeHistory(id: string): Promise<HistoryRecord[]> {
+    await this.ensureLoaded();
+    this.data.history = this.data.history.filter((item) => item.id !== id);
+    await this.persist();
+    return this.listHistory();
+  }
+
   async clearHistory(): Promise<void> {
     await this.ensureLoaded();
     this.data.history = [];
