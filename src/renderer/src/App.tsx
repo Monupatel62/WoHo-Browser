@@ -119,6 +119,8 @@ export default function App() {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
         event.preventDefault(); void window.wohoBrowser.reload();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'j') {
+        event.preventDefault(); void showPanel('downloads');
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'h') {
         event.preventDefault(); void showPanel('history');
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
@@ -127,6 +129,8 @@ export default function App() {
         event.preventDefault(); void showPanel('find');
       } else if (event.key === 'Escape' && active?.loading) {
         event.preventDefault(); void window.wohoBrowser.stop();
+      } else if (event.altKey && event.key === 'Home') {
+        event.preventDefault(); void goHome();
       } else if (event.altKey && event.key === 'ArrowLeft') {
         event.preventDefault(); void window.wohoBrowser.goBack();
       } else if (event.altKey && event.key === 'ArrowRight') {
