@@ -1,0 +1,17 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Accept only the configured dev renderer or the exact packaged renderer file. */
+export function isTrustedRendererUrl(value: string, devRendererUrl: string | undefined, expectedFilePath: string): boolean {
+  try {
+    const actual = new URL(value);
+    if (devRendererUrl) {
+      const expected = new URL(devRendererUrl);
+      return actual.origin === expected.origin && actual.pathname === expected.pathname;
+    }
+    if (actual.protocol !== 'file:' || actual.search || actual.hash) return false;
+    return resolve(fileURLToPath(actual)) === resolve(expectedFilePath);
+  } catch {
+    return false;
+  }
+}
