@@ -37,5 +37,12 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
-      - name: Build desktop app
-        run: npm run build
+      - name: Package unsigned Windows installer
+        run: npm run package:win
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: woho-browser-windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14
