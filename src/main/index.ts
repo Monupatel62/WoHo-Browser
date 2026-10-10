@@ -320,7 +320,13 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
   });
-  wc.on('will-frame-navigate', (event, details) => {
+  // Electron exposes this runtime event, but some Electron 44 typings omit it
+  // from WebContents' overload list. Keep the runtime listener narrowly typed.
+  const listenForFrameNavigation = wc.on as unknown as (
+    eventName: string,
+    listener: (event: { preventDefault(): void }, details: { url: string }) => void,
+  ) => typeof wc;
+  listenForFrameNavigation.call(wc, 'will-frame-navigate', (event, details) => {
     if (!isAllowedFrameNavigationTarget(details.url)) event.preventDefault();
   });
   wc.on('will-redirect', (event, targetUrl) => {
