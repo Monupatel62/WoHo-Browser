@@ -15,6 +15,7 @@ export default function App() {
   const [state, setState] = useState<BrowserState>(emptyState);
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
@@ -164,6 +165,17 @@ export default function App() {
     }
   }
 
+  async function clearSiteData() {
+    if (!window.confirm('Clear cookies, cached files, and website storage? This may sign you out of websites. Browsing history and bookmarks will remain.')) return;
+    setError(''); setNotice('');
+    try {
+      await window.wohoBrowser.clearSiteData();
+      setNotice('Cookies, cache, and website storage cleared. Reload open pages if they still show old state.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not clear site data.');
+    }
+  }
+
   async function clearHistory() {
     if (!window.confirm('Clear all saved browsing history? This cannot be undone.')) return;
     try {
@@ -206,11 +218,12 @@ export default function App() {
       <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
+    {notice && <div className="notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice">×</button></div>}
     {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : 'Find in page'}>
       <header className="data-panel-header">
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : 'Find in page'}</strong>
         <div>
-          {panel === 'history' && <button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear all</button>}
+          {panel === 'history' && <><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear site data</button></>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
         </div>
       </header>
