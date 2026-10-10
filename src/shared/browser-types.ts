@@ -2,6 +2,7 @@ export interface BrowserTabState { id: string; title: string; url: string; loadi
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
+export interface SitePermissionDecision { origin: string; permission: string; allowed: boolean; }
 export type DownloadStatus = 'waiting' | 'progressing' | 'paused' | 'completed' | 'cancelled' | 'interrupted';
 export interface DownloadRecord { id: string; filename: string; url: string; status: DownloadStatus; receivedBytes: number; totalBytes: number; canResume: boolean; savePath?: string; startedAt: string; }
 export interface FindResult { tabId: string; requestId: number; activeMatchOrdinal: number; matches: number; finalUpdate: boolean; }
@@ -21,6 +22,9 @@ export interface WoHoBrowserApi {
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
   clearSiteData(): Promise<void>;
+  listSitePermissions(): Promise<SitePermissionDecision[]>;
+  revokeSitePermission(origin: string, permission: string): Promise<void>;
+  forgetSitePermission(origin: string, permission: string): Promise<void>;
   listDownloads(): Promise<DownloadRecord[]>;
   pauseDownload(id: string): Promise<void>;
   resumeDownload(id: string): Promise<void>;
