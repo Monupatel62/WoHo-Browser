@@ -55,7 +55,7 @@ export default function App() {
   useEffect(() => { setAddress(active?.url ?? ''); }, [active?.id, active?.url]);
 
   useEffect(() => {
-    void window.wohoBrowser.setOverlayPanelOpen(Boolean(panel)).catch(() => setError('Could not update browser panel layout.'));
+    void window.wohoBrowser.setOverlayPanelOpen(Boolean(panel), panel === 'find' ? 100 : 360).catch(() => setError('Could not update browser panel layout.'));
     if (panel === 'find') {
       window.setTimeout(() => { findInputRef.current?.focus(); findInputRef.current?.select(); }, 0);
     } else {
@@ -100,7 +100,7 @@ export default function App() {
     try {
       if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
       else if (next === 'history') setHistory(await window.wohoBrowser.listHistory());
-      else setDownloads(await window.wohoBrowser.listDownloads());
+      else if (next === 'downloads') setDownloads(await window.wohoBrowser.listDownloads());
       setPanel(next);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load browser data.');
@@ -206,7 +206,7 @@ export default function App() {
       <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
-    {panel && <section className="data-panel" aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : 'Find in page'}>
+    {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : 'Find in page'}>
       <header className="data-panel-header">
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : 'Find in page'}</strong>
         <div>
@@ -219,7 +219,6 @@ export default function App() {
         <span className="find-count">{findMatches ? `${findOrdinal} of ${findMatches}` : findQuery ? 'No matches' : 'Enter text'}</span>
         <button type="button" className="panel-action" disabled={!findQuery.trim()} onClick={() => void runFind(findQuery, false, true)} aria-label="Previous match">↑</button>
         <button type="submit" className="panel-action" disabled={!findQuery.trim()} aria-label="Next match">↓</button>
-        <button type="button" className="panel-close" onClick={() => setPanel(null)} aria-label="Close find bar">×</button>
       </form>}
       {panel === 'bookmarks' && (bookmarks.length ? <ul className="saved-list">{bookmarks.map((bookmark) => <li key={bookmark.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
