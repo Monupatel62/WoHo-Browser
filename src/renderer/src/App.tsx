@@ -240,6 +240,17 @@ export default function App() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Navigation failed.'); }
   }
 
+  async function goHome() {
+    setError('');
+    try {
+      const currentSettings = await window.wohoBrowser.getSettings();
+      await window.wohoBrowser.navigate(currentSettings.homePageUrl);
+      setPanel(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not open the configured home page.');
+    }
+  }
+
   async function openSavedUrl(url: string) {
     try { await window.wohoBrowser.navigate(url); setPanel(null); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not open saved page.'); }
@@ -419,6 +430,7 @@ export default function App() {
     </div>
     <div className="toolbar">
       <div className="nav-actions">
+        <button className="icon-button" title="Home (configured home page)" aria-label="Home" onClick={() => void goHome()}>⌂</button>
         <button className="icon-button" title="Back (Alt+Left)" aria-label="Back" disabled={!active?.canGoBack} onClick={() => void window.wohoBrowser.goBack()}>‹</button>
         <button className="icon-button" title="Forward (Alt+Right)" aria-label="Forward" disabled={!active?.canGoForward} onClick={() => void window.wohoBrowser.goForward()}>›</button>
         <button className="icon-button" title={active?.loading ? 'Stop loading (Esc)' : 'Reload (Ctrl+R)'} aria-label={active?.loading ? 'Stop loading' : 'Reload'} onClick={() => void (active?.loading ? window.wohoBrowser.stop() : window.wohoBrowser.reload())}>{active?.loading ? '×' : '↻'}</button>
