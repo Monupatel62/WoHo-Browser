@@ -6,7 +6,7 @@ import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
-import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
+import { isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
@@ -326,7 +326,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   wc.on('context-menu', (_event, params) => {
     const linkUrl = params.linkURL;
-    if (!mainWindow || mainWindow.isDestroyed() || linkUrl.length > 4096 || !isAllowedNavigationTarget(linkUrl)) return;
+    if (!mainWindow || mainWindow.isDestroyed() || !isSafeContextMenuLink(linkUrl)) return;
     const openPrivately = privateTabRegistry.has(id);
     const menu = Menu.buildFromTemplate([
       {
