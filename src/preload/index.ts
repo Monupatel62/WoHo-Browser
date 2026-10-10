@@ -20,6 +20,7 @@ const api: WoHoBrowserApi = {
   listHistory: () => ipcRenderer.invoke('browser:list-history') as Promise<HistoryRecord[]>,
   clearHistory: () => ipcRenderer.invoke('browser:clear-history'),
   removeHistory: (id) => ipcRenderer.invoke('browser:remove-history', id) as Promise<HistoryRecord[]>,
+  removeHistoryEntries: (ids) => ipcRenderer.invoke('browser:remove-history-entries', ids) as Promise<HistoryRecord[]>,
   removeHistoryRange: (startAt, endAt) => ipcRenderer.invoke('browser:remove-history-range', startAt, endAt) as Promise<HistoryRecord[]>,
   clearSiteData: () => ipcRenderer.invoke('browser:clear-site-data'),
   listSitePermissions: () => ipcRenderer.invoke('browser:list-site-permissions') as Promise<SitePermissionDecision[]>,

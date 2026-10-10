@@ -56,3 +56,9 @@
 .private-badge{font-size:10px!important;color:#e1d5ff;background:#34284e;border:1px solid #65558f;padding:3px 6px;border-radius:6px;margin-left:5px}
 .tab:has(.tab-select[aria-selected="true"]){border-bottom-color:#9d83ff}
 @media(max-width:850px){.private-tab-button{padding:6px;font-size:10px}}
+
+
+.history-select-all,.history-select-entry{display:flex;align-items:center;gap:6px;color:#aab8d0;font-size:11px;flex:none}
+.history-select-all{white-space:nowrap}
+.history-select-all input,.history-select-entry input{accent-color:#719dff;cursor:pointer}
+.history-select-entry{padding-left:5px}

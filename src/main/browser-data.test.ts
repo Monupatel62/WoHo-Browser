@@ -100,6 +100,28 @@ describe('BrowserDataStore', () => {
     ]);
   });
 
+  it('deletes multiple selected history entries in one durable update', async () => {
+    const { store, file } = await createStore();
+    await store.recordVisit('https://example.com/one', 'One');
+    await store.recordVisit('https://example.com/two', 'Two');
+    await store.recordVisit('https://example.com/three', 'Three');
+    const before = await store.listHistory();
+    const removeIds = before.filter((entry) => entry.title !== 'Two').map((entry) => entry.id);
+
+    const remaining = await store.removeHistoryEntries(removeIds);
+    expect(remaining.map((entry) => entry.title)).toEqual(['Two']);
+    expect(await new BrowserDataStore(file).listHistory()).toMatchObject([{ title: 'Two' }]);
+  });
+
+  it('rejects invalid or duplicate multi-delete IDs without changing history', async () => {
+    const { store } = await createStore();
+    await store.recordVisit('https://example.com/keep', 'Keep');
+    const before = await store.listHistory();
+    await expect(store.removeHistoryEntries(['', before[0].id])).rejects.toThrow(/Invalid history entry selection/);
+    await expect(store.removeHistoryEntries([before[0].id, before[0].id])).rejects.toThrow(/Invalid history entry selection/);
+    expect(await store.listHistory()).toEqual(before);
+  });
+
   it('deletes only history visits within an inclusive date-time range', async () => {
     const { store, file } = await createStore();
     await store.recordVisit('https://example.com/before', 'Before');

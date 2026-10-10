@@ -290,6 +290,23 @@ export class BrowserDataStore {
     return this.listHistory();
   }
 
+  async removeHistoryEntries(ids: string[]): Promise<HistoryRecord[]> {
+    await this.ensureLoaded();
+    if (!Array.isArray(ids) || ids.length > MAX_HISTORY ||
+        ids.some((id) => typeof id !== 'string' || id.length === 0 || id.length > 100) ||
+        new Set(ids).size !== ids.length) {
+      throw new Error('Invalid history entry selection; no history was changed.');
+    }
+    if (ids.length === 0) return this.listHistory();
+    const selected = new Set(ids);
+    const next = this.data.history.filter((item) => !selected.has(item.id));
+    if (next.length !== this.data.history.length) {
+      this.data.history = next;
+      await this.persist();
+    }
+    return this.listHistory();
+  }
+
   async removeHistoryRange(startAt: string, endAt: string): Promise<HistoryRecord[]> {
     await this.ensureLoaded();
     const startDate = new Date(startAt);

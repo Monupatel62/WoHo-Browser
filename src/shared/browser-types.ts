@@ -25,6 +25,7 @@ export interface WoHoBrowserApi {
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
   removeHistory(id: string): Promise<HistoryRecord[]>;
+  removeHistoryEntries(ids: string[]): Promise<HistoryRecord[]>;
   removeHistoryRange(startAt: string, endAt: string): Promise<HistoryRecord[]>;
   clearSiteData(): Promise<void>;
   listSitePermissions(): Promise<SitePermissionDecision[]>;

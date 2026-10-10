@@ -513,6 +513,14 @@ function registerIpc(): void {
     if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid history ID.');
     return browserDataStore.removeHistory(id);
   });
+  handle('browser:remove-history-entries', (_event, ids: unknown) => {
+    if (!Array.isArray(ids) || ids.length > 500 ||
+        ids.some((id) => typeof id !== 'string' || id.length === 0 || id.length > 100) ||
+        new Set(ids).size !== ids.length) {
+      throw new Error('Invalid history entry selection.');
+    }
+    return browserDataStore.removeHistoryEntries(ids);
+  });
   handle('browser:remove-history-range', (_event, startAt: unknown, endAt: unknown) => {
     if (typeof startAt !== 'string' || startAt.length > 64 ||
         typeof endAt !== 'string' || endAt.length > 64) {
