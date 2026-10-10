@@ -4,7 +4,7 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 
 ## Project status
 
-**Release 0 prototype in progress.** The Electron/Chromium shell, navigation, baseline security controls, bookmarks, local history, an initial download manager, find-in-page, clear-site-data controls, session-scoped site permission prompts, and Windows packaging CI are implemented in code. CI verification is required for this feature branch; Windows runtime and security review remain outstanding.
+**Release 0 prototype in progress.** The Electron/Chromium shell, navigation and IPC security controls, bookmarks and redacted local history, isolated private tabs, session-scoped site permissions, bounded persistent download history, find-in-page, clear-site-data controls, and Windows packaging CI are implemented in code. Main and feature-branch CI/CodeQL are run through GitHub Actions; Windows runtime and independent security review remain outstanding.
 
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
