@@ -5,7 +5,10 @@ export function safeDownloadUrl(value: string): string | null {
     if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password) return null;
     url.search = '';
     url.hash = '';
-    return url.toString().slice(0, 4096);
+    const sanitized = url.toString();
+    // Reject rather than truncate: truncation can persist a different URL or
+    // cut through an escaped path segment, making the whole history unreadable.
+    return sanitized.length <= 4096 ? sanitized : null;
   } catch {
     return null;
   }

@@ -7,6 +7,13 @@ describe('safeDownloadUrl', () => {
     expect(safeDownloadUrl('http://example.com/file.zip')).toBe('http://example.com/file.zip');
   });
 
+  it('rejects overlong sanitized URLs instead of truncating them', () => {
+    expect(safeDownloadUrl('https://example.com/' + 'x'.repeat(4100))).toBeNull();
+    // Long query strings are removed before the length check, so a normal
+    // resource URL is still retained without its potentially sensitive token.
+    expect(safeDownloadUrl('https://example.com/file?token=' + 'x'.repeat(5000))).toBe('https://example.com/file');
+  });
+
   it('rejects non-web schemes and URLs containing credentials', () => {
     expect(safeDownloadUrl('file:///private.txt')).toBeNull();
     expect(safeDownloadUrl('blob:https://example.com/id')).toBeNull();
