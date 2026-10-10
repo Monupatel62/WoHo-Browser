@@ -1,6 +1,6 @@
 # Settings, Import/Export, and Data Portability
 
-**Status:** Partially implemented. A validated local settings store and UI now support selecting Google, Bing, or DuckDuckGo as the default search provider and configuring an HTTP(S) home/new-tab URL. General settings import/export remains planned.
+**Status:** Partially implemented. A validated local settings store and UI support selecting Google, Bing, or DuckDuckGo as the default search provider, configuring an HTTP(S) home/new-tab URL, and opting into restoration of up to 50 normal-tab URLs on startup. Session restore is off by default and private tabs are excluded. General settings import/export remains planned.
 
 ## Settings contract
 Every setting requires a default, type/range, persistence scope (global/profile/session), immediate or restart-required effect, migration behavior, and reset behavior. Do not display settings without implementation. Reject unknown keys, invalid types, oversized strings, malformed URLs, unsupported provider templates, and out-of-range values. Corrupt settings should fall back safely and be reported.
