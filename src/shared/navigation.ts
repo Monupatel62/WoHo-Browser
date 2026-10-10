@@ -5,7 +5,7 @@ const SCHEME_PREFIX = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
 export function isSafeWebUrl(value: string): boolean {
   try {
     const parsed = new URL(value);
-    return WEB_PROTOCOLS.has(parsed.protocol) && Boolean(parsed.hostname);
+    return WEB_PROTOCOLS.has(parsed.protocol) && Boolean(parsed.hostname) && !parsed.username && !parsed.password;
   } catch {
     return false;
   }
