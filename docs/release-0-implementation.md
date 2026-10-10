@@ -10,7 +10,7 @@
 - Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, and keyboard shortcuts (including Ctrl+F).
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
-- HTTP/HTTPS-only navigation targets and denied popups. Right-clicking a valid HTTP(S) link offers Open Link in New Tab and Copy Link Address; new tabs inherit private mode. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
+- HTTP/HTTPS-only main-frame navigation, explicit subframe navigation policy (HTTP(S), inherited-origin `about:blank`/`about:srcdoc`, and web-origin `blob:` only), and denied popups. Right-clicking a valid HTTP(S) link offers Open Link in New Tab and Copy Link Address; new tabs inherit private mode. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
