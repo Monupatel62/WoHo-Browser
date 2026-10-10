@@ -20,6 +20,13 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install
+      - name: Inspect dependency advisories
+        shell: pwsh
+        run: |
+          npm audit --json > npm-audit.json
+          if ($LASTEXITCODE -ne 0) {
+            node -e "const a = require('./npm-audit.json'); for (const [name, v] of Object.entries(a.vulnerabilities || {})) { if (v.severity === 'critical' || v.severity === 'high') console.log(name + ': ' + v.severity + ' fix=' + JSON.stringify(v.fixAvailable) + ' via=' + v.via.map(x => typeof x === 'string' ? x : x.name + ' ' + x.range).join(', ')); }"
+          }
       - name: Lint
         run: npm run lint
       - name: Typecheck
