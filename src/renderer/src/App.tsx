@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord } from '../../shared/browser-types';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
-type DataPanel = 'bookmarks' | 'history' | 'downloads' | null;
+type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'find' | null;
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -19,9 +19,16 @@ export default function App() {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [panel, setPanel] = useState<DataPanel>(null);
+  const [findQuery, setFindQuery] = useState('');
+  const [findMatches, setFindMatches] = useState(0);
+  const [findOrdinal, setFindOrdinal] = useState(0);
+  const findInputRef = useRef<HTMLInputElement>(null);
+  const findRequestIdRef = useRef<number | null>(null);
+  const activeTabIdRef = useRef<string | null>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const active = state.tabs.find((tab) => tab.id === state.activeTabId);
   const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
+  activeTabIdRef.current = active?.id ?? null;
 
   useEffect(() => {
     let mounted = true;
@@ -29,6 +36,12 @@ export default function App() {
     void window.wohoBrowser.listBookmarks().then((items) => { if (mounted) setBookmarks(items); }).catch(() => setError('Could not load bookmarks.'));
     void window.wohoBrowser.listDownloads().then((items) => { if (mounted) setDownloads(items); }).catch(() => setError('Could not load downloads.'));
     const unsubscribeDownloads = window.wohoBrowser.onDownloadsChanged((items) => setDownloads(items));
+    const unsubscribeFind = window.wohoBrowser.onFindResults((result) => {
+      if (result.tabId !== activeTabIdRef.current) return;
+      if (findRequestIdRef.current !== null && result.requestId !== findRequestIdRef.current) return;
+      setFindMatches(result.matches);
+      setFindOrdinal(result.activeMatchOrdinal);
+    });
     const unsubscribe = window.wohoBrowser.onStateChanged((next) => {
       setState(next);
       if (document.activeElement !== addressRef.current) {
@@ -36,13 +49,19 @@ export default function App() {
         setAddress(current?.url ?? '');
       }
     });
-    return () => { mounted = false; unsubscribe(); unsubscribeDownloads(); };
+    return () => { mounted = false; unsubscribe(); unsubscribeDownloads(); unsubscribeFind(); };
   }, []);
 
   useEffect(() => { setAddress(active?.url ?? ''); }, [active?.id, active?.url]);
 
   useEffect(() => {
     void window.wohoBrowser.setOverlayPanelOpen(Boolean(panel)).catch(() => setError('Could not update browser panel layout.'));
+    if (panel === 'find') {
+      window.setTimeout(() => { findInputRef.current?.focus(); findInputRef.current?.select(); }, 0);
+    } else {
+      findRequestIdRef.current = null;
+      void window.wohoBrowser.stopFindInPage().catch(() => undefined);
+    }
   }, [panel]);
 
   useEffect(() => {
@@ -59,6 +78,8 @@ export default function App() {
         event.preventDefault(); void showPanel('history');
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault(); void showPanel('bookmarks');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+        event.preventDefault(); void showPanel('find');
       } else if (event.key === 'Escape' && active?.loading) {
         event.preventDefault(); void window.wohoBrowser.stop();
       } else if (event.altKey && event.key === 'ArrowLeft') {
@@ -83,6 +104,25 @@ export default function App() {
       setPanel(next);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load browser data.');
+    }
+  }
+
+  async function runFind(query: string, forward = true, findNext = false) {
+    const boundedQuery = query.slice(0, 500);
+    setFindQuery(boundedQuery);
+    if (!boundedQuery.trim()) {
+      findRequestIdRef.current = null;
+      setFindMatches(0); setFindOrdinal(0);
+      await window.wohoBrowser.stopFindInPage().catch(() => undefined);
+      return;
+    }
+    setError('');
+    try {
+      findRequestIdRef.current = null;
+      const requestId = await window.wohoBrowser.findInPage(boundedQuery, forward, findNext);
+      findRequestIdRef.current = requestId;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Find in page failed.');
     }
   }
 
@@ -163,16 +203,24 @@ export default function App() {
       <button className={`data-button ${panel === 'bookmarks' ? 'selected' : ''}`} onClick={() => void showPanel('bookmarks')} title="Bookmarks (Ctrl+B)">Bookmarks</button>
       <button className={`data-button ${panel === 'history' ? 'selected' : ''}`} onClick={() => void showPanel('history')} title="History (Ctrl+H)">History</button>
       <button className={`data-button ${panel === 'downloads' ? 'selected' : ''}`} onClick={() => void showPanel('downloads')} title="Downloads">Downloads{downloads.some((item) => item.status === 'progressing' || item.status === 'waiting' || item.status === 'paused') ? ' •' : ''}</button>
+      <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
-    {panel && <section className="data-panel" aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : 'Downloads'}>
+    {panel && <section className="data-panel" aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : 'Find in page'}>
       <header className="data-panel-header">
-        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : 'Downloads'}</strong>
+        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : 'Find in page'}</strong>
         <div>
           {panel === 'history' && <button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear all</button>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
         </div>
       </header>
+      {panel === 'find' && <form className="find-controls" onSubmit={(event) => { event.preventDefault(); void runFind(findQuery, true, true); }}>
+        <input ref={findInputRef} value={findQuery} onChange={(event) => { setFindQuery(event.target.value); void runFind(event.target.value, true, false); }} aria-label="Find text on current page" placeholder="Find on this page" maxLength={500} />
+        <span className="find-count">{findMatches ? `${findOrdinal} of ${findMatches}` : findQuery ? 'No matches' : 'Enter text'}</span>
+        <button type="button" className="panel-action" disabled={!findQuery.trim()} onClick={() => void runFind(findQuery, false, true)} aria-label="Previous match">↑</button>
+        <button type="submit" className="panel-action" disabled={!findQuery.trim()} aria-label="Next match">↓</button>
+        <button type="button" className="panel-close" onClick={() => setPanel(null)} aria-label="Close find bar">×</button>
+      </form>}
       {panel === 'bookmarks' && (bookmarks.length ? <ul className="saved-list">{bookmarks.map((bookmark) => <li key={bookmark.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
         <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
