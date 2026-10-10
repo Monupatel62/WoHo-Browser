@@ -18,6 +18,7 @@ const api: WoHoBrowserApi = {
   stop: () => ipcRenderer.invoke('browser:stop'),
   listBookmarks: () => ipcRenderer.invoke('browser:list-bookmarks') as Promise<BookmarkRecord[]>,
   addBookmark: (title, url) => ipcRenderer.invoke('browser:add-bookmark', title, url) as Promise<BookmarkRecord[]>,
+  updateBookmark: (id, title, url) => ipcRenderer.invoke('browser:update-bookmark', id, title, url) as Promise<BookmarkRecord[]>,
   removeBookmark: (id) => ipcRenderer.invoke('browser:remove-bookmark', id) as Promise<BookmarkRecord[]>,
   exportBookmarks: () => ipcRenderer.invoke('browser:export-bookmarks') as Promise<boolean>,
   importBookmarks: () => ipcRenderer.invoke('browser:import-bookmarks') as Promise<BookmarkRecord[] | null>,
