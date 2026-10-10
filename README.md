@@ -8,6 +8,7 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
+- [Documentation audit and remaining gaps](docs/documentation-audit.md)
 - [Exhaustive feature catalog](docs/feature-catalog.md)
 - [Master product plan](docs/WOHO_BROWSER_MASTER_PLAN.md)
 - [Release 0 feasibility spike](docs/release-0-spike-plan.md)
