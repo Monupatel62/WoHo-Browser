@@ -98,7 +98,7 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
     void prompt.then((allowed) => callback(disposedPrivateSessions.has(targetSession) ? false : allowed)).catch(() => callback(false));
   });
   targetSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    if (!webContents) return false;
+    if (!webContents || disposedPrivateSessions.has(targetSession)) return false;
     const origin = getPermissionOrigin(requestingOrigin || webContents.getURL());
     const key = origin ? createPermissionGrantKey(origin, permission) : null;
     return key ? permissionDecisions(targetSession).get(key) === true : false;
