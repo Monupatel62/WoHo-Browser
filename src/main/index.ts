@@ -82,7 +82,7 @@ function registerDownloadHandling(): void {
         defaultPath: record.filename,
         buttonLabel: 'Save',
       });
-      if (choice.canceled || !choice.filePath || item.isDestroyed()) {
+      if (choice.canceled || !choice.filePath || downloadItems.get(id) !== item) {
         if (!item.isDestroyed()) item.cancel();
         setDownloadStatus(id, 'cancelled');
         return;
