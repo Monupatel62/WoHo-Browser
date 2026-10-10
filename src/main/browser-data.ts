@@ -292,9 +292,12 @@ export class BrowserDataStore {
 
   async removeHistoryRange(startAt: string, endAt: string): Promise<HistoryRecord[]> {
     await this.ensureLoaded();
-    const start = Date.parse(startAt);
-    const end = Date.parse(endAt);
-    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) {
+    const startDate = new Date(startAt);
+    const endDate = new Date(endAt);
+    const start = startDate.getTime();
+    const end = endDate.getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) ||
+        startDate.toISOString() !== startAt || endDate.toISOString() !== endAt || start > end) {
       throw new Error('Invalid history date range; no history was changed.');
     }
     const next = this.data.history.filter((item) => {
