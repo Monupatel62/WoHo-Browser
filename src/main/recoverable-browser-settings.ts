@@ -1,5 +1,4 @@
 import { BrowserSettingsStore } from './browser-settings';
-import type { BrowserSettings } from '../shared/browser-settings';
 
 export type SettingsRecoveryWarning = (title: string, message: string, detail: string) => Promise<void>;
 
@@ -37,8 +36,4 @@ export async function openRecoverableBrowserSettingsStore(
   const fallback = new BrowserSettingsStore(uniqueRecoveryPath());
   await fallback.load();
   return fallback;
-}
-
-export async function readSettingsOrDefault(store: BrowserSettingsStore): Promise<BrowserSettings> {
-  return store.get();
 }
