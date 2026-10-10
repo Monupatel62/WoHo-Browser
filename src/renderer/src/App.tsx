@@ -68,7 +68,9 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'n') {
+        event.preventDefault(); void window.wohoBrowser.openPrivateTab();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
         event.preventDefault(); addressRef.current?.focus(); addressRef.current?.select();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 't') {
         event.preventDefault(); void window.wohoBrowser.openTab();
