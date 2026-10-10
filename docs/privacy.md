@@ -16,8 +16,8 @@
 |---|---|---|
 | Settings | Stored locally | Reset/export where practical |
 | Bookmarks | Stored locally | Export/import/delete |
-| History | Stored locally | Clear history and retention settings |
-| Download records | In-memory for the current app session | Records disappear when the app exits; downloaded files remain until the user deletes them |
+| History | Stored locally; query strings and URL fragments are removed to avoid retaining common token-bearing URL components | Clear history and retention settings |
+| Download records | Up to 100 normal-profile records stored locally; source query strings and fragments are removed; selected save paths are retained | Download records are separate from files; private downloads are excluded from the normal list; downloaded files remain until the user deletes them |
 | AI prompt and selected page context | Sent only after user action when remote AI is used | Preview, cancel, provider disclosure |
 | AI provider credentials | Secure local storage where supported | View provider configuration and remove key |
 | Crash diagnostics | Off unless consent is obtained | Opt in/out and explain fields |
