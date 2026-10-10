@@ -31,6 +31,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historyStartDate, setHistoryStartDate] = useState('');
   const [historyEndDate, setHistoryEndDate] = useState('');
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [sitePermissions, setSitePermissions] = useState<SitePermissionDecision[]>([]);
   const [panel, setPanel] = useState<DataPanel>(null);
@@ -50,6 +51,9 @@ export default function App() {
     return Boolean(date) && (!historyStartDate || date >= historyStartDate) && (!historyEndDate || date <= historyEndDate);
   });
   const historyRangeValid = Boolean(historyStartDate && historyEndDate && historyStartDate <= historyEndDate);
+  const visibleHistoryIds = visibleHistory.map((entry) => entry.id);
+  const selectedVisibleCount = visibleHistoryIds.filter((id) => selectedHistoryIds.includes(id)).length;
+  const allVisibleHistorySelected = visibleHistoryIds.length > 0 && selectedVisibleCount === visibleHistoryIds.length;
   activeTabIdRef.current = active?.id ?? null;
 
   useEffect(() => {
@@ -75,6 +79,8 @@ export default function App() {
   }, []);
 
   useEffect(() => { setAddress(active?.url ?? ''); }, [active?.id, active?.url]);
+
+  useEffect(() => { setSelectedHistoryIds([]); }, [savedSearch, historyStartDate, historyEndDate]);
 
   useEffect(() => {
     void window.wohoBrowser.setOverlayPanelOpen(Boolean(panel), panel === 'find' ? 100 : 360).catch(() => setError('Could not update browser panel layout.'));
@@ -123,6 +129,7 @@ export default function App() {
   async function showPanel(next: Exclude<DataPanel, null>) {
     setError('');
     setSavedSearch('');
+    setSelectedHistoryIds([]);
     if (panel === next) { setPanel(null); return; }
     try {
       if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
@@ -253,6 +260,7 @@ export default function App() {
     try {
       await window.wohoBrowser.clearHistory();
       setHistory([]);
+      setSelectedHistoryIds([]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not clear history.');
     }
@@ -269,9 +277,48 @@ export default function App() {
       const startAt = new Date(`${historyStartDate}T00:00:00`).toISOString();
       const endAt = new Date(`${historyEndDate}T23:59:59.999`).toISOString();
       setHistory(await window.wohoBrowser.removeHistoryRange(startAt, endAt));
+      setSelectedHistoryIds([]);
       setNotice(`History from ${historyStartDate} through ${historyEndDate} deleted.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not delete history range.');
+    }
+  }
+
+  function toggleHistorySelection(id: string, checked: boolean) {
+    setSelectedHistoryIds((current) => checked
+      ? [...new Set([...current, id])]
+      : current.filter((item) => item !== id));
+  }
+
+  function toggleVisibleHistorySelection(checked: boolean) {
+    setSelectedHistoryIds((current) => {
+      if (checked) return [...new Set([...current, ...visibleHistoryIds])];
+      const visible = new Set(visibleHistoryIds);
+      return current.filter((id) => !visible.has(id));
+    });
+  }
+
+  async function deleteSelectedHistory() {
+    const ids = selectedHistoryIds.filter((id) => history.some((entry) => entry.id === id));
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} selected history ${ids.length === 1 ? 'entry' : 'entries'}? This cannot be undone.`)) return;
+    setError(''); setNotice('');
+    try {
+      setHistory(await window.wohoBrowser.removeHistoryEntries(ids));
+      setSelectedHistoryIds([]);
+      setNotice(`Deleted ${ids.length} history ${ids.length === 1 ? 'entry' : 'entries'}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete selected history entries.');
+    }
+  }
+
+  async function removeHistoryEntry(id: string) {
+    setError('');
+    try {
+      setHistory(await window.wohoBrowser.removeHistory(id));
+      setSelectedHistoryIds((current) => current.filter((item) => item !== id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete history entry.');
     }
   }
 
@@ -334,7 +381,7 @@ export default function App() {
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}</strong>
         <div>
           {panel === 'bookmarks' && <><button className="panel-action" onClick={() => void importBookmarks()}>Import</button><button className="panel-action" onClick={() => void exportBookmarks()}>Export</button></>}
-          {panel === 'history' && <><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear all site data</button></>}
+          {panel === 'history' && <><button className="panel-action" onClick={() => void deleteSelectedHistory()} disabled={selectedHistoryIds.length === 0}>Delete selected ({selectedHistoryIds.length})</button><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear all site data</button></>}
           {panel === 'downloads' && <button className="panel-action" onClick={() => void clearFinishedDownloads()} disabled={!downloads.some((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'interrupted')}>Clear finished</button>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
         </div>
@@ -342,6 +389,7 @@ export default function App() {
       {(panel === 'bookmarks' || panel === 'history') && <div className="find-controls">
         <input value={savedSearch} onChange={(event) => setSavedSearch(event.target.value.slice(0, 200))} aria-label={panel === 'bookmarks' ? 'Search bookmarks' : 'Search browsing history'} placeholder={panel === 'bookmarks' ? 'Search bookmarks' : 'Search history'} maxLength={200} />
         {panel === 'history' && <>
+          <label className="history-select-all"><input type="checkbox" aria-label="Select all visible history entries" checked={allVisibleHistorySelected} onChange={(event) => toggleVisibleHistorySelection(event.target.checked)} disabled={visibleHistory.length === 0} /> Select visible</label>
           <label>From <input type="date" value={historyStartDate} aria-label="Filter history from date" onChange={(event) => setHistoryStartDate(event.target.value)} /></label>
           <label>To <input type="date" value={historyEndDate} aria-label="Filter history through date" onChange={(event) => setHistoryEndDate(event.target.value)} /></label>
           <button type="button" className="panel-action" disabled={!historyRangeValid || history.length === 0} onClick={() => void clearHistoryRange()}>Delete range</button>
@@ -371,9 +419,10 @@ export default function App() {
         <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
       </li>)}</ul> : <p className="empty-data">No bookmarks match your search.</p>) : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
       {panel === 'history' && (history.length ? (visibleHistory.length ? <ul className="saved-list">{visibleHistory.map((entry) => <li key={entry.id}>
+        <label className="history-select-entry"><input type="checkbox" checked={selectedHistoryIds.includes(entry.id)} onChange={(event) => toggleHistorySelection(entry.id, event.target.checked)} aria-label={`Select history entry ${entry.title}`} /></label>
         <button className="saved-open" onClick={() => void openSavedUrl(entry.url)}><strong>{entry.title}</strong><span>{entry.url}</span><small>{new Date(entry.visitedAt).toLocaleString()}</small></button>
         <button className="panel-action" aria-label={`Open history entry ${entry.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(entry.url)}>New tab</button>
-        <button className="saved-remove" aria-label={`Delete history entry ${entry.title}`} onClick={() => void window.wohoBrowser.removeHistory(entry.id).then(setHistory).catch(() => setError('Could not delete history entry.'))}>×</button>
+        <button className="saved-remove" aria-label={`Delete history entry ${entry.title}`} onClick={() => void removeHistoryEntry(entry.id)}>×</button>
       </li>)}</ul> : <p className="empty-data">No history entries match your search.</p>) : <p className="empty-data">No browsing history saved.</p>)}
       {panel === 'downloads' && (downloads.length ? <ul className="download-list">{[...downloads].reverse().map((item) => {
         const progress = item.totalBytes > 0 ? Math.min(100, Math.round(item.receivedBytes / item.totalBytes * 100)) : 0;
