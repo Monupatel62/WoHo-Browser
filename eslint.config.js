@@ -1,8 +1,13 @@
-export default [
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
   { ignores: ['out/**', 'release/**', 'node_modules/**', 'coverage/**'] },
+  ...tseslint.configs.recommended,
   {
-    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
-    languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
-    rules: { 'no-debugger': 'error', 'no-constant-condition': 'error' },
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
   },
-];
+);
