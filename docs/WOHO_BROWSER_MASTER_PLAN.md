@@ -69,7 +69,6 @@ A Chromium-based desktop browser with a built-in AI side panel, source-aware pag
 ### Release 3 — Productivity and privacy
 - Tab groups/workspaces and session restore.
 - Reader view and export of user-selected notes.
-- Reader view and export of user-selected notes.
 - Tracking/ad blocking only after a maintainable filter-update, privacy, exception, and filter-maintenance design is approved.
 - Richer site controls and validated privacy features beyond the Release 1 private-session baseline.
 - Import/export of bookmarks and other supported user data.
@@ -249,20 +248,18 @@ A feature is done only when:
 
 ## 11. Initial work plan
 
-1. Inspect the empty repository and confirm the default branch.
-2. Commit this master plan and a concise root README.
-3. Record the Electron-versus-CEF-versus-Chromium decision and rationale.
-4. Define supported Windows versions and minimum hardware assumptions.
-5. Create architecture, threat model, and privacy documents.
-6. Set up CI and dependency/security checks.
-7. Build a minimal vertical slice: launch → open HTTPS URL → navigate → close cleanly.
-8. Add tabs and safe navigation policies.
-9. Add bookmarks/history/downloads with tests.
-10. Package a clearly labeled development build for the R0 spike; production distribution must use a signed installer and verified update path. A development build is not a production release.
-11. Run a security review before exposing AI features.
-12. Add AI page Q&A behind explicit user action and data disclosure.
-13. Test with a small group and validate whether users would pay.
-14. Publish a release only when all gates pass.
+1. Finish a consistency audit across the existing specifications, requirements, and ADRs; remove contradictory or duplicate statements.
+2. Confirm exact supported Windows versions, architecture, and reference hardware for the Release 0 spike.
+3. Verify repository automation and add CI, dependency, secret, and static-analysis checks if missing.
+4. Implement the smallest vertical slice: launch → open HTTPS URL → navigate safely → close cleanly.
+5. Add automated tests for navigation, popup denial, permission defaults, IPC boundaries, and renderer isolation before expanding features.
+6. Prototype multiple tabs with the selected view model and test crash/cleanup behavior.
+7. Evaluate storage, packaging, licensing, and update integrity through working prototypes; update the relevant ADRs with evidence.
+8. Package a clearly labeled development build for the R0 spike. It is not a production release.
+9. Review security and privacy controls before exposing AI features.
+10. Add user-triggered AI page Q&A only after the broker, consent, context minimization, and safe-rendering boundaries are tested.
+11. Validate the product with target users before committing to monetization or advanced features.
+12. Publish only after all release gates pass.
 
 ## 12. Risks and open decisions
 
@@ -277,7 +274,7 @@ A feature is done only when:
 - Distribution: code signing, reputation warnings, and installer delivery need planning.
 
 Open decisions to document before implementation:
-- Framework and engine.
+- Production framework/engine commitment after the Release 0 spike.
 - Supported Windows versions.
 - Project license and third-party notices.
 - Product icon and visual design.
@@ -294,15 +291,15 @@ Update this table only with verified repository evidence.
 
 | Area | Status | Evidence / next step |
 |---|---|---|
-| Repository | Planning document being established | Verify commits on main |
-| Product vision | Drafted | Review and revise as decisions are made |
-| Framework choice | Open | Compare Electron, CEF, and Chromium fork |
-| Architecture | Proposed | Create architecture decision record |
-| Security model | Baseline requirements drafted | Create detailed threat model and tests |
-| Windows MVP | Not implemented/verified here | Build the first vertical slice |
-| AI assistant | Planned | Design broker and consent flow |
-| CI and release | Not verified here | Add workflows and inspect real results |
-| Monetization | Hypotheses only | Interview potential users and validate willingness to pay |
+| Repository | Documentation/specification stage | Verify latest `main` commit and documentation tree before each change |
+| Product vision | Drafted | Review as user research and technical evidence arrive |
+| Framework choice | Electron + TypeScript + React selected for R0 prototype only; production decision open | ADR-0001 and `docs/release-0-spike-plan.md` |
+| Architecture | Proposed | Validate trust boundaries and view model in a working R0 prototype |
+| Security model | Requirements drafted; implementation not verified | Add tests and attach evidence to the implementation PR |
+| Windows MVP | Not implemented | Build and test the R0 vertical slice first |
+| AI assistant | Planned | Validate broker, consent, context minimization, and safe output before implementation |
+| CI and release | Not verified; no `.github/workflows/` directory found | Add workflows and inspect real results |
+| Monetization | Hypotheses only | Interview target users and validate willingness to pay |
 
 ## 14. Working agreement for future updates
 
