@@ -1,19 +1,19 @@
 # WoHo Browser — Master Product Plan
 
-> **Status:** Planning / specification  
+> **Status:** Release 0 implementation in progress  
 > **Repository:** https://github.com/Monupatel62/WoHo-Browser  
 > **Product owner:** WoHoTech  
 > **Document rule:** Keep this file as the living source of truth. Add decisions, verified implementation status, risks, and roadmap changes here as the project evolves. Never mark a feature complete without code, tests, and evidence.
 
 ## 1. Product vision
 
-WoHo Browser is a privacy-conscious, AI-assisted desktop web browser built under the WoHoTech brand. The first goal is a dependable Windows browser with familiar navigation and a useful AI workspace. Later releases may expand to Linux, Android, managed business deployments, and deeper browser-engine work.
+WoHo Browser is a privacy-conscious desktop web browser built under the WoHoTech brand. The first goal is a dependable Windows browser with reliable navigation, tabs, downloads, and user-controlled privacy. AI assistant, AI agent, AI API, and AI service integrations are outside the current product scope. Later releases may expand to Linux, Android, managed business deployments, and deeper browser-engine work.
 
-The product should make everyday browsing work reliably before adding complex AI automation. It must be honest about what it can access, ask before sensitive actions, and keep users in control.
+The product should make everyday browsing work reliably and keep users in control of saved data, site permissions, downloads, and privacy. The current build does not include AI features or AI service calls.
 
 ### Product principles
-- Useful before flashy: navigation, tabs, downloads, recovery, and updates must work before advanced AI features.
-- Security first: web content is untrusted. A webpage must never gain privileged access to the desktop or AI tools.
+- Useful before flashy: navigation, tabs, downloads, recovery, and updates must work before optional advanced features.
+- Security first: web content is untrusted and must never gain privileged access to the desktop.
 - User control: explicit permissions for file access, downloads, automation, microphone, camera, and other sensitive capabilities.
 - Privacy by design: explain what data leaves the device; avoid collecting browsing history by default.
 - Evidence-based releases: every completed claim must be backed by tests and a reproducible build.
@@ -23,20 +23,20 @@ The product should make everyday browsing work reliably before adding complex AI
 ## 2. Target users and problems
 
 ### Initial users
-1. Developers who want AI help while researching documentation and debugging.
-2. Students and researchers who need webpage summaries and source-based notes.
-3. Power users who work across many tabs and want better tab organization.
-4. Small businesses that may later need managed settings and private AI workflows.
+1. Everyday users who need reliable web navigation and downloads.
+2. Students and researchers who need bookmarks, history, and organized browsing.
+3. Developers who research documentation and test web applications.
+4. Power users and small businesses that may later need managed settings and privacy controls.
 
 ### Problems to solve
 - Too many tabs and repeated context switching.
-- Time spent reading long pages and comparing sources.
-- Repetitive browsing workflows.
-- Unclear privacy and permission behavior in AI-powered tools.
-- Difficulty using local AI models or a configurable AI provider in a single desktop workflow.
+- Unreliable or unclear navigation, download, and recovery behavior.
+- Weak control over saved browsing data and website permissions.
+- Unclear private-browsing and download-retention behavior.
+- Lack of accessible, keyboard-friendly controls and transparent errors.
 
 ### Initial positioning
-A Chromium-based desktop browser with a built-in AI side panel, source-aware page assistance, and transparent permissions. Do not claim it is faster, safer, or more private than Chrome until measured evidence supports that claim.
+A Chromium-based desktop browser with familiar navigation, reliable downloads, clear permissions, and transparent local-data controls. Do not claim it is faster, safer, or more private than Chrome until measured evidence supports that claim.
 
 ## 3. Scope and release strategy
 
@@ -57,14 +57,14 @@ A Chromium-based desktop browser with a built-in AI side panel, source-aware pag
 - Keyboard shortcuts, accessible focus behavior, responsive layouts.
 - Installer, uninstall support, version display, and documented update process.
 
-### Release 2 — AI browsing assistant
-- Side panel that can answer questions about the current page.
-- User-triggered summary, explanation, key points, and Q&A.
-- Answers linked to page excerpts or headings where possible.
-- Explicit context preview before page content is sent to a remote model.
-- Provider configuration and clear cost/privacy disclosures.
-- Local-model integration as an optional path, subject to supported hardware and model licenses.
-- No autonomous external actions by default.
+### Release 2 — Reliable browsing and privacy
+- User-visible settings for home page, search provider, startup behavior, and appearance.
+- Session restore and clear recovery behavior after a renderer or app crash.
+- Bookmark import/export and editing, plus history filters and range deletion.
+- Clear, tested site-permission revocation and private-session cleanup.
+- Download retry/removal controls and safe cleanup of partial files.
+- Accessibility, localization, and common-site compatibility testing.
+- No AI assistant, agent, API, model, or AI service integration.
 
 ### Release 3 — Productivity and privacy
 - Tab groups/workspaces and session restore.
@@ -75,12 +75,12 @@ A Chromium-based desktop browser with a built-in AI side panel, source-aware pag
 
 Permission request/check handlers and a tested non-persistent private session are foundation/MVP requirements, not features deferred to this release.
 
-### Release 4 — Controlled AI actions
-- User-defined workflows for limited browsing tasks.
-- Preview of intended actions before execution.
-- Per-action permission checks, domain allowlists where appropriate, timeouts, cancellation, and audit history.
-- No hidden purchases, form submissions, messages, or file operations.
-- Confirmation before sending data, submitting forms, downloading executable files, or changing account settings.
+### Release 4 — Advanced browser controls
+- Optional tab groups and workspace profiles after session isolation is verified.
+- Site-specific content and permission controls with clear reset behavior.
+- Stronger download safety UX and recoverable failure handling.
+- Enterprise policy controls only after a threat model and maintenance plan are approved.
+- No AI-driven browsing actions or background automation in the current product scope.
 
 ### Release 5 — Business and cross-platform expansion
 - Managed policies and enterprise configuration.
@@ -99,7 +99,7 @@ Electron + TypeScript + React is selected for the Release 0 feasibility prototyp
 - Main process: application lifecycle, windows, trusted system integration, updates, and permission mediation.
 - Renderer: browser chrome UI and settings; treat all webpage content as untrusted.
 - Web contents/session layer: tab lifecycle, navigation policy, downloads, certificates, and per-session permissions.
-- AI broker: explicit context collection, provider selection, redaction, request limits, and response handling.
+- Search boundary: explicit search-provider selection and search-suggestion privacy. AI broker and AI service calls are out of scope.
 - Storage layer: versioned local settings, bookmarks, history, and workspace metadata.
 - Update service: signed release metadata and a documented rollback/recovery plan.
 - Telemetry: off by default unless a clear, minimal, consent-based policy is approved.
