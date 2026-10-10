@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
+import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
@@ -20,6 +21,13 @@ let browserDataStore: BrowserDataStore;
 const downloads = new Map<string, DownloadRecord>();
 const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
+const sessionPermissionDecisions = new Map<string, boolean>();
+const PERMISSION_LABELS: Record<string, string> = {
+  media: 'camera or microphone',
+  geolocation: 'your location',
+  notifications: 'notifications',
+  'clipboard-read': 'clipboard contents',
+};
 
 function publishDownloads(): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -306,6 +314,7 @@ function registerIpc(): void {
   handle('browser:clear-history', () => browserDataStore.clearHistory());
   handle('browser:clear-site-data', async () => {
     await Promise.all([browserSession.clearStorageData(), browserSession.clearCache()]);
+    sessionPermissionDecisions.clear();
   });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:pause-download', (_event, id: unknown) => {
@@ -384,9 +393,35 @@ function createWindow(): void {
 app.whenReady().then(() => {
   browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
   browserSession = session.fromPartition('persist:woho-browser');
-  browserSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  browserSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    const origin = getPermissionOrigin(details.requestingUrl || webContents.getURL());
+    const key = origin ? createPermissionGrantKey(origin, permission) : null;
+    if (!key || !origin || !mainWindow || mainWindow.isDestroyed()) { callback(false); return; }
+    const existingDecision = sessionPermissionDecisions.get(key);
+    if (existingDecision !== undefined) { callback(existingDecision); return; }
+    const label = PERMISSION_LABELS[permission];
+    void dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      title: 'Website permission request',
+      message: origin + ' wants access to ' + label + '.',
+      detail: 'Allow only if you trust this website. Your decision lasts until WoHo Browser closes or you clear site data.',
+      buttons: ['Allow for this session', 'Block'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true,
+    }).then(({ response }) => {
+      const allowed = response === 0;
+      sessionPermissionDecisions.set(key, allowed);
+      callback(allowed);
+    }).catch(() => callback(false));
+  });
   registerDownloadHandling();
-  browserSession.setPermissionCheckHandler(() => false);
+  browserSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    if (!webContents) return false;
+    const origin = getPermissionOrigin(requestingOrigin || webContents.getURL());
+    const key = origin ? createPermissionGrantKey(origin, permission) : null;
+    return key ? sessionPermissionDecisions.get(key) === true : false;
+  });
   registerIpc();
   createWindow();
   void createTab(HOME_URL);
