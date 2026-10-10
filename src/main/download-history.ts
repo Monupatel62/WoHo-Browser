@@ -54,6 +54,7 @@ async function atomicWrite(filePath: string, contents: string): Promise<void> {
 /** Bounded, local-only normal-profile download history. Private downloads must never be passed here. */
 export class DownloadHistoryStore {
   private records: DownloadRecord[] = [];
+  private removedIds = new Set<string>();
   private loaded = false;
   private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
@@ -117,6 +118,7 @@ export class DownloadHistoryStore {
   async upsert(record: DownloadRecord): Promise<void> {
     await this.ensureLoaded();
     const safeRecord = parseDownload(record);
+    if (this.removedIds.has(safeRecord.id)) return;
     const existing = this.records.findIndex((item) => item.id === safeRecord.id);
     if (existing >= 0) this.records.splice(existing, 1);
     this.records.unshift({ ...safeRecord });
@@ -125,6 +127,7 @@ export class DownloadHistoryStore {
   }
 
   async remove(id: string): Promise<void> {
+    this.removedIds.add(id);
     await this.ensureLoaded();
     const next = this.records.filter((record) => record.id !== id);
     if (next.length === this.records.length) return;
