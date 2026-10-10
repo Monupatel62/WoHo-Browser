@@ -100,6 +100,34 @@ describe('BrowserDataStore', () => {
     ]);
   });
 
+  it('deletes only history visits within an inclusive date-time range', async () => {
+    const { store, file } = await createStore();
+    await store.recordVisit('https://example.com/before', 'Before');
+    await store.recordVisit('https://example.com/inside-start', 'Inside start');
+    await store.recordVisit('https://example.com/inside-end', 'Inside end');
+    await store.recordVisit('https://example.com/after', 'After');
+    const before = await store.listHistory();
+    const records = new Map(before.map((item) => [item.title, item]));
+    const start = records.get('Inside start')!.visitedAt;
+    const end = records.get('Inside end')!.visitedAt;
+
+    const remaining = await store.removeHistoryRange(start, end);
+    expect(remaining.map((item) => item.title).sort()).toEqual(['After', 'Before']);
+    expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
+      { title: 'After' },
+      { title: 'Before' },
+    ]);
+  });
+
+  it('rejects invalid or reversed history ranges without changing data', async () => {
+    const { store } = await createStore();
+    await store.recordVisit('https://example.com/keep', 'Keep');
+    const before = await store.listHistory();
+    await expect(store.removeHistoryRange('not-a-date', '2026-10-10T23:59:59.999Z')).rejects.toThrow(/Invalid history date range/);
+    await expect(store.removeHistoryRange('2026-10-11T00:00:00.000Z', '2026-10-10T00:00:00.000Z')).rejects.toThrow(/Invalid history date range/);
+    expect(await store.listHistory()).toEqual(before);
+  });
+
   it('does not save unsupported schemes or URLs with embedded credentials', async () => {
     const { store } = await createStore();
     await expect(store.addBookmark('Unsafe', 'javascript:alert(1)')).rejects.toThrow(/HTTP and HTTPS/);
