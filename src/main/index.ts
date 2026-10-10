@@ -1,4 +1,4 @@
-import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
@@ -6,7 +6,7 @@ import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
-import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
+import { isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
@@ -324,6 +324,23 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
   });
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('context-menu', (_event, params) => {
+    const linkUrl = params.linkURL;
+    if (!mainWindow || mainWindow.isDestroyed() || !isSafeContextMenuLink(linkUrl)) return;
+    const openPrivately = privateTabRegistry.has(id);
+    const menu = Menu.buildFromTemplate([
+      {
+        label: 'Open Link in New Tab',
+        click: () => { void createTab(linkUrl, openPrivately); },
+      },
+      { type: 'separator' },
+      {
+        label: 'Copy Link Address',
+        click: () => clipboard.writeText(linkUrl),
+      },
+    ]);
+    menu.popup({ window: mainWindow });
+  });
   wc.on('destroyed', () => {
     privateTabRegistry.onDestroyed(id);
     views.delete(id);

@@ -10,7 +10,7 @@
 - Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, and keyboard shortcuts (including Ctrl+F).
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
-- HTTP/HTTPS-only navigation targets and denied popups. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
+- HTTP/HTTPS-only navigation targets and denied popups. Right-clicking a valid HTTP(S) link offers Open Link in New Tab and Copy Link Address; new tabs inherit private mode. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
@@ -23,7 +23,7 @@
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
+- Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 

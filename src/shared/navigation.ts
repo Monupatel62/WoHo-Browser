@@ -29,3 +29,8 @@ export function resolveAddressInput(input: string, searchEngine = DEFAULT_SEARCH
 export function isAllowedNavigationTarget(value: string): boolean {
   return isSafeWebUrl(value);
 }
+
+/** A context-menu link must be a bounded, safe HTTP(S) destination. */
+export function isSafeContextMenuLink(value: string): boolean {
+  return value.length <= 4096 && isAllowedNavigationTarget(value);
+}
