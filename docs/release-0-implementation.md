@@ -23,7 +23,7 @@
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation, browser data persistence/validation and URL-redaction migration, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
+- Unit tests for navigation, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
@@ -32,7 +32,7 @@
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer.
-- Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.
+- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, import/export, bookmark editing/reordering, history time filters, multi-select deletion, and clear-range controls are not implemented yet.
 - Download history is persisted locally and bounded; retry, per-item remove-from-list, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 

@@ -3,10 +3,10 @@
 **Status:** Partially implemented. First milestone includes add/remove/list bookmarks, duplicate URL handling, chronological HTTP(S) history, open-from-history, per-entry history deletion, and clear-all. Remaining items below are planned unless explicitly marked implemented.
 
 ## Bookmarks
-Fields: stable ID, title, URL, folder ID, timestamps, and optional tags. Implemented: add current page, delete, list, open in current tab, and update the title for an existing URL. Planned: edit, create/rename/move/delete folders, reorder, search, new-tab opening, import/export, and robust invalid-row reporting. Deleting a folder must state whether child bookmarks are deleted. Validate URL schemes and lengths; escape titles in UI.
+Fields: stable ID, title, URL, folder ID, timestamps, and optional tags. Implemented: add current page, delete, list, open in current tab, and update the title for an existing URL. Planned: edit, create/rename/move/delete folders, reorder, new-tab opening, import/export, and robust invalid-row reporting. Case-insensitive title/URL search is implemented in the Bookmarks panel. Deleting a folder must state whether child bookmarks are deleted. Validate URL schemes and lengths; escape titles in UI.
 
 ## History
-Store only necessary metadata such as URL, title, visit timestamp, and transition type. Define treatment of private visits, internal pages, failed navigations, redirects, and file URLs. Never store passwords, form contents, or page contents as history. Implemented: chronological list, open entry, remove one entry, and clear all. Planned: search, time filters, remove selected, and clear range. Verify that cleared entries no longer appear in storage-backed suggestions.
+Store only necessary metadata such as URL, title, visit timestamp, and transition type. Define treatment of private visits, internal pages, failed navigations, redirects, and file URLs. Never store passwords, form contents, or page contents as history. Implemented: chronological list, open entry, remove one entry, and clear all. Planned: time filters, remove selected, and clear range. Case-insensitive title/URL search is implemented in the History panel. Verify that cleared entries no longer appear in storage-backed suggestions.
 
 ## Session restore
 Restore safe URLs and approved tab metadata only. Do not persist live renderer objects, authentication tokens, cookies, or form state in a generic session file. Do not replay POST requests or privileged actions. Private tabs are excluded from normal-profile session restore.
