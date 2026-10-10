@@ -417,6 +417,7 @@ app.whenReady().then(() => {
   });
   registerDownloadHandling();
   browserSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    if (!webContents) return false;
     const origin = getPermissionOrigin(requestingOrigin || webContents.getURL());
     const key = origin ? createPermissionGrantKey(origin, permission) : null;
     return key ? sessionPermissionDecisions.get(key) === true : false;
