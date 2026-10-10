@@ -108,6 +108,9 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
 function registerPrivateDownloadHandling(privateSession: Electron.Session): void {
   privateSession.on('will-download', (event, item) => {
     if (!safeDownloadUrl(item.getURL())) { event.preventDefault(); return; }
+    // Pause synchronously so the download cannot write to the default folder
+    // while the asynchronous Save dialog is open.
+    item.pause();
     let activeItems = privateDownloadItemsBySession.get(privateSession);
     if (!activeItems) { activeItems = new Set<DownloadItem>(); privateDownloadItemsBySession.set(privateSession, activeItems); }
     activeItems.add(item);
@@ -120,6 +123,7 @@ function registerPrivateDownloadHandling(privateSession: Electron.Session): void
       });
       if (choice.canceled || !choice.filePath || disposedPrivateSessions.has(privateSession)) { item.cancel(); return; }
       item.setSavePath(choice.filePath);
+      item.resume();
     })().catch((error: unknown) => {
       console.error('Could not prepare private download:', error instanceof Error ? error.message : 'Unknown download error');
       item.cancel();
@@ -173,6 +177,8 @@ function registerDownloadHandling(): void {
     if (!safeUrl) { event.preventDefault(); return; }
     pruneDownloadRecords(MAX_DOWNLOAD_RECORDS - 1);
     if (downloads.size >= MAX_DOWNLOAD_RECORDS) { event.preventDefault(); return; }
+    // Pause before any asynchronous UI so no bytes reach an implicit default path.
+    item.pause();
     const id = randomUUID();
     const record: DownloadRecord = {
       id,
@@ -218,6 +224,7 @@ function registerDownloadHandling(): void {
       if (downloadItems.get(id) !== item) return;
       record.savePath = choice.filePath;
       item.setSavePath(choice.filePath);
+      item.resume();
       setDownloadStatus(id, item.isPaused() ? 'paused' : 'progressing');
     })().catch((error: unknown) => {
       console.error('Could not prepare download:', error instanceof Error ? error.message : 'Unknown download error');
