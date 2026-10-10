@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, WoHoBrowserApi } from '../shared/browser-types';
+import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
@@ -21,7 +21,14 @@ const api: WoHoBrowserApi = {
   resumeDownload: (id) => ipcRenderer.invoke('browser:resume-download', id),
   cancelDownload: (id) => ipcRenderer.invoke('browser:cancel-download', id),
   revealDownload: (id) => ipcRenderer.invoke('browser:reveal-download', id),
-  setOverlayPanelOpen: (open) => ipcRenderer.invoke('browser:set-overlay-panel-open', open),
+  setOverlayPanelOpen: (open, height) => ipcRenderer.invoke('browser:set-overlay-panel-open', open, height),
+  findInPage: (query, forward, findNext) => ipcRenderer.invoke('browser:find-in-page', query, forward, findNext) as Promise<number>,
+  stopFindInPage: () => ipcRenderer.invoke('browser:stop-find-in-page'),
+  onFindResults: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, result: FindResult) => callback(result);
+    ipcRenderer.on('browser:find-results', listener);
+    return () => ipcRenderer.removeListener('browser:find-results', listener);
+  },
   onDownloadsChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, items: DownloadRecord[]) => callback(items);
     ipcRenderer.on('browser:downloads', listener);

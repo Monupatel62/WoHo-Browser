@@ -1,6 +1,6 @@
 # Window, Browser Chrome, and Navigation Specification
 
-**Status:** Planned; no implementation implied.
+**Status:** Partially implemented. Back/forward/reload/stop, tab controls, address navigation, and find-in-page with next/previous, match count, no-results state, close/Escape, and Ctrl+F are present in the prototype. Remaining items below are planned.
 
 ## Window lifecycle
 Launch should produce a usable window or a plain-language startup error. First launch must not require an account or AI setup. Define close behavior for active downloads, unsaved notes, and multiple windows. Shutdown must flush essential writes safely. If profile loading fails, preserve a recoverable backup where possible and never silently overwrite user data. Define minimum window size, display scaling, multi-monitor behavior, and disconnected-display recovery.

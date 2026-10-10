@@ -3,12 +3,13 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
+import { normalizeFindQuery } from '../shared/find-query';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
-import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus } from '../shared/browser-types';
+import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
-let overlayPanelOpen = false;
+let overlayPanelHeight = 0;
 const HOME_URL = 'https://www.google.com/';
 let mainWindow: BrowserWindow | null = null;
 let browserSession: Electron.Session;
@@ -155,9 +156,9 @@ function layoutViews(): void {
     view.setVisible(id === activeTabId);
     view.setBounds({
       x: 0,
-      y: CHROME_HEIGHT + (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0),
+      y: CHROME_HEIGHT + overlayPanelHeight,
       width: Math.max(0, width),
-      height: Math.max(0, height - CHROME_HEIGHT - (overlayPanelOpen ? DATA_PANEL_HEIGHT : 0)),
+      height: Math.max(0, height - CHROME_HEIGHT - overlayPanelHeight),
     });
   }
 }
@@ -172,6 +173,18 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     });
   });
   wc.on('did-navigate-in-page', changed);
+  wc.on('found-in-page', (_event, result) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const payload: FindResult = {
+        tabId: id,
+        requestId: result.requestId,
+        activeMatchOrdinal: result.activeMatchOrdinal,
+        matches: result.matches,
+        finalUpdate: result.finalUpdate,
+      };
+      mainWindow.webContents.send('browser:find-results', payload);
+    }
+  });
   wc.on('page-title-updated', changed);
   wc.on('did-start-loading', changed);
   wc.on('did-stop-loading', changed);
@@ -231,9 +244,18 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
-  handle('browser:set-overlay-panel-open', (_event, open: unknown) => {
-    if (typeof open !== 'boolean') throw new Error('Invalid panel state.');
-    overlayPanelOpen = open;
+  handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
+    if (typeof forward !== 'boolean' || typeof findNext !== 'boolean') throw new Error('Invalid find-in-page request.');
+    const query = normalizeFindQuery(rawQuery);
+    const view = activeView();
+    if (!view) throw new Error('No active tab.');
+    if (!query) { view.webContents.stopFindInPage('clearSelection'); return 0; }
+    return view.webContents.findInPage(query, { forward, findNext });
+  });
+  handle('browser:stop-find-in-page', () => activeView()?.webContents.stopFindInPage('clearSelection'));
+  handle('browser:set-overlay-panel-open', (_event, open: unknown, height: unknown) => {
+    if (typeof open !== 'boolean' || typeof height !== 'number' || !Number.isInteger(height) || height < 0 || height > DATA_PANEL_HEIGHT) throw new Error('Invalid panel state.');
+    overlayPanelHeight = open ? height : 0;
     layoutViews();
   });
   handle('browser:open-tab', (_event, url?: unknown) => {
@@ -347,7 +369,7 @@ function createWindow(): void {
   mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
     mainWindow = null;
-    overlayPanelOpen = false;
+    overlayPanelHeight = 0;
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
