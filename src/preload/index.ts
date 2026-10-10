@@ -4,6 +4,7 @@ import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryR
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
   openTab: (url) => ipcRenderer.invoke('browser:open-tab', url),
+  openPrivateTab: (url) => ipcRenderer.invoke('browser:open-private-tab', url),
   closeTab: (id) => ipcRenderer.invoke('browser:close-tab', id),
   selectTab: (id) => ipcRenderer.invoke('browser:select-tab', id),
   navigate: (url) => ipcRenderer.invoke('browser:navigate', url),
