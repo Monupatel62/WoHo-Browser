@@ -57,12 +57,14 @@ describe('DownloadHistoryStore', () => {
     expect(rows[0].id).toBe('download-104');
   });
 
-  it('does not resurrect a record when an older upsert completes after removal', async () => {
+  it('does not resurrect a record when an upsert races with removal', async () => {
     const { store, file } = await createStore();
     await store.upsert(record());
-    await store.remove('download-1');
-    await store.upsert(record({ status: 'interrupted' }));
-    expect(await store.list()).toEqual([]);
+    const reloadedStore = new DownloadHistoryStore(file);
+    const lateUpsert = reloadedStore.upsert(record({ status: 'interrupted' }));
+    const removal = reloadedStore.remove('download-1');
+    await Promise.all([lateUpsert, removal]);
+    expect(await reloadedStore.list()).toEqual([]);
     expect(JSON.parse(await readFile(file, 'utf8')).downloads).toEqual([]);
   });
 
