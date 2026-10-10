@@ -28,12 +28,14 @@ const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, b
 const privateTabIds = new Set<string>();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
+const disposedPrivateSessions = new WeakSet<Electron.Session>();
 
 async function disposePrivateSession(tabId: string): Promise<void> {
   const privateSession = privateSessionsByTab.get(tabId);
   if (!privateSession) return;
   privateSessionsByTab.delete(tabId);
   privateTabIds.delete(tabId);
+  disposedPrivateSessions.add(privateSession);
   const activeItems = privateDownloadItemsBySession.get(privateSession);
   if (activeItems) {
     for (const item of activeItems) {
@@ -100,7 +102,7 @@ function registerPrivateDownloadHandling(privateSession: Electron.Session): void
         title: 'Save private download', defaultPath: safeDownloadFilename(item.getFilename()), buttonLabel: 'Save',
         message: 'Private downloads are saved to disk and will remain after this private tab closes.',
       });
-      if (choice.canceled || !choice.filePath) { item.cancel(); return; }
+      if (choice.canceled || !choice.filePath || disposedPrivateSessions.has(privateSession)) { item.cancel(); return; }
       item.setSavePath(choice.filePath);
     })().catch((error: unknown) => {
       console.error('Could not prepare private download:', error instanceof Error ? error.message : 'Unknown download error');
