@@ -50,6 +50,13 @@ export default function App() {
   const activeTabIdRef = useRef<string | null>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const active = state.tabs.find((tab) => tab.id === state.activeTabId);
+  const connectionStatus = active?.navigationError
+    ? 'Connection error'
+    : active?.url.startsWith('https://')
+      ? 'HTTPS connection'
+      : active?.url.startsWith('http://')
+        ? 'Unencrypted HTTP connection'
+        : 'No website loaded';
   const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
   const visibleBookmarks = filterSavedEntries(bookmarks, savedSearch);
   const visibleHistory = filterSavedEntries(history, savedSearch).filter((entry) => {
@@ -436,7 +443,7 @@ export default function App() {
         <button className="icon-button" title={active?.loading ? 'Stop loading (Esc)' : 'Reload (Ctrl+R)'} aria-label={active?.loading ? 'Stop loading' : 'Reload'} onClick={() => void (active?.loading ? window.wohoBrowser.stop() : window.wohoBrowser.reload())}>{active?.loading ? '×' : '↻'}</button>
       </div>
       <form className="address-form" onSubmit={submitAddress}>
-        <span className="security-icon" aria-hidden="true">{active?.url.startsWith('https://') ? '◆' : '○'}</span>
+        <span className={`security-icon ${connectionStatus === 'Unencrypted HTTP connection' || connectionStatus === 'Connection error' ? 'insecure' : ''}`} role="img" aria-label={connectionStatus} title={connectionStatus}>{connectionStatus === 'HTTPS connection' ? '◆' : connectionStatus === 'Unencrypted HTTP connection' ? '!' : '○'}</span>
         <input ref={addressRef} value={address} onChange={(event) => setAddress(event.target.value)} aria-label="Search or enter website address" placeholder="Search or enter website address" autoComplete="off" spellCheck={false} />
         {address && <button type="button" className="clear-address" aria-label="Clear address" onClick={() => { setAddress(''); addressRef.current?.focus(); }}>×</button>}
         <button type="submit" className="go-button">Go</button>
