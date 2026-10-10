@@ -21,7 +21,7 @@ Re-evaluate every redirect and distinguish main-frame from subframe navigation. 
 Certificate errors must never be silently bypassed. Use browser-controlled error UI identifying the host and safe next steps. MVP should not offer a bypass unless a reviewed threat model explicitly approves a narrow exception. Distinguish offline, DNS, timeout, reset, policy-blocked, and unknown failures where reliable signals exist.
 
 ## Context menu and page actions
-Candidate actions: Back, Forward, Reload, Save/Download link, Copy link, Copy selected text, open link in new tab, image actions, and developer inspection in development builds only. Items are enabled only when valid for the selected target. Render labels as text, not executable markup.
+Implemented: right-clicking a valid HTTP(S) link offers “Open Link in New Tab” and “Copy Link Address”. New tabs inherit the source tab's private mode. Unsafe schemes, credential-bearing URLs, and overlong link URLs are not offered. Remaining candidates: Back, Forward, Reload, Save/Download link, Copy selected text, image actions, and developer inspection in development builds only. Items must be enabled only when valid for the selected target. Render labels as text, not executable markup.
 
 ## Find, zoom, print, fullscreen
 Find-in-page needs next/previous, count if available, close/Escape, and no-results state. Zoom scope (per-tab or per-site) is an open decision. Fullscreen must be obvious and recoverable with Escape where supported. Print/PDF must disclose destination and never silently upload content.
