@@ -124,6 +124,7 @@ describe('BrowserDataStore', () => {
     await store.recordVisit('https://example.com/keep', 'Keep');
     const before = await store.listHistory();
     await expect(store.removeHistoryRange('not-a-date', '2026-10-10T23:59:59.999Z')).rejects.toThrow(/Invalid history date range/);
+    await expect(store.removeHistoryRange('2026-02-30T00:00:00.000Z', '2026-10-10T23:59:59.999Z')).rejects.toThrow(/Invalid history date range/);
     await expect(store.removeHistoryRange('2026-10-11T00:00:00.000Z', '2026-10-10T00:00:00.000Z')).rejects.toThrow(/Invalid history date range/);
     expect(await store.listHistory()).toEqual(before);
   });
