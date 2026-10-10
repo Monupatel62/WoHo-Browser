@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { BrowserState, WoHoBrowserApi } from '../shared/browser-types';
+import type { BookmarkRecord, BrowserState, HistoryRecord, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
@@ -11,6 +11,11 @@ const api: WoHoBrowserApi = {
   goForward: () => ipcRenderer.invoke('browser:forward'),
   reload: () => ipcRenderer.invoke('browser:reload'),
   stop: () => ipcRenderer.invoke('browser:stop'),
+  listBookmarks: () => ipcRenderer.invoke('browser:list-bookmarks') as Promise<BookmarkRecord[]>,
+  addBookmark: (title, url) => ipcRenderer.invoke('browser:add-bookmark', title, url) as Promise<BookmarkRecord[]>,
+  removeBookmark: (id) => ipcRenderer.invoke('browser:remove-bookmark', id) as Promise<BookmarkRecord[]>,
+  listHistory: () => ipcRenderer.invoke('browser:list-history') as Promise<HistoryRecord[]>,
+  clearHistory: () => ipcRenderer.invoke('browser:clear-history'),
   onStateChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, state: BrowserState) => callback(state);
     ipcRenderer.on('browser:state', listener);
