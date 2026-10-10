@@ -4,6 +4,7 @@ export interface BookmarkRecord { id: string; title: string; url: string; create
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
 export type DownloadStatus = 'waiting' | 'progressing' | 'paused' | 'completed' | 'cancelled' | 'interrupted';
 export interface DownloadRecord { id: string; filename: string; url: string; status: DownloadStatus; receivedBytes: number; totalBytes: number; canResume: boolean; savePath?: string; startedAt: string; }
+export interface FindResult { tabId: string; requestId: number; activeMatchOrdinal: number; matches: number; finalUpdate: boolean; }
 export interface WoHoBrowserApi {
   getState(): Promise<BrowserState>;
   openTab(url?: string): Promise<void>;
@@ -25,6 +26,9 @@ export interface WoHoBrowserApi {
   cancelDownload(id: string): Promise<void>;
   revealDownload(id: string): Promise<void>;
   setOverlayPanelOpen(open: boolean): Promise<void>;
+  findInPage(query: string, forward: boolean, findNext: boolean): Promise<number>;
+  stopFindInPage(): Promise<void>;
+  onFindResults(callback: (result: FindResult) => void): () => void;
   onDownloadsChanged(callback: (downloads: DownloadRecord[]) => void): () => void;
   onStateChanged(callback: (state: BrowserState) => void): () => void;
 }
