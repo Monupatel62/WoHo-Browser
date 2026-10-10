@@ -260,6 +260,23 @@ export class BrowserDataStore {
     return this.listBookmarks();
   }
 
+  async updateBookmark(id: string, title: string, rawUrl: string): Promise<BookmarkRecord[]> {
+    await this.ensureLoaded();
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) {
+      throw new Error('Invalid bookmark ID.');
+    }
+    const url = validateUrl(rawUrl);
+    const bookmark = this.data.bookmarks.find((item) => item.id === id);
+    if (!bookmark) throw new Error('Bookmark no longer exists.');
+    const duplicate = this.data.bookmarks.find((item) => item.id !== id && item.url === url);
+    if (duplicate) throw new Error('Another bookmark already uses this URL.');
+    bookmark.title = safeTitle(title);
+    bookmark.url = url;
+    bookmark.updatedAt = new Date().toISOString();
+    await this.persist();
+    return this.listBookmarks();
+  }
+
   async removeBookmark(id: string): Promise<BookmarkRecord[]> {
     await this.ensureLoaded();
     this.data.bookmarks = this.data.bookmarks.filter((item) => item.id !== id);
