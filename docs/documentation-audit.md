@@ -32,8 +32,9 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - No extension system, sync, password manager, or credential storage is implemented.
 - Browser profile and download-history startup recovery now preserve corrupt originals and fall back to separate files; Windows runtime recovery behavior still needs manual verification.
 - Bookmark JSON import/export is implemented with size, row-count, format, and URL validation; preview and per-row import reporting remain unimplemented.
+- History supports local-date filtering and inclusive date-range deletion; multi-select deletion remains unimplemented.
 - Per-item download-record removal, retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
-- General settings import/export, bookmark folders/edit/reorder, history time filters/range deletion, and other broader roadmap items remain unimplemented.
+- General settings import/export, bookmark folders/edit/reorder, history multi-select deletion and other broader roadmap items remain unimplemented.
 - Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. The configured CI gate rejects high/critical advisories, so moderate advisories require explicit triage rather than being described as absent.
 - Some legacy AI-related specification files remain in the repository. Treat them as out-of-scope reference material, not authorization to add AI integrations; keep the README and master plan as the current product-scope references.
 
