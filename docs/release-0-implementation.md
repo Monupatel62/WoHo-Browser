@@ -23,7 +23,7 @@
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, and private-tab history exclusion through WebContents destruction.
+- Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, IPC sender/main-frame authorization, frame navigation scheme policy, and private-tab history exclusion through WebContents destruction.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
@@ -47,6 +47,6 @@ The first milestone uses a versioned JSON document in Electron's user-data direc
 - Private browsing has automated tests for history exclusion while a private tab is closing; Electron session isolation, on-disk cleanup, private download destination behavior, and Windows runtime behavior still require manual verification.
 - Inspect the generated unsigned Windows installer artifact; successful packaging is not proof of a clean install or correct runtime behavior.
 - Launch on Windows and test initial navigation, tab switching/closing, resize, history navigation, bookmark persistence after restart, history clearing after restart, popup denial, and unsupported schemes.
-- Add IPC negative tests and automated main-process navigation/permission tests.
+- IPC negative tests now cover trusted WebContents, main-frame-only calls, and renderer URL boundaries. Main-process end-to-end navigation and native permission prompt/revocation tests still need Windows runtime coverage.
 - Complete threat-model review and dependency/license review before production release.
 - Signing, update delivery, compatibility certification, and production security review are not complete.
