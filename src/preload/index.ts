@@ -21,6 +21,11 @@ const api: WoHoBrowserApi = {
   resumeDownload: (id) => ipcRenderer.invoke('browser:resume-download', id),
   cancelDownload: (id) => ipcRenderer.invoke('browser:cancel-download', id),
   revealDownload: (id) => ipcRenderer.invoke('browser:reveal-download', id),
+  onDownloadsChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, items: DownloadRecord[]) => callback(items);
+    ipcRenderer.on('browser:downloads', listener);
+    return () => ipcRenderer.removeListener('browser:downloads', listener);
+  },
   onStateChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, state: BrowserState) => callback(state);
     ipcRenderer.on('browser:state', listener);
