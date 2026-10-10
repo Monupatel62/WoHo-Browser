@@ -45,13 +45,32 @@ function pruneDownloadRecords(): void {
   }
 }
 
+function safeDownloadFilename(value: string): string {
+  const leaf = value.split('/').pop()?.split(String.fromCharCode(92)).pop() ?? '';
+  const forbidden = '<>:' + String.fromCharCode(34) + '/\\|?*';
+  const safe = [...leaf].map((character) => character < ' ' || forbidden.includes(character) ? '_' : character).join('').replace(/[. ]+$/g, '').trim();
+  return (safe || 'download').slice(0, 255);
+}
+
+function safeDownloadUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password) return null;
+    url.search = '';
+    url.hash = '';
+    return url.toString().slice(0, 4096);
+  } catch { return null; }
+}
+
 function registerDownloadHandling(): void {
-  browserSession.on('will-download', (_event, item) => {
+  browserSession.on('will-download', (event, item) => {
+    const safeUrl = safeDownloadUrl(item.getURL());
+    if (!safeUrl) { event.preventDefault(); return; }
     const id = randomUUID();
     const record: DownloadRecord = {
       id,
-      filename: item.getFilename().slice(0, 255) || 'download',
-      url: item.getURL().slice(0, 4096),
+      filename: safeDownloadFilename(item.getFilename()),
+      url: safeUrl,
       status: 'waiting',
       receivedBytes: 0,
       totalBytes: item.getTotalBytes(),
