@@ -11,6 +11,7 @@ import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedRendererUrl } from './trusted-renderer';
+import { PrivateTabRegistry } from './private-tab-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -29,7 +30,7 @@ const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
 const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
 const pendingPermissionPromptsBySession = new WeakMap<Electron.Session, Map<string, Promise<boolean>>>();
-const privateTabIds = new Set<string>();
+const privateTabRegistry = new PrivateTabRegistry();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
 const disposedPrivateSessions = new WeakSet<Electron.Session>();
@@ -38,7 +39,6 @@ async function disposePrivateSession(tabId: string): Promise<void> {
   const privateSession = privateSessionsByTab.get(tabId);
   if (!privateSession) return;
   privateSessionsByTab.delete(tabId);
-  privateTabIds.delete(tabId);
   disposedPrivateSessions.add(privateSession);
   const activeItems = privateDownloadItemsBySession.get(privateSession);
   if (activeItems) {
@@ -264,7 +264,7 @@ function getState(): BrowserState {
       canGoBack: wc.navigationHistory.canGoBack(),
       canGoForward: wc.navigationHistory.canGoForward(),
       isActive: id === activeTabId,
-      isPrivate: privateTabIds.has(id),
+      isPrivate: privateTabRegistry.has(id),
     }];
   });
   return { tabs, activeTabId };
@@ -293,7 +293,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   const changed = () => { layoutViews(); publishState(); };
   wc.on('did-navigate', (_event, url) => {
     changed();
-    if (!shouldPersistBrowsingHistory(privateTabIds.has(id))) return;
+    if (!shouldPersistBrowsingHistory(privateTabRegistry.has(id))) return;
     void browserDataStore.recordVisit(url, wc.getTitle()).catch((error: unknown) => {
       console.error('Could not persist browser history:', error instanceof Error ? error.message : 'Unknown storage error');
     });
@@ -324,6 +324,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   });
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   wc.on('destroyed', () => {
+    privateTabRegistry.onDestroyed(id);
     views.delete(id);
     void disposePrivateSession(id);
     const index = tabOrder.indexOf(id);
@@ -339,7 +340,7 @@ async function createTab(target = HOME_URL, isPrivate = false): Promise<void> {
   const id = randomUUID();
   const tabSession = isPrivate ? session.fromPartition('woho-private-' + randomUUID()) : browserSession;
   if (isPrivate) {
-    privateTabIds.add(id);
+    privateTabRegistry.add(id);
     privateSessionsByTab.set(id, tabSession);
     configurePermissionHandlers(tabSession);
     registerPrivateDownloadHandling(tabSession);
