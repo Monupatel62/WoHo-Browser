@@ -296,7 +296,7 @@ Update this table only with verified repository evidence.
 | Framework choice | Electron + TypeScript + React selected for R0 prototype only; production decision open | ADR-0001 and `docs/release-0-spike-plan.md` |
 | Architecture | Proposed | Validate trust boundaries and view model in a working R0 prototype |
 | Security model | Requirements drafted; implementation not verified | Add tests and attach evidence to the implementation PR |
-| Windows MVP | Not implemented | Build and test the R0 vertical slice first |
+| Windows MVP | In-progress prototype | Core navigation, tabs, bookmarks/history, downloads, permissions, private tabs, settings, and Windows packaging CI exist; clean Windows runtime and release gates remain |
 | AI assistant | Planned | Validate broker, consent, context minimization, and safe output before implementation |
 | CI and release | Not verified; no `.github/workflows/` directory found | Add workflows and inspect real results |
 | Monetization | Hypotheses only | Interview target users and validate willingness to pay |

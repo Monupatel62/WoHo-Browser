@@ -62,3 +62,13 @@
 .history-select-all{white-space:nowrap}
 .history-select-all input,.history-select-entry input{accent-color:#719dff;cursor:pointer}
 .history-select-entry{padding-left:5px}
+
+
+.settings-form{display:flex;flex-direction:column;gap:8px;padding:16px}
+.settings-form label{font-size:12px;font-weight:650;color:#dce4f5}
+.settings-form select,.settings-form input{width:100%;min-width:0;height:36px;padding:0 10px;border:1px solid #34415b;border-radius:8px;background:#202a40;color:#e8edf7;font:inherit;font-size:12px}
+.settings-form select:focus,.settings-form input:focus{outline:2px solid #719dff;outline-offset:1px}
+.settings-form p{margin:0 0 8px;color:#91a0bb;font-size:11px;line-height:1.5}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.settings-actions .panel-action{border:1px solid #34415b;background:#202a40}
+.settings-actions .panel-action:hover:not(:disabled){background:#2d3b56}

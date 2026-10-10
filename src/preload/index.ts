@@ -1,8 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { BrowserSettings } from '../shared/browser-settings';
 import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
+  getSettings: () => ipcRenderer.invoke('browser:get-settings') as Promise<BrowserSettings>,
+  updateSettings: (settings) => ipcRenderer.invoke('browser:update-settings', settings) as Promise<BrowserSettings>,
+  resetSettings: () => ipcRenderer.invoke('browser:reset-settings') as Promise<BrowserSettings>,
   openTab: (url) => ipcRenderer.invoke('browser:open-tab', url),
   openPrivateTab: (url) => ipcRenderer.invoke('browser:open-private-tab', url),
   closeTab: (id) => ipcRenderer.invoke('browser:close-tab', id),
