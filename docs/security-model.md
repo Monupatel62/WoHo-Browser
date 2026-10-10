@@ -43,3 +43,25 @@ Use platform-secure credential storage where practical. If users provide API key
 
 ## Vulnerability reporting
 Before public release, add a SECURITY.md with a monitored reporting channel, supported release policy, expected response process, and instructions not to publish exploitable details before coordination. Do not invent a security email address; configure a real contact first.
+
+
+## Electron-specific hardening requirements
+The following controls must be checked against the exact selected Electron version and official documentation before implementation:
+- Disable Node integration for website content; enable context isolation and sandboxing where supported.
+- Use a narrow preload API and validate every IPC call against sender frame/origin, schema, size, and capability.
+- Install both permission request and permission check handlers; default-deny unknown origins and permission types.
+- Enforce navigation policy with navigation events such as will-navigate and deny or safely mediate new windows through setWindowOpenHandler.
+- Deny javascript:, data:, file:, and custom schemes for ordinary web navigation unless a specific reviewed feature requires a narrowly scoped exception.
+- Keep remote debugging disabled in production.
+- Review Electron fuses, including disabling run-as-Node behavior where compatible with the build, and evaluate ASAR integrity protection for the chosen packaging approach.
+- Never silently bypass certificate errors. External protocol launches must be allowlisted and user initiated.
+- Render page titles, favicons, and URL text safely; do not allow webpage content to imitate trusted chrome.
+- Do not render model output as active HTML. Disable remote Markdown images by default to prevent exfiltration.
+- Treat localhost inference servers as a security boundary. Do not expose them directly to websites; test DNS rebinding/CORS assumptions and restrict browser-to-local-service access.
+- Update policy must address rollback/downgrade, signing-key separation, key rotation, and emergency stop.
+
+## Security patch target
+Proposed target for approval: assess a confirmed critical Electron/Chromium issue affecting a shipped build within 24 hours and aim to publish a tested mitigation within 72 hours where feasible. This is not a current SLA until ownership and release capability are approved. See docs/incident-response-and-cve-policy.md.
+
+## Release gate
+A security checklist is not a certification. Before production release, attach test evidence for navigation, IPC, permission denial/revocation, downloads, update integrity, and renderer isolation to the release record.
