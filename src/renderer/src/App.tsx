@@ -185,7 +185,7 @@ export default function App() {
         const activeDownload = item.status === 'waiting' || item.status === 'progressing' || item.status === 'paused';
         return <li className="download-item" key={item.id}>
           <div className="download-summary"><strong title={item.filename}>{item.filename}</strong><span>{item.status === 'waiting' ? 'Waiting for save location…' : item.status === 'progressing' ? `${formatBytes(item.receivedBytes)} / ${item.totalBytes > 0 ? formatBytes(item.totalBytes) : 'size unknown'}` : item.status === 'paused' ? `Paused · ${formatBytes(item.receivedBytes)}` : item.status === 'completed' ? `Completed · ${formatBytes(item.receivedBytes)}` : item.status === 'cancelled' ? 'Cancelled' : 'Interrupted'}</span>
-          {item.status === 'progressing' && <div className="download-progress" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: item.totalBytes > 0 ? progress + '%' : '100%' }} /></div>}
+          {item.status === 'progressing' && <div className={`download-progress ${item.totalBytes > 0 ? '' : 'indeterminate'}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} {...(item.totalBytes > 0 ? { 'aria-valuenow': progress } : {})}><span style={{ width: item.totalBytes > 0 ? progress + '%' : '35%' }} /></div>}
           </div>
           <div className="download-actions">
             {item.status === 'progressing' && <button className="panel-action" onClick={() => void runDownloadAction('pause', item.id)}>Pause</button>}
