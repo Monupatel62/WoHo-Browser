@@ -25,6 +25,7 @@ describe('safeDownloadFilename', () => {
   it('avoids Windows reserved device names, including names with extensions', () => {
     expect(safeDownloadFilename('CON')).toBe('_CON');
     expect(safeDownloadFilename('nul.txt')).toBe('_nul.txt');
+    expect(safeDownloadFilename('CON .txt')).toBe('_CON .txt');
     expect(safeDownloadFilename('COM1.zip')).toBe('_COM1.zip');
     expect(safeDownloadFilename('LPT³.log')).toBe('_LPT³.log');
     expect(safeDownloadFilename('normal-CON.txt')).toBe('normal-CON.txt');
