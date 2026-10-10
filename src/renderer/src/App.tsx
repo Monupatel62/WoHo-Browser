@@ -153,6 +153,28 @@ export default function App() {
     }
   }
 
+  async function exportBookmarks() {
+    if (!window.confirm('Export saved bookmarks to a JSON file? The export may contain sensitive URLs. Keep the file in a secure location.')) return;
+    setError(''); setNotice('');
+    try {
+      if (await window.wohoBrowser.exportBookmarks()) setNotice('Bookmarks exported successfully.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not export bookmarks.');
+    }
+  }
+
+  async function importBookmarks() {
+    setError(''); setNotice('');
+    try {
+      const next = await window.wohoBrowser.importBookmarks();
+      if (next === null) return;
+      setBookmarks(next);
+      setNotice('Bookmarks imported. Matching URLs were updated; saved files and browsing history were not changed.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not import bookmarks.');
+    }
+  }
+
   async function submitAddress(event: FormEvent) {
     event.preventDefault(); setError('');
     try { await window.wohoBrowser.navigate(address); addressRef.current?.blur(); setPanel(null); }
@@ -269,6 +291,7 @@ export default function App() {
       <header className="data-panel-header">
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}</strong>
         <div>
+          {panel === 'bookmarks' && <><button className="panel-action" onClick={() => void importBookmarks()}>Import</button><button className="panel-action" onClick={() => void exportBookmarks()}>Export</button></>}
           {panel === 'history' && <><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear all site data</button></>}
           {panel === 'downloads' && <button className="panel-action" onClick={() => void clearFinishedDownloads()} disabled={!downloads.some((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'interrupted')}>Clear finished</button>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>

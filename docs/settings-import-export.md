@@ -1,6 +1,6 @@
 # Settings, Import/Export, and Data Portability
 
-**Status:** Planned.
+**Status:** Partially implemented; bookmark JSON import/export exists, while general settings import/export remains planned.
 
 ## Settings contract
 Every setting requires a default, type/range, persistence scope (global/profile/session), immediate or restart-required effect, migration behavior, and reset behavior. Do not display settings without implementation. Reject unknown keys, invalid types, oversized strings, malformed URLs, unsupported provider templates, and out-of-range values. Corrupt settings should fall back safely and be reported.
@@ -17,7 +17,7 @@ Every setting requires a default, type/range, persistence scope (global/profile/
 - Advanced: reset settings, profile location info, version/build, diagnostic export.
 
 ## Import/export
-Candidate initial support: bookmarks and selected settings. History, passwords, extensions, cookies, and full profiles require separate decisions. Preview included categories/counts before applying. Validate format/version, encoding, size, row count, nesting, URL schemes, duplicate IDs, and paths. Report invalid rows without crashing. Apply transactionally or report partial imports clearly. Do not import executable extensions, preload scripts, certificates, or privileged policies from untrusted files.
+Implemented: bookmarks-only JSON import/export with format/version validation, a 1 MiB file limit, at most 500 entries, HTTP(S)-only URLs, embedded-credential rejection, URL deduplication, and all-or-nothing validation before applying. Export asks for a destination and warns that saved URLs may be sensitive. Import currently has no preview and rejects the whole file rather than reporting individual invalid rows. General settings import/export remains planned. History, passwords, extensions, cookies, and full profiles require separate decisions. Do not import executable extensions, preload scripts, certificates, or privileged policies from untrusted files.
 
 Export files can contain sensitive data: warn, ask for destination, and avoid shared/public default directories. Do not overwrite current data without confirmation and a recoverable backup where feasible. No remote upload occurs as part of import/export.
 
