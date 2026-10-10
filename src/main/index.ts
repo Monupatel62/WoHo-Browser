@@ -8,6 +8,7 @@ import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
+import { getDownloadIdsToPrune } from '../shared/download-retention';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -142,15 +143,12 @@ function setDownloadStatus(id: string, status: DownloadStatus): void {
 }
 
 function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): void {
-  if (downloads.size <= maxRecords) return;
-  for (const [id, record] of downloads) {
-    if (downloads.size <= maxRecords) break;
-    if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') {
-      downloads.delete(id);
-      void downloadHistoryStore.remove(id).catch((error: unknown) => {
-        console.error('Could not prune download history:', error instanceof Error ? error.message : 'Unknown storage error');
-      });
-    }
+  const idsToPrune = getDownloadIdsToPrune([...downloads.values()], maxRecords);
+  for (const id of idsToPrune) {
+    downloads.delete(id);
+    void downloadHistoryStore.remove(id).catch((error: unknown) => {
+      console.error('Could not prune download history:', error instanceof Error ? error.message : 'Unknown storage error');
+    });
   }
 }
 
