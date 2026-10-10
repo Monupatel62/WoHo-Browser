@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
+import { DEFAULT_BROWSER_SETTINGS, SEARCH_PROVIDERS, type BrowserSettings, type SearchProviderId } from '../../shared/browser-settings';
 import { shouldOpenNewTabPrivately } from '../../shared/privacy-policy';
 import { filterSavedEntries } from '../../shared/saved-entry-search';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
-type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'find' | null;
+type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'settings' | 'find' | null;
 
 function localDateKey(value: string): string {
   const date = new Date(value);
@@ -34,6 +35,8 @@ export default function App() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [sitePermissions, setSitePermissions] = useState<SitePermissionDecision[]>([]);
+  const [settings, setSettings] = useState<BrowserSettings>({ ...DEFAULT_BROWSER_SETTINGS });
+  const [settingsDraft, setSettingsDraft] = useState<BrowserSettings>({ ...DEFAULT_BROWSER_SETTINGS });
   const [panel, setPanel] = useState<DataPanel>(null);
   const [savedSearch, setSavedSearch] = useState('');
   const [findQuery, setFindQuery] = useState('');
@@ -136,6 +139,11 @@ export default function App() {
       else if (next === 'history') setHistory(await window.wohoBrowser.listHistory());
       else if (next === 'downloads') setDownloads(await window.wohoBrowser.listDownloads());
       else if (next === 'permissions') setSitePermissions(await window.wohoBrowser.listSitePermissions());
+      else if (next === 'settings') {
+        const current = await window.wohoBrowser.getSettings();
+        setSettings(current);
+        setSettingsDraft(current);
+      }
       setPanel(next);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load browser data.');
@@ -240,6 +248,31 @@ export default function App() {
       setNotice(action === 'revoke' ? `Access blocked for ${decision.origin}.` : `Saved decision forgotten for ${decision.origin}; the site will need to ask again.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not update site permission.');
+    }
+  }
+
+  async function saveSettings() {
+    setError(''); setNotice('');
+    try {
+      const saved = await window.wohoBrowser.updateSettings(settingsDraft);
+      setSettings(saved);
+      setSettingsDraft(saved);
+      setNotice('Browser settings saved. New tabs and searches will use these settings.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not save browser settings.');
+    }
+  }
+
+  async function resetSettings() {
+    if (!window.confirm('Reset the search provider and home page to WoHo Browser defaults?')) return;
+    setError(''); setNotice('');
+    try {
+      const defaults = await window.wohoBrowser.resetSettings();
+      setSettings(defaults);
+      setSettingsDraft(defaults);
+      setNotice('Browser settings reset to defaults.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not reset browser settings.');
     }
   }
 
@@ -372,13 +405,14 @@ export default function App() {
       <button className={`data-button ${panel === 'history' ? 'selected' : ''}`} onClick={() => void showPanel('history')} title="History (Ctrl+H)">History</button>
       <button className={`data-button ${panel === 'downloads' ? 'selected' : ''}`} onClick={() => void showPanel('downloads')} title="Downloads">Downloads{downloads.some((item) => item.status === 'progressing' || item.status === 'waiting' || item.status === 'paused') ? ' •' : ''}</button>
       <button className={`data-button ${panel === 'permissions' ? 'selected' : ''}`} onClick={() => void showPanel('permissions')} title="Site permissions">Permissions</button>
+      <button className={`data-button ${panel === 'settings' ? 'selected' : ''}`} onClick={() => void showPanel('settings')} title="Browser settings">Settings</button>
       <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
     {notice && <div className="notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice">×</button></div>}
     {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}>
       <header className="data-panel-header">
-        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}</strong>
+        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : panel === 'settings' ? 'Settings' : 'Find in page'}</strong>
         <div>
           {panel === 'bookmarks' && <><button className="panel-action" onClick={() => void importBookmarks()}>Import</button><button className="panel-action" onClick={() => void exportBookmarks()}>Export</button></>}
           {panel === 'history' && <><button className="panel-action" onClick={() => void deleteSelectedHistory()} disabled={selectedHistoryIds.length === 0}>Delete selected ({selectedHistoryIds.length})</button><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear all site data</button></>}
@@ -402,6 +436,17 @@ export default function App() {
         <button type="button" className="panel-action" disabled={!findQuery.trim()} onClick={() => void runFind(findQuery, false, true)} aria-label="Previous match">↑</button>
         <button type="submit" className="panel-action" disabled={!findQuery.trim()} aria-label="Next match">↓</button>
       </form>}
+      {panel === 'settings' && <div className="settings-form">
+        <label htmlFor="settings-search-provider">Default search provider</label>
+        <select id="settings-search-provider" value={settingsDraft.searchProvider} onChange={(event) => setSettingsDraft((current) => ({ ...current, searchProvider: event.target.value as SearchProviderId }))}>
+          {Object.entries(SEARCH_PROVIDERS).map(([id, provider]) => <option key={id} value={id}>{provider.label}</option>)}
+        </select>
+        <p>Plain-text searches are sent to the selected provider. Search text is not stored as browser history unless a website navigation is committed.</p>
+        <label htmlFor="settings-home-page">Home page and new-tab address</label>
+        <input id="settings-home-page" value={settingsDraft.homePageUrl} onChange={(event) => setSettingsDraft((current) => ({ ...current, homePageUrl: event.target.value.slice(0, 2048) }))} maxLength={2048} placeholder="https://example.com/" spellCheck={false} />
+        <p>Use an HTTP or HTTPS URL. Search-provider and home-page changes are saved locally and apply to future searches and tabs; already-open tabs are unchanged.</p>
+        <div className="settings-actions"><button className="panel-action" onClick={() => void saveSettings()} disabled={settingsDraft.searchProvider === settings.searchProvider && settingsDraft.homePageUrl === settings.homePageUrl}>Save settings</button><button className="panel-action" onClick={() => void resetSettings()}>Reset defaults</button></div>
+      </div>}
       {panel === 'permissions' && (sitePermissions.length ? <ul className="saved-list">{sitePermissions.map((decision) => <li key={decision.origin + '::' + decision.permission}>
         <div className="permission-entry">
           <strong>{decision.permission === 'media' ? 'Camera / microphone' : decision.permission === 'geolocation' ? 'Location' : decision.permission === 'notifications' ? 'Notifications' : decision.permission === 'clipboard-read' ? 'Clipboard access' : decision.permission}</strong>
