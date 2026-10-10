@@ -89,3 +89,5 @@
 
 .settings-toggle{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;padding:8px 0}
 .settings-toggle input{width:16px;height:16px;flex:none;accent-color:#719dff}
+
+.security-icon.insecure{color:#ffb3bd;font-weight:800}
