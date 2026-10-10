@@ -7,7 +7,7 @@
 - Electron desktop shell with React/TypeScript browser chrome.
 - Electron `WebContentsView` per tab using a dedicated persistent browser session.
 - Address bar with HTTPS-by-default bare hostnames and configurable Google, Bing, or DuckDuckGo search fallback. A Settings panel persists a validated HTTP(S) home/new-tab URL and selected search provider locally; invalid or corrupt settings use a separate recovery file without overwriting the original.
-- Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, and keyboard shortcuts (including Ctrl+F).
+- Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, keyboard shortcuts (including Ctrl+F), and per-tab renderer-crash indication with a user-triggered reload action.
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
 - HTTP/HTTPS-only main-frame navigation, explicit subframe navigation policy (HTTP(S), inherited-origin `about:blank`/`about:srcdoc`, and web-origin `blob:` only), and denied popups. Right-clicking a valid HTTP(S) link offers Open Link in New Tab and Copy Link Address; new tabs inherit private mode. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.

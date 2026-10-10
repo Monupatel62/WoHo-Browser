@@ -18,6 +18,7 @@ import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
+import { TabCrashRegistry } from './tab-crash-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -39,6 +40,7 @@ const MAX_DOWNLOAD_RECORDS = 100;
 const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
 const pendingPermissionPromptsBySession = new WeakMap<Electron.Session, Map<string, Promise<boolean>>>();
 const privateTabRegistry = new PrivateTabRegistry();
+const tabCrashRegistry = new TabCrashRegistry();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
 const disposedPrivateSessions = new WeakSet<Electron.Session>();
@@ -276,6 +278,7 @@ function getState(): BrowserState {
       canGoForward: wc.navigationHistory.canGoForward(),
       isActive: id === activeTabId,
       isPrivate: privateTabRegistry.has(id),
+      isCrashed: tabCrashRegistry.has(id),
     }];
   });
   return { tabs, activeTabId };
@@ -323,10 +326,10 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     }
   });
   wc.on('page-title-updated', changed);
-  wc.on('did-start-loading', changed);
+  wc.on('did-start-loading', () => { tabCrashRegistry.markReloading(id); changed(); });
   wc.on('did-stop-loading', changed);
   wc.on('did-fail-load', changed);
-  wc.on('render-process-gone', changed);
+  wc.on('render-process-gone', () => { tabCrashRegistry.markCrashed(id); changed(); });
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
   });
@@ -362,6 +365,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   });
   wc.on('destroyed', () => {
     privateTabRegistry.onDestroyed(id);
+    tabCrashRegistry.remove(id);
     views.delete(id);
     void disposePrivateSession(id);
     const index = tabOrder.indexOf(id);

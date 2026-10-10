@@ -409,7 +409,7 @@ export default function App() {
       <div className="tabs" role="tablist" aria-label="Browser tabs">
         {state.tabs.map((tab) => <div className={`tab ${tab.isActive ? 'active' : ''}`} key={tab.id} role="presentation">
           <button className="tab-select" role="tab" aria-selected={tab.isActive} title={tab.title} onClick={() => void window.wohoBrowser.selectTab(tab.id)}>
-            <span className={`tab-dot ${tab.loading ? 'loading' : ''}`}></span><span className="tab-title">{tab.isPrivate ? '◈ ' : ''}{tab.title}</span>
+            <span className={`tab-dot ${tab.loading ? 'loading' : ''} ${tab.isCrashed ? 'crashed' : ''}`}></span><span className="tab-title">{tab.isPrivate ? '◈ ' : ''}{tab.isCrashed ? 'Crashed · ' : ''}{tab.title}</span>
           </button>
           <button className="tab-close" aria-label={`Close ${tab.title}`} onClick={() => void window.wohoBrowser.closeTab(tab.id)}>×</button>
         </div>)}
@@ -437,7 +437,7 @@ export default function App() {
       <button className={`data-button ${panel === 'settings' ? 'selected' : ''}`} onClick={() => void showPanel('settings')} title="Browser settings">Settings</button>
       <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
-    {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
+    {(error || active?.isCrashed) && <div className="error-banner" role="alert"><span>{error || 'This page stopped unexpectedly. Reload the tab to try again.'}</span>{active?.isCrashed && <button className="panel-action" onClick={() => void window.wohoBrowser.reload()}>Reload tab</button>}{error && <button onClick={() => setError('')} aria-label="Dismiss error">×</button>}</div>}
     {notice && <div className="notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice">×</button></div>}
     {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : panel === 'settings' ? 'Browser settings' : 'Find in page'}>
       <header className="data-panel-header">
