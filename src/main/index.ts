@@ -63,6 +63,7 @@ function permissionDecisions(targetSession: Electron.Session): Map<string, boole
 
 function configurePermissionHandlers(targetSession: Electron.Session): void {
   targetSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if (disposedPrivateSessions.has(targetSession)) { callback(false); return; }
     const origin = getPermissionOrigin(details.requestingUrl || webContents.getURL());
     const key = origin ? createPermissionGrantKey(origin, permission) : null;
     if (!key || !origin || !mainWindow || mainWindow.isDestroyed()) { callback(false); return; }
@@ -77,6 +78,7 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
       detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
       buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
     }).then(({ response }) => {
+      if (disposedPrivateSessions.has(targetSession)) { callback(false); return; }
       const allowed = response === 0;
       decisions.set(key, allowed);
       callback(allowed);
