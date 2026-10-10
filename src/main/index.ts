@@ -130,7 +130,7 @@ function registerIpc(): void {
   };
   handle('browser:get-state', () => getState());
   handle('browser:open-tab', (_event, url?: unknown) => {
-    if (url !== undefined && typeof url !== 'string') throw new Error('Invalid URL payload.');
+    if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
     return createTab(typeof url === 'string' ? url : HOME_URL);
   });
   handle('browser:select-tab', (_event, id: unknown) => {
@@ -179,13 +179,26 @@ function createWindow(): void {
       webSecurity: true,
     },
   });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
+  const isTrustedRendererUrl = (value: string) => {
+    if (rendererUrl) {
+      try { return new URL(value).origin === new URL(rendererUrl).origin; } catch { return false; }
+    }
+    return value.startsWith('file://') && value.endsWith('/out/renderer/index.html');
+  };
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!isTrustedRendererUrl(url)) event.preventDefault();
+  });
+  mainWindow.webContents.on('will-redirect', (event, url) => {
+    if (!isTrustedRendererUrl(url)) event.preventDefault();
+  });
   mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
     mainWindow = null;
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
-  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
   if (rendererUrl) void mainWindow.loadURL(rendererUrl);
   else void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   mainWindow.webContents.on('did-finish-load', () => { layoutViews(); publishState(); });
