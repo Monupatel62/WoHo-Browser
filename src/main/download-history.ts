@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto';
 import type { DownloadRecord, DownloadStatus } from '../shared/browser-types';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 
-interface PersistedDownloads { version: 1; downloads: DownloadRecord[]; }
 const MAX_RECORDS = 100;
 const MAX_FILE_BYTES = 1024 * 1024;
 const STATUSES = new Set<DownloadStatus>(['waiting', 'progressing', 'paused', 'completed', 'cancelled', 'interrupted']);
