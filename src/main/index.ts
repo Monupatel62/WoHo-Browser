@@ -82,18 +82,20 @@ function registerDownloadHandling(): void {
         defaultPath: record.filename,
         buttonLabel: 'Save',
       });
-      if (choice.canceled || !choice.filePath || downloadItems.get(id) !== item) {
-        if (!item.isDestroyed()) item.cancel();
-        setDownloadStatus(id, 'cancelled');
+      if (choice.canceled || !choice.filePath) {
+        if (downloadItems.get(id) === item) item.cancel();
         return;
       }
+      if (downloadItems.get(id) !== item) return;
       record.savePath = choice.filePath;
       item.setSavePath(choice.filePath);
       setDownloadStatus(id, item.isPaused() ? 'paused' : 'progressing');
     })().catch((error: unknown) => {
       console.error('Could not prepare download:', error instanceof Error ? error.message : 'Unknown download error');
-      if (!item.isDestroyed()) item.cancel();
-      setDownloadStatus(id, 'interrupted');
+      if (downloadItems.get(id) === item) {
+        item.cancel();
+        setDownloadStatus(id, 'interrupted');
+      }
     });
   });
 }
