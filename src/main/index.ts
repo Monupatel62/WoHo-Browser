@@ -10,6 +10,7 @@ import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContex
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
+import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
@@ -238,14 +239,17 @@ function registerDownloadHandling(): void {
 }
 
 function assertTrustedChrome(event: IpcMainInvokeEvent): void {
-  if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== event.sender.mainFrame) {
-    throw new Error('Untrusted IPC sender.');
-  }
-  const senderUrl = event.sender.getURL();
-  const expectedRendererPath = join(__dirname, '../renderer/index.html');
-  if (!isTrustedRendererUrl(senderUrl, process.env.ELECTRON_RENDERER_URL, expectedRendererPath)) {
-    throw new Error('IPC sender origin rejected.');
-  }
+  if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Untrusted IPC sender.');
+  const trusted = isTrustedIpcSender({
+    expectedSender: mainWindow.webContents,
+    sender: event.sender,
+    senderFrame: event.senderFrame,
+    mainFrame: event.sender.mainFrame,
+    senderUrl: event.sender.getURL(),
+    devRendererUrl: process.env.ELECTRON_RENDERER_URL,
+    expectedRendererPath: join(__dirname, '../renderer/index.html'),
+  });
+  if (!trusted) throw new Error('Untrusted IPC sender or renderer origin.');
 }
 
 function activeView(): WebContentsView | undefined {
