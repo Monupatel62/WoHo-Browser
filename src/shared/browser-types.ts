@@ -1,5 +1,5 @@
 import type { BrowserSettings } from './browser-settings';
-export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; isCrashed: boolean; }
+export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; isCrashed: boolean; navigationError?: string; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
