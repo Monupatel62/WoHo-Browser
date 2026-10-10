@@ -4,12 +4,15 @@ import { readFileBounded } from './bounded-file-read';
 import { randomUUID } from 'node:crypto';
 import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './browser-data';
 import { openRecoverableBrowserDataStore } from './recoverable-browser-data';
+import { BrowserSettingsStore } from './browser-settings';
+import { openRecoverableBrowserSettingsStore } from './recoverable-browser-settings';
 import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
+import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedIpcSender } from './ipc-security';
@@ -20,7 +23,8 @@ import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, Fin
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
 let overlayPanelHeight = 0;
-const HOME_URL = 'https://www.google.com/';
+let browserSettingsStore: BrowserSettingsStore;
+let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
 let mainWindow: BrowserWindow | null = null;
 let startupComplete = false;
 let browserSession: Electron.Session;
@@ -368,7 +372,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   });
 }
 
-async function createTab(target = HOME_URL, isPrivate = false): Promise<void> {
+async function createTab(target?: string, isPrivate = false): Promise<void> {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const id = randomUUID();
   const tabSession = isPrivate ? session.fromPartition('woho-private-' + randomUUID()) : browserSession;
@@ -396,7 +400,7 @@ async function createTab(target = HOME_URL, isPrivate = false): Promise<void> {
   layoutViews();
   publishState();
   try {
-    const url = resolveAddressInput(target);
+    const url = resolveAddressInput(target ?? browserSettings.homePageUrl, getSearchEnginePrefix(browserSettings.searchProvider));
     await view.webContents.loadURL(url);
   } catch (error) {
     console.error('Tab navigation failed:', error instanceof Error ? error.message : 'Unknown error');
@@ -412,6 +416,15 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
+  handle('browser:get-settings', () => browserSettingsStore.get());
+  handle('browser:update-settings', async (_event, candidate: unknown) => {
+    browserSettings = await browserSettingsStore.update(candidate);
+    return { ...browserSettings };
+  });
+  handle('browser:reset-settings', async () => {
+    browserSettings = await browserSettingsStore.reset();
+    return { ...browserSettings };
+  });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
     if (typeof forward !== 'boolean' || typeof findNext !== 'boolean') throw new Error('Invalid find-in-page request.');
     const query = normalizeFindQuery(rawQuery);
@@ -428,11 +441,11 @@ function registerIpc(): void {
   });
   handle('browser:open-tab', (_event, url?: unknown) => {
     if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
-    return createTab(typeof url === 'string' ? url : HOME_URL);
+    return createTab(typeof url === 'string' ? url : undefined);
   });
   handle('browser:open-private-tab', (_event, url?: unknown) => {
     if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
-    return createTab(typeof url === 'string' ? url : HOME_URL, true);
+    return createTab(typeof url === 'string' ? url : undefined, true);
   });
   handle('browser:select-tab', (_event, id: unknown) => {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
@@ -448,14 +461,14 @@ function registerIpc(): void {
     if (index >= 0) tabOrder.splice(index, 1);
     if (activeTabId === id) activeTabId = tabOrder[Math.max(0, index - 1)] ?? tabOrder[0] ?? null;
     if (!view.webContents.isDestroyed()) view.webContents.close();
-    if (tabOrder.length === 0) void createTab(HOME_URL);
+    if (tabOrder.length === 0) void createTab();
     layoutViews(); publishState();
   });
   handle('browser:navigate', async (_event, value: unknown) => {
     if (typeof value !== 'string' || value.length > 4096) throw new Error('Invalid address input.');
     const view = activeView();
     if (!view) return createTab(value);
-    const target = resolveAddressInput(value);
+    const target = resolveAddressInput(value, getSearchEnginePrefix(browserSettings.searchProvider));
     if (!isAllowedNavigationTarget(target)) throw new Error('Navigation target blocked.');
     await view.webContents.loadURL(target);
     publishState();
@@ -651,7 +664,7 @@ if (!hasSingleInstanceLock) {
       // The initial ready handler creates the first window; avoid racing it.
       if (!startupComplete) return;
       createWindow();
-      void createTab(HOME_URL);
+      void createTab();
       return;
     }
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -661,6 +674,17 @@ if (!hasSingleInstanceLock) {
 
   app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData');
+  browserSettingsStore = await openRecoverableBrowserSettingsStore(
+    join(userDataPath, 'settings.json'),
+    join(userDataPath, 'settings-recovery.json'),
+    () => join(userDataPath, 'settings-' + randomUUID() + '.json'),
+    async (title, message, detail) => {
+      await dialog.showMessageBox({
+        type: 'warning', title, message, detail, buttons: ['Continue'], noLink: true,
+      });
+    },
+  );
+  browserSettings = await browserSettingsStore.get();
   browserDataStore = await openRecoverableBrowserDataStore(
     join(userDataPath, 'browser-data.json'),
     join(userDataPath, 'browser-data-recovery.json'),
@@ -707,9 +731,9 @@ if (!hasSingleInstanceLock) {
   registerDownloadHandling();
   registerIpc();
   createWindow();
-  void createTab(HOME_URL);
+  void createTab();
   startupComplete = true;
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(HOME_URL); } });
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(); } });
   });
 }
 
