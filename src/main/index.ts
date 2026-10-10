@@ -19,6 +19,7 @@ const DATA_PANEL_HEIGHT = 360;
 let overlayPanelHeight = 0;
 const HOME_URL = 'https://www.google.com/';
 let mainWindow: BrowserWindow | null = null;
+let startupComplete = false;
 let browserSession: Electron.Session;
 let activeTabId: string | null = null;
 const tabOrder: string[] = [];
@@ -550,7 +551,24 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => { layoutViews(); publishState(); });
 }
 
-app.whenReady().then(async () => {
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      // The initial ready handler creates the first window; avoid racing it.
+      if (!startupComplete) return;
+      createWindow();
+      void createTab(HOME_URL);
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData');
   browserDataStore = new BrowserDataStore(join(userDataPath, 'browser-data.json'));
   const primaryDownloadHistoryPath = join(userDataPath, 'download-history.json');
@@ -590,7 +608,9 @@ app.whenReady().then(async () => {
   registerIpc();
   createWindow();
   void createTab(HOME_URL);
+  startupComplete = true;
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(HOME_URL); } });
-});
+  });
+}
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

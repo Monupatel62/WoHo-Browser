@@ -31,6 +31,8 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 - [Cross-feature acceptance matrix](docs/cross-feature-acceptance-matrix.md)
 
 ## Security and privacy
+
+The app enforces a single running instance to prevent concurrent processes from overwriting the same local profile JSON stores; a second launch focuses the existing window.
 - [Security model](docs/security-model.md)
 - [Threat model](docs/threat-model.md)
 - [IPC contract](docs/ipc-contract.md)
