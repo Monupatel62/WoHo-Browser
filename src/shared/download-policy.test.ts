@@ -38,6 +38,16 @@ describe('safeDownloadFilename', () => {
     expect(safeDownloadFilename('normal-CON.txt')).toBe('normal-CON.txt');
   });
 
+  it('normalizes Unicode and strips bidirectional control characters that can spoof extensions', () => {
+    expect(safeDownloadFilename('cafe\u0301.txt')).toBe('café.txt');
+    expect(safeDownloadFilename('invoice\u202Egpj.exe')).toBe('invoicegpj.exe');
+    expect(safeDownloadFilename('report\u2066fdp\u2069.exe')).toBe('reportfdp.exe');
+  });
+
+  it('bounds normalization work for excessively long server-provided names', () => {
+    expect(safeDownloadFilename('x'.repeat(100_000))).toHaveLength(255);
+  });
+
   it('provides a fallback for empty names and bounds long names', () => {
     expect(safeDownloadFilename('...')).toBe('download');
     expect(safeDownloadFilename('x'.repeat(500))).toHaveLength(255);

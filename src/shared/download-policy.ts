@@ -16,7 +16,12 @@ export function safeDownloadUrl(value: string): string | null {
 
 /** Strip path components and Windows-invalid characters from a suggested download name. */
 export function safeDownloadFilename(value: string): string {
-  const leaf = value.split('/').pop()?.split(String.fromCharCode(92)).pop() ?? '';
+  const lastSeparator = Math.max(value.lastIndexOf('/'), value.lastIndexOf(String.fromCharCode(92)));
+  // Keep normalization work bounded. The returned filename is limited to 255
+  // code units, so an excessive server-provided suffix is never needed.
+  const leaf = value.slice(lastSeparator + 1).slice(0, 1024)
+    .normalize('NFC')
+    .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u206F]/g, '');
   const forbidden = '<>:' + String.fromCharCode(34) + '/\\|?*';
   let safe = [...leaf]
     .map((character) => character < ' ' || forbidden.includes(character) ? '_' : character)
