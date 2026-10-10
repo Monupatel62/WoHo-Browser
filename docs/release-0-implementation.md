@@ -7,7 +7,7 @@
 - Electron desktop shell with React/TypeScript browser chrome.
 - Electron `WebContentsView` per tab using a dedicated browser session.
 - Address bar with HTTPS-by-default bare hostnames and Google search fallback.
-- Back, forward, reload, open tab, close tab, and select tab controls.
+- Back, forward, reload/stop, open tab, close tab, and select tab controls, including Ctrl+R and Escape shortcuts.
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
 - HTTP/HTTPS-only navigation targets and denied popup windows.
