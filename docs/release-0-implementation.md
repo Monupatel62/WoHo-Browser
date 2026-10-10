@@ -13,6 +13,7 @@
 - HTTP/HTTPS-only navigation targets, denied popups, and deny-by-default site permissions.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Bookmark add/remove/list UI and duplicate-URL handling.
+- User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: Save dialog per download, progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
 - Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
 - Chronological history UI, navigation from history, and clear-all history.
