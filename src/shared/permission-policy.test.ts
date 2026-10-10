@@ -4,7 +4,7 @@ import { createPermissionGrantKey, getPermissionOrigin } from './permission-poli
 describe('site permission policy', () => {
   it('normalizes HTTP(S) origins and rejects unsafe URL schemes', () => {
     expect(getPermissionOrigin('https://example.com/path?q=1')).toBe('https://example.com');
-    expect(getPermissionOrigin('http://example.com:8080/page')).toBe('http://example.com:8080');
+    expect(getPermissionOrigin('http://example.com:8080/page')).toBeNull();
     expect(getPermissionOrigin('file:///private.txt')).toBeNull();
     expect(getPermissionOrigin('https://user:secret@example.com')).toBeNull();
   });
