@@ -509,6 +509,13 @@ function registerIpc(): void {
     if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid history ID.');
     return browserDataStore.removeHistory(id);
   });
+  handle('browser:remove-history-range', (_event, startAt: unknown, endAt: unknown) => {
+    if (typeof startAt !== 'string' || startAt.length > 64 ||
+        typeof endAt !== 'string' || endAt.length > 64) {
+      throw new Error('Invalid history date range.');
+    }
+    return browserDataStore.removeHistoryRange(startAt, endAt);
+  });
   handle('browser:clear-site-data', async () => {
     await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
     permissionDecisions(browserSession).clear();
