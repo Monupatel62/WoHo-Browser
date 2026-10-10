@@ -484,6 +484,14 @@ function registerIpc(): void {
     }
     return browserDataStore.addBookmark(title, url);
   });
+  handle('browser:update-bookmark', (_event, id: unknown, title: unknown, url: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100 ||
+        typeof title !== 'string' || title.length > 512 ||
+        typeof url !== 'string' || url.length > 4096) {
+      throw new Error('Invalid bookmark payload.');
+    }
+    return browserDataStore.updateBookmark(id, title, url);
+  });
   handle('browser:remove-bookmark', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid bookmark ID.');
     return browserDataStore.removeBookmark(id);
