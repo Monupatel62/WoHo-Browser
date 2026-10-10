@@ -2,9 +2,10 @@ import { stat } from 'node:fs/promises';
 import { atomicWriteFile } from './browser-data';
 import { readFileBounded } from './bounded-file-read';
 import { isSafeWebUrl } from '../shared/navigation';
+import { MAX_RESTORED_TABS } from '../shared/session-policy';
 
 const SESSION_VERSION = 1;
-const MAX_SESSION_TABS = 50;
+const MAX_SESSION_TABS = MAX_RESTORED_TABS;
 const MAX_SESSION_FILE_BYTES = 256 * 1024;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
