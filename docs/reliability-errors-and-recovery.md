@@ -1,12 +1,15 @@
 # Reliability, Error States, and Recovery Specification
 
-**Status:** Partially implemented. Renderer-process crashes are shown in the affected tab with a user-triggered reload action. Optional normal-tab URL restore is implemented and off by default; full app-crash/Windows runtime verification and network/TLS error UX remain outstanding.
+**Status:** Partially implemented. Renderer-process crashes and main-frame navigation failures now produce trusted browser-chrome feedback with a user-triggered reload action. Common DNS, offline, timeout, refused-connection, and certificate failures receive safe messages; user-cancelled navigations are ignored. Optional normal-tab URL restore is implemented and off by default. Full Windows runtime verification remains outstanding.
 
 ## Reliability goal
 Fail visibly and recover safely rather than hang silently, lose data, or weaken security. Quantitative budgets are defined in the performance document and must be measured on declared hardware.
 
 ## Error categories
 Define user-facing behavior for offline/network unavailable, DNS failure, connection refused/reset/timeout, TLS failure, unsupported scheme, blocked popup/permission/external protocol, interrupted download, destination unavailable, disk full, AI provider outage/invalid credential/quota/timeout/cancel, storage lock/corruption/migration failure, renderer crash, app startup failure, and updater failure. Explain what happened and the next safe action without exposing secrets, raw stack traces, sensitive URLs, or internal paths.
+
+## Navigation failure feedback
+Implemented in code: main-frame navigation failures are surfaced in browser chrome with a reload action. Aborted navigations are ignored; certificate/TLS failures explicitly state that the connection was blocked and do not offer a bypass. Unknown failures use a generic message and do not display raw URLs, stack traces, or internal paths. The underlying Chromium error page may still be visible in the content view. Windows/Electron runtime checks remain required.
 
 ## Retry rules
 Retries must be bounded and understandable. Do not automatically repeat form submissions, paid AI requests, file writes, or external launches. Cancel stale retries when the tab/request changes. Backoff must prevent request storms.
