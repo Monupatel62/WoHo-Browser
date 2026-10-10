@@ -88,7 +88,7 @@ describe('BrowserDataStore', () => {
     await store.addBookmark('Second', 'https://example.com/two');
     await expect(store.updateBookmark(first.id, 'Changed', 'https://example.com/two')).rejects.toThrow(/already uses this URL/);
     await expect(store.updateBookmark(first.id, 'Changed', 'javascript:alert(1)')).rejects.toThrow(/HTTP and HTTPS/);
-    expect(await store.listBookmarks()).toMatchObject([{ id: first.id, title: 'First', url: 'https://example.com/one' }]);
+    expect((await store.listBookmarks()).find((item) => item.id === first.id)).toMatchObject({ id: first.id, title: 'First', url: 'https://example.com/one' });
   });
 
   it('rejects edits for missing bookmark IDs', async () => {
