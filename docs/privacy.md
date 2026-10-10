@@ -18,6 +18,7 @@
 | Bookmarks | Stored locally | Export/import/delete |
 | History | Stored locally; query strings and URL fragments are removed to avoid retaining common token-bearing URL components | Clear history and retention settings |
 | Download records | Up to 100 normal-profile records stored locally; source query strings and fragments are removed; selected save paths are retained | Download records are separate from files; private downloads are excluded from the normal list; downloaded files remain until the user deletes them |
+| Saved session URLs | Off by default; when enabled, up to 50 normal-tab HTTP(S) URLs are stored locally, including query values needed to reopen pages | Explicit opt-in; private tabs are excluded; disabling the setting clears the saved session list; saved URLs may contain sensitive query values |
 | AI prompt and selected page context | Sent only after user action when remote AI is used | Preview, cancel, provider disclosure |
 | AI provider credentials | Secure local storage where supported | View provider configuration and remove key |
 | Crash diagnostics | Off unless consent is obtained | Opt in/out and explain fields |
