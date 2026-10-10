@@ -50,3 +50,9 @@
 .permission-entry span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#91a0bb}
 .permission-entry small{font-size:11px}
 .permission-allowed{color:#8ee0bb}.permission-blocked{color:#ffb3bd}
+
+.private-tab-button{flex:none;border:1px solid #65558f;border-radius:9px;background:#29223e;color:#e1d5ff;cursor:pointer;font:inherit;font-size:12px;padding:7px 9px}
+.private-tab-button:hover{background:#3a2d57}
+.private-badge{font-size:10px!important;color:#e1d5ff;background:#34284e;border:1px solid #65558f;padding:3px 6px;border-radius:6px;margin-left:5px}
+.tab:has(.tab-select[aria-selected="true"]){border-bottom-color:#9d83ff}
+@media(max-width:850px){.private-tab-button{padding:6px;font-size:10px}}

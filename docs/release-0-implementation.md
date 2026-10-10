@@ -13,6 +13,7 @@
 - HTTP/HTTPS-only navigation targets and denied popups. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
+- Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
 - Bookmark add/remove/list UI and duplicate-URL handling.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: Save dialog per download, progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
@@ -28,7 +29,7 @@
 
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
-- No sync, private browsing, extension system, Safe Browsing integration, updater, or signed installer.
+- No sync, extension system, Safe Browsing integration, updater, or signed installer.
 - Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.
 - Download history is in-memory only; no retry, remove-from-list, or open-after-completion controls yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
@@ -41,6 +42,7 @@ The first milestone uses a versioned JSON document in Electron's user-data direc
 
 - CI and CodeQL must pass for the exact pull-request head.
 - Permission UI behavior has CI coverage through build/typecheck and permission-origin policy tests, but end-to-end native permission prompt/revocation behavior still needs Windows runtime testing.
+- Private browsing has a unit test for the history-persistence policy; Electron session isolation, on-disk cleanup, private downloads, and Windows runtime behavior still require manual verification.
 - Inspect the generated unsigned Windows installer artifact; successful packaging is not proof of a clean install or correct runtime behavior.
 - Launch on Windows and test initial navigation, tab switching/closing, resize, history navigation, bookmark persistence after restart, history clearing after restart, popup denial, and unsupported schemes.
 - Add IPC negative tests and automated main-process navigation/permission tests.

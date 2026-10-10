@@ -6,6 +6,7 @@ import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
+import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -21,7 +22,61 @@ let browserDataStore: BrowserDataStore;
 const downloads = new Map<string, DownloadRecord>();
 const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
-const sessionPermissionDecisions = new Map<string, boolean>();
+const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
+const privateTabIds = new Set<string>();
+
+function permissionDecisions(targetSession: Electron.Session): Map<string, boolean> {
+  let decisions = permissionDecisionsBySession.get(targetSession);
+  if (!decisions) { decisions = new Map<string, boolean>(); permissionDecisionsBySession.set(targetSession, decisions); }
+  return decisions;
+}
+
+function configurePermissionHandlers(targetSession: Electron.Session): void {
+  targetSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    const origin = getPermissionOrigin(details.requestingUrl || webContents.getURL());
+    const key = origin ? createPermissionGrantKey(origin, permission) : null;
+    if (!key || !origin || !mainWindow || mainWindow.isDestroyed()) { callback(false); return; }
+    const decisions = permissionDecisions(targetSession);
+    const existingDecision = decisions.get(key);
+    if (existingDecision !== undefined) { callback(existingDecision); return; }
+    const label = PERMISSION_LABELS[permission];
+    if (!label) { callback(false); return; }
+    void dialog.showMessageBox(mainWindow, {
+      type: 'question', title: 'Website permission request',
+      message: origin + ' wants access to ' + label + '.',
+      detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
+      buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
+    }).then(({ response }) => {
+      const allowed = response === 0;
+      decisions.set(key, allowed);
+      callback(allowed);
+    }).catch(() => callback(false));
+  });
+  targetSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    if (!webContents) return false;
+    const origin = getPermissionOrigin(requestingOrigin || webContents.getURL());
+    const key = origin ? createPermissionGrantKey(origin, permission) : null;
+    return key ? permissionDecisions(targetSession).get(key) === true : false;
+  });
+}
+
+function registerPrivateDownloadHandling(privateSession: Electron.Session): void {
+  privateSession.on('will-download', (event, item) => {
+    if (!safeDownloadUrl(item.getURL())) { event.preventDefault(); return; }
+    void (async () => {
+      if (!mainWindow || mainWindow.isDestroyed()) { item.cancel(); return; }
+      const choice = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save private download', defaultPath: safeDownloadFilename(item.getFilename()), buttonLabel: 'Save',
+        message: 'Private downloads are saved to disk and will remain after this private tab closes.',
+      });
+      if (choice.canceled || !choice.filePath) { item.cancel(); return; }
+      item.setSavePath(choice.filePath);
+    })().catch((error: unknown) => {
+      console.error('Could not prepare private download:', error instanceof Error ? error.message : 'Unknown download error');
+      item.cancel();
+    });
+  });
+}
 const PERMISSION_LABELS: Record<string, string> = {
   media: 'camera or microphone',
   geolocation: 'your location',
@@ -148,6 +203,7 @@ function getState(): BrowserState {
       canGoBack: wc.navigationHistory.canGoBack(),
       canGoForward: wc.navigationHistory.canGoForward(),
       isActive: id === activeTabId,
+      isPrivate: privateTabIds.has(id),
     }];
   });
   return { tabs, activeTabId };
@@ -176,6 +232,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   const changed = () => { layoutViews(); publishState(); };
   wc.on('did-navigate', (_event, url) => {
     changed();
+    if (!shouldPersistBrowsingHistory(privateTabIds.has(id))) return;
     void browserDataStore.recordVisit(url, wc.getTitle()).catch((error: unknown) => {
       console.error('Could not persist browser history:', error instanceof Error ? error.message : 'Unknown storage error');
     });
@@ -207,6 +264,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   wc.on('destroyed', () => {
     views.delete(id);
+    privateTabIds.delete(id);
     const index = tabOrder.indexOf(id);
     if (index >= 0) tabOrder.splice(index, 1);
     if (activeTabId === id) activeTabId = tabOrder[Math.max(0, index - 1)] ?? tabOrder[0] ?? null;
@@ -215,12 +273,18 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   });
 }
 
-async function createTab(target = HOME_URL): Promise<void> {
+async function createTab(target = HOME_URL, isPrivate = false): Promise<void> {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const id = randomUUID();
+  const tabSession = isPrivate ? session.fromPartition('woho-private-' + randomUUID()) : browserSession;
+  if (isPrivate) {
+    privateTabIds.add(id);
+    configurePermissionHandlers(tabSession);
+    registerPrivateDownloadHandling(tabSession);
+  }
   const view = new WebContentsView({
     webPreferences: {
-      session: browserSession,
+      session: tabSession,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -270,6 +334,10 @@ function registerIpc(): void {
     if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
     return createTab(typeof url === 'string' ? url : HOME_URL);
   });
+  handle('browser:open-private-tab', (_event, url?: unknown) => {
+    if (url !== undefined && (typeof url !== 'string' || url.length > 4096)) throw new Error('Invalid URL payload.');
+    return createTab(typeof url === 'string' ? url : HOME_URL, true);
+  });
   handle('browser:select-tab', (_event, id: unknown) => {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
     activeTabId = id; layoutViews(); publishState();
@@ -314,9 +382,9 @@ function registerIpc(): void {
   handle('browser:clear-history', () => browserDataStore.clearHistory());
   handle('browser:clear-site-data', async () => {
     await Promise.all([browserSession.clearStorageData(), browserSession.clearCache()]);
-    sessionPermissionDecisions.clear();
+    permissionDecisions(browserSession).clear();
   });
-  handle('browser:list-site-permissions', () => [...sessionPermissionDecisions.entries()].map(([key, allowed]) => {
+  handle('browser:list-site-permissions', () => [...permissionDecisions(browserSession).entries()].map(([key, allowed]) => {
     const separator = key.lastIndexOf('::');
     return { origin: key.slice(0, separator), permission: key.slice(separator + 2), allowed };
   }).sort((a, b) => a.origin.localeCompare(b.origin) || a.permission.localeCompare(b.permission)));
@@ -325,14 +393,14 @@ function registerIpc(): void {
     const origin = getPermissionOrigin(rawOrigin);
     const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
     if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
-    sessionPermissionDecisions.set(key, false);
+    permissionDecisions(browserSession).set(key, false);
   });
   handle('browser:forget-site-permission', (_event, rawOrigin: unknown, rawPermission: unknown) => {
     if (typeof rawOrigin !== 'string' || typeof rawPermission !== 'string') throw new Error('Invalid site permission request.');
     const origin = getPermissionOrigin(rawOrigin);
     const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
     if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
-    sessionPermissionDecisions.delete(key);
+    permissionDecisions(browserSession).delete(key);
   });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:pause-download', (_event, id: unknown) => {
@@ -411,35 +479,8 @@ function createWindow(): void {
 app.whenReady().then(() => {
   browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
   browserSession = session.fromPartition('persist:woho-browser');
-  browserSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    const origin = getPermissionOrigin(details.requestingUrl || webContents.getURL());
-    const key = origin ? createPermissionGrantKey(origin, permission) : null;
-    if (!key || !origin || !mainWindow || mainWindow.isDestroyed()) { callback(false); return; }
-    const existingDecision = sessionPermissionDecisions.get(key);
-    if (existingDecision !== undefined) { callback(existingDecision); return; }
-    const label = PERMISSION_LABELS[permission];
-    void dialog.showMessageBox(mainWindow, {
-      type: 'question',
-      title: 'Website permission request',
-      message: origin + ' wants access to ' + label + '.',
-      detail: 'Allow only if you trust this website. Your decision lasts until WoHo Browser closes or you clear site data.',
-      buttons: ['Allow for this session', 'Block'],
-      defaultId: 1,
-      cancelId: 1,
-      noLink: true,
-    }).then(({ response }) => {
-      const allowed = response === 0;
-      sessionPermissionDecisions.set(key, allowed);
-      callback(allowed);
-    }).catch(() => callback(false));
-  });
+  configurePermissionHandlers(browserSession);
   registerDownloadHandling();
-  browserSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    if (!webContents) return false;
-    const origin = getPermissionOrigin(requestingOrigin || webContents.getURL());
-    const key = origin ? createPermissionGrantKey(origin, permission) : null;
-    return key ? sessionPermissionDecisions.get(key) === true : false;
-  });
   registerIpc();
   createWindow();
   void createTab(HOME_URL);
