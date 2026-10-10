@@ -280,6 +280,30 @@ export default function App() {
     }
   }
 
+  async function exportSettings() {
+    if (!window.confirm('Export browser settings? The file includes your configured home-page URL, which may contain sensitive query values.')) return;
+    setError(''); setNotice('');
+    try {
+      if (await window.wohoBrowser.exportSettings()) setNotice('Browser settings exported.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not export browser settings.');
+    }
+  }
+
+  async function importSettings() {
+    if (!window.confirm('Import settings from a JSON file? This replaces the current search provider, home page, and session-restore preference.')) return;
+    setError(''); setNotice('');
+    try {
+      const imported = await window.wohoBrowser.importSettings();
+      if (!imported) return;
+      setSettings(imported);
+      setSettingsDraft(imported);
+      setNotice('Browser settings imported.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not import browser settings.');
+    }
+  }
+
   async function saveSettings() {
     setError(''); setNotice('');
     try {
@@ -444,6 +468,7 @@ export default function App() {
         <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : panel === 'settings' ? 'Settings' : 'Find in page'}</strong>
         <div>
           {panel === 'bookmarks' && <><button className="panel-action" onClick={() => void importBookmarks()}>Import</button><button className="panel-action" onClick={() => void exportBookmarks()}>Export</button></>}
+          {panel === 'settings' && <><button className="panel-action" onClick={() => void importSettings()}>Import</button><button className="panel-action" onClick={() => void exportSettings()}>Export</button></>}
           {panel === 'history' && <><button className="panel-action" onClick={() => void deleteSelectedHistory()} disabled={selectedHistoryIds.length === 0}>Delete selected ({selectedHistoryIds.length})</button><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear all site data</button></>}
           {panel === 'downloads' && <button className="panel-action" onClick={() => void clearFinishedDownloads()} disabled={!downloads.some((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'interrupted')}>Clear finished</button>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
