@@ -20,7 +20,7 @@ export function safeDownloadFilename(value: string): string {
     .join('')
     .replace(/[. ]+$/g, '')
     .trim();
-  const deviceName = (safe.split('.')[0] ?? '').toUpperCase();
+  const deviceName = (safe.split('.')[0] ?? '').replace(/[. ]+$/g, '').toUpperCase();
   if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]|COM[¹²³]|LPT[¹²³])$/.test(deviceName)) safe = '_' + safe;
   return (safe || 'download').slice(0, 255);
 }
