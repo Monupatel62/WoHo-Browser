@@ -30,7 +30,7 @@ const MAX_BOOKMARKS = 500;
 const MAX_HISTORY = 500;
 const MAX_TITLE_LENGTH = 512;
 const MAX_URL_LENGTH = 2048;
-const MAX_BOOKMARK_IMPORT_BYTES = 1024 * 1024;
+export const MAX_BOOKMARK_IMPORT_BYTES = 1024 * 1024;
 
 function safeTitle(value: string): string {
   return value.trim().slice(0, MAX_TITLE_LENGTH) || 'Untitled';
