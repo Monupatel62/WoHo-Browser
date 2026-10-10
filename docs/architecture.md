@@ -9,8 +9,8 @@
 - Make navigation, sessions, downloads, storage, and AI independently testable.
 - Avoid building a custom Chromium fork until requirements justify its maintenance cost.
 
-## 2. Proposed technology decision
-Evaluate Electron + TypeScript + React for the first prototype. Electron bundles Chromium-based rendering but is not the same as maintaining a standalone Chromium browser fork. Before final selection, compare Electron, CEF, and custom Chromium against packaging, extension compatibility, update burden, security controls, licensing, and available engineering capacity.
+## 2. Technology decision status
+Electron + TypeScript + React is selected for the Release 0 feasibility prototype only, as recorded in ADR-0001. Electron bundles Chromium-based rendering but is not the same as maintaining a standalone Chromium browser fork. This is not a production commitment: the R0 spike must verify the required security controls, packaging, licensing, navigation behavior, and maintenance feasibility. Reopen alternatives only if the spike identifies a material blocker.
 
 ## 3. Logical components
 - **Desktop shell:** application lifecycle, windows, menus, platform integration, update orchestration.
@@ -59,7 +59,7 @@ For each major choice record: context, requirements, options considered, decisio
 
 
 ## 10. Concrete process and view model (review update)
-The Release 0 spike will use Electron's supported WebContentsView API for website tabs, with browser chrome rendered separately. This is a prototype decision, not proof of complete browser parity. Do not use deprecated BrowserView or the webview tag without a reviewed exception.
+The Release 0 spike will evaluate and prototype Electron's supported WebContentsView API for website tabs, with browser chrome rendered separately. This is a prototype implementation direction, not proof of complete browser parity or a final production commitment. Do not use deprecated BrowserView or the webview tag without a reviewed exception.
 
 ### Process boundaries
 - **Main process:** lifecycle, trusted window creation, navigation policy, permission mediation, downloads, updates, and narrowly scoped IPC handlers.
