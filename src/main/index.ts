@@ -80,14 +80,16 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
     if (existingDecision !== undefined) { callback(existingDecision); return; }
     const label = PERMISSION_LABELS[permission];
     if (!label) { callback(false); return; }
+    const promptWindow = mainWindow;
     const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, async () => {
-      const { response } = await dialog.showMessageBox(mainWindow!, {
+      if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+      const { response } = await dialog.showMessageBox(promptWindow, {
         type: 'question', title: 'Website permission request',
         message: origin + ' wants access to ' + label + '.',
         detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
         buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
       });
-      if (disposedPrivateSessions.has(targetSession)) return false;
+      if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
       const allowed = response === 0;
       decisions.set(key, allowed);
       return allowed;
