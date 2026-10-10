@@ -1,6 +1,7 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, session, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { BrowserDataStore } from './browser-data';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import type { BrowserState, BrowserTabState } from '../shared/browser-types';
 
@@ -11,6 +12,7 @@ let browserSession: Electron.Session;
 let activeTabId: string | null = null;
 const tabOrder: string[] = [];
 const views = new Map<string, WebContentsView>();
+let browserDataStore: BrowserDataStore;
 
 function assertTrustedChrome(event: IpcMainInvokeEvent): void {
   if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== event.sender.mainFrame) {
@@ -70,7 +72,12 @@ function layoutViews(): void {
 function wireTabEvents(id: string, view: WebContentsView): void {
   const wc = view.webContents;
   const changed = () => { layoutViews(); publishState(); };
-  wc.on('did-navigate', changed);
+  wc.on('did-navigate', (_event, url) => {
+    changed();
+    void browserDataStore.recordVisit(url, wc.getTitle()).catch((error: unknown) => {
+      console.error('Could not persist browser history:', error instanceof Error ? error.message : 'Unknown storage error');
+    });
+  });
   wc.on('did-navigate-in-page', changed);
   wc.on('page-title-updated', changed);
   wc.on('did-start-loading', changed);
@@ -164,6 +171,19 @@ function registerIpc(): void {
   handle('browser:forward', () => { const view = activeView(); if (view?.webContents.navigationHistory.canGoForward()) view.webContents.navigationHistory.goForward(); });
   handle('browser:reload', () => activeView()?.webContents.reload());
   handle('browser:stop', () => activeView()?.webContents.stop());
+  handle('browser:list-bookmarks', () => browserDataStore.listBookmarks());
+  handle('browser:add-bookmark', (_event, title: unknown, url: unknown) => {
+    if (typeof title !== 'string' || typeof url !== 'string' || title.length > 512 || url.length > 4096) {
+      throw new Error('Invalid bookmark payload.');
+    }
+    return browserDataStore.addBookmark(title, url);
+  });
+  handle('browser:remove-bookmark', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid bookmark ID.');
+    return browserDataStore.removeBookmark(id);
+  });
+  handle('browser:list-history', () => browserDataStore.listHistory());
+  handle('browser:clear-history', () => browserDataStore.clearHistory());
 }
 
 function createWindow(): void {
@@ -210,6 +230,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
   browserSession = session.fromPartition('persist:woho-browser');
   browserSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   browserSession.setPermissionCheckHandler(() => false);
