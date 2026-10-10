@@ -14,7 +14,7 @@ import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
-import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
+import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, MAX_SETTINGS_IMPORT_BYTES, parseBrowserSettingsImport, type BrowserSettings } from '../shared/browser-settings';
 import { selectRestorableTabUrls } from '../shared/session-policy';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
@@ -476,6 +476,41 @@ function registerIpc(): void {
   handle('browser:reset-settings', async () => {
     browserSettings = await browserSettingsStore.reset();
     if (browserSessionStore) void browserSessionStore.save([]).catch(() => undefined);
+    return { ...browserSettings };
+  });
+  handle('browser:export-settings', async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Browser window is unavailable.');
+    const choice = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export browser settings',
+      defaultPath: 'WoHo-Browser-Settings.json',
+      buttonLabel: 'Export',
+      filters: [{ name: 'WoHo Browser Settings', extensions: ['json'] }],
+    });
+    if (choice.canceled || !choice.filePath) return false;
+    const payload = { version: 2, settings: await browserSettingsStore.get() };
+    await atomicWriteFile(choice.filePath, JSON.stringify(payload, null, 2) + '\\n');
+    return true;
+  });
+  handle('browser:import-settings', async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Browser window is unavailable.');
+    const choice = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import browser settings',
+      properties: ['openFile'],
+      filters: [{ name: 'WoHo Browser Settings', extensions: ['json'] }],
+    });
+    if (choice.canceled || !choice.filePaths[0]) return null;
+    let raw: Buffer;
+    try {
+      raw = await readFileBounded(choice.filePaths[0], MAX_SETTINGS_IMPORT_BYTES);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('byte limit')) {
+        throw new Error('Settings import exceeds the 16 KiB limit.');
+      }
+      throw error;
+    }
+    browserSettings = await browserSettingsStore.update(parseBrowserSettingsImport(raw.toString('utf8')));
+    if (browserSettings.restoreSession) persistSessionTabs();
+    else if (browserSessionStore) void browserSessionStore.save([]).catch(() => undefined);
     return { ...browserSettings };
   });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
