@@ -1,6 +1,6 @@
 # WoHo Browser Privacy Requirements
 
-**Status:** Proposed policy requirements. Publish a user-facing privacy notice before public release.
+**Status:** Proposed policy requirements. No AI features or remote AI processing are implemented in the current browser prototype. Publish a user-facing privacy notice before public release.
 
 ## Principles
 - Collect the least data needed for the feature.
@@ -17,14 +17,14 @@
 | Settings | Stored locally | Reset/export where practical |
 | Bookmarks | Stored locally | Export/import/delete |
 | History | Stored locally | Clear history and retention settings |
-| Download records | Stored locally | Clear records; files remain until user deletes them |
+| Download records | In-memory for the current app session | Records disappear when the app exits; downloaded files remain until the user deletes them |
 | AI prompt and selected page context | Sent only after user action when remote AI is used | Preview, cancel, provider disclosure |
 | AI provider credentials | Secure local storage where supported | View provider configuration and remove key |
 | Crash diagnostics | Off unless consent is obtained | Opt in/out and explain fields |
 | Sync data | Not collected until sync is designed and launched | Account, encryption, export, deletion controls |
 
-## AI disclosure
-Before remote processing, identify the provider, show the context being sent, and explain that provider policies may apply. Do not include cookies, passwords, hidden form fields, or unrelated browsing history in AI context. Provide local-model options only when supported and tested.
+## Future AI disclosure
+AI integration is out of scope and absent from this prototype. If a future version adds remote AI, identify the provider before processing, show the context being sent, and explain applicable provider policies. Never include cookies, passwords, hidden form fields, or unrelated browsing history in AI context. Do not advertise local-model options unless they are supported and tested.
 
 ## Private browsing
 Document precisely which local records are not retained and which data may still be visible to websites, networks, employers, DNS resolvers, or internet providers. Do not promise protection against device monitoring or network observation.

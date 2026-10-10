@@ -304,6 +304,9 @@ function registerIpc(): void {
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
+  handle('browser:clear-site-data', async () => {
+    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache()]);
+  });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
