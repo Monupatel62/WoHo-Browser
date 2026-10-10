@@ -81,3 +81,47 @@ See docs/performance-and-compatibility-budgets.md. The listed numbers are target
 
 ## Scope alignment
 Master-plan release names map to R0/R1/R2/R3/R4 above. Installer and default-deny permission policy are R0/R1 requirements; private browsing belongs in R1. A feature may be deferred only by recording a reason and updating the relevant release decision.
+
+
+## Detailed feature acceptance IDs
+
+These additional IDs connect the feature specifications to testable behavior. They remain proposed until release scope is approved.
+
+### R1 — Windows MVP detail
+- **R1-009 Address/search:** URL-versus-query classification is deterministic; malformed schemes cannot trigger local-file or external-app access.
+- **R1-010 Navigation safety:** redirects are revalidated; unexpected popups and external protocols are denied or safely mediated.
+- **R1-011 TLS:** certificate failures use browser-controlled UI and are never silently bypassed.
+- **R1-012 Tab lifecycle:** loading, failure, close, crash, and safe reopen states are visible and tested.
+- **R1-013 Bookmark CRUD:** add/edit/move/delete/search and folder behavior persist across restart.
+- **R1-014 History deletion:** one-item, range, and full clear are verified against the actual data store and suggestion cache.
+- **R1-015 Download safety:** destination, source, progress, cancellation, collision, failure, and partial-file cleanup are handled; downloaded files never auto-execute.
+- **R1-016 Site permissions:** request and check handlers are installed; unknown requests default-deny; grants can be reviewed and revoked.
+- **R1-017 Private session:** cookies, storage, cache, history, suggestions, permissions, and session restore are isolated according to documented engine guarantees.
+- **R1-018 Settings:** values are validated, scoped, migrated, and reset according to documented semantics.
+- **R1-019 Error recovery:** offline, DNS, timeout, TLS, storage, download, and renderer-crash states offer safe next steps.
+- **R1-020 Accessibility:** all core browser-chrome actions are keyboard reachable with visible focus and accessible names/states.
+- **R1-021 Data portability:** supported imports reject malformed/oversized files and report invalid records without crashing.
+- **R1-022 Diagnostics:** default diagnostics exclude credentials, page contents, prompts, cookies, history, and filenames.
+- **R1-023 Update integrity:** production update packages and metadata are verified before installation; invalid signatures fail closed.
+- **R1-024 Runtime maintenance:** release process checks supported Electron/Chromium runtime status and relevant security advisories.
+- **R1-025 File origin marking:** Windows download behavior documents and tests Mark-of-the-Web preservation where supported.
+
+### R2 — AI assistant detail
+- **R2-006 Context minimization:** only explicitly selected and necessary page context is included in a request.
+- **R2-007 Remote consent:** before remote submission, users can inspect context and identify the provider/data destination.
+- **R2-008 Provider transparency:** provider/model, retention limitations, and potential usage/cost are disclosed.
+- **R2-009 Safe output:** model responses are rendered inertly; remote Markdown images and active HTML are disabled by default.
+- **R2-010 Prompt-injection resistance:** page content cannot override policy, reveal secrets, or authorize a tool action.
+- **R2-011 Cancellation and limits:** timeout, cancellation, input/output size, and provider failure are tested.
+- **R2-012 Secret handling:** provider credentials are not exposed to website renderers, telemetry, logs, or diagnostic exports.
+- **R2-013 Private-session isolation:** AI context and conversation storage follow the documented private-session policy.
+
+### R3 — Productivity and privacy (gated)
+- **R3-004 Workspaces:** group/workspace create, rename, switch, move, and delete semantics are documented and tested before release.
+- **R3-005 Reader view:** extracted content preserves meaningful structure and discloses incomplete extraction.
+- **R3-006 Tracking protection:** filter source, update cadence, exception behavior, privacy impact, and maintenance ownership are approved before enabling.
+- **R3-007 Import/export:** supported formats, limits, data categories, and deletion implications are documented.
+- **R3-008 Feature gating:** extensions, sync, password management, autofill, enterprise policy, and DRM remain disabled/unpromised until separate ADRs and security reviews approve them.
+
+### Cross-cutting verification rule
+For every ID, the implementation PR must name the relevant test(s), attach or link CI evidence, note supported platform/runtime versions, and record known limitations. Mark a requirement **Verified** only after evidence is checked; documentation or a passing lint check alone is insufficient.
