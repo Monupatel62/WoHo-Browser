@@ -84,4 +84,28 @@ describe('BrowserDataStore', () => {
     expect(await readFile(file, 'utf8')).not.toContain('access_token=secret');
   });
 
+  it('rejects duplicate history IDs without overwriting the source file', async () => {
+    const { store, file } = await createStore();
+    const entry = {
+      id: 'duplicate-id', title: 'Example', url: 'https://example.com/',
+      visitedAt: '2026-10-10T10:00:00.000Z',
+    };
+    const raw = JSON.stringify({ version: 1, bookmarks: [], history: [entry, { ...entry }] });
+    await writeFile(file, raw, 'utf8');
+    await expect(store.listHistory()).rejects.toThrow(/duplicate history IDs/);
+    expect(await readFile(file, 'utf8')).toBe(raw);
+  });
+
+  it('rejects empty persisted record IDs', async () => {
+    const { store, file } = await createStore();
+    const raw = JSON.stringify({
+      version: 1,
+      bookmarks: [{ id: '', title: 'Example', url: 'https://example.com/', createdAt: '2026-10-10T10:00:00.000Z', updatedAt: '2026-10-10T10:00:00.000Z' }],
+      history: [],
+    });
+    await writeFile(file, raw, 'utf8');
+    await expect(store.listBookmarks()).rejects.toThrow(/invalid record/);
+    expect(await readFile(file, 'utf8')).toBe(raw);
+  });
+
 });
