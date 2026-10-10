@@ -12,6 +12,7 @@
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
 - HTTP/HTTPS-only navigation targets and denied popups. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
+- Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Bookmark add/remove/list UI and duplicate-URL handling.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: Save dialog per download, progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
@@ -39,6 +40,7 @@ The first milestone uses a versioned JSON document in Electron's user-data direc
 ## Verification and remaining gates
 
 - CI and CodeQL must pass for the exact pull-request head.
+- Permission UI behavior has CI coverage through build/typecheck and permission-origin policy tests, but end-to-end native permission prompt/revocation behavior still needs Windows runtime testing.
 - Inspect the generated unsigned Windows installer artifact; successful packaging is not proof of a clean install or correct runtime behavior.
 - Launch on Windows and test initial navigation, tab switching/closing, resize, history navigation, bookmark persistence after restart, history clearing after restart, popup denial, and unsupported schemes.
 - Add IPC negative tests and automated main-process navigation/permission tests.
