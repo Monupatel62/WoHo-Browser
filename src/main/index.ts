@@ -46,7 +46,7 @@ function pruneDownloadRecords(): void {
 }
 
 function registerDownloadHandling(): void {
-  browserSession.on('will-download', (event, item) => {
+  browserSession.on('will-download', (_event, item) => {
     const id = randomUUID();
     const record: DownloadRecord = {
       id,
@@ -274,21 +274,21 @@ function registerIpc(): void {
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
     const item = downloadItems.get(id);
-    if (!item || item.isDestroyed() || !item.isPaused() && downloads.get(id)?.status !== 'progressing') throw new Error('Download cannot be paused.');
+    if (!item || item.isPaused() || downloads.get(id)?.status !== 'progressing') throw new Error('Download cannot be paused.');
     item.pause();
     setDownloadStatus(id, 'paused');
   });
   handle('browser:resume-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
     const item = downloadItems.get(id);
-    if (!item || item.isDestroyed() || !item.isPaused() || !item.canResume()) throw new Error('Download cannot be resumed.');
+    if (!item || !item.isPaused() || downloads.get(id)?.status !== 'paused' || !item.canResume()) throw new Error('Download cannot be resumed.');
     item.resume();
     setDownloadStatus(id, 'progressing');
   });
   handle('browser:cancel-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
     const item = downloadItems.get(id);
-    if (!item || item.isDestroyed()) throw new Error('Download is no longer active.');
+    if (!item) throw new Error('Download is no longer active.');
     item.cancel();
     setDownloadStatus(id, 'cancelled');
   });
