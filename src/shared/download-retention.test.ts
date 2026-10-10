@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadRecord } from './browser-types';
-import { getDownloadIdsToPrune } from './download-retention';
+import { getDownloadIdsToPrune, isFinishedDownloadStatus } from './download-retention';
 
 function row(id: string, startedAt: string, status: DownloadRecord['status'] = 'completed'): DownloadRecord {
   return {
@@ -38,5 +38,15 @@ describe('getDownloadIdsToPrune', () => {
 
   it('rejects invalid limits', () => {
     expect(() => getDownloadIdsToPrune([], -1)).toThrow(/non-negative integer/);
+  });
+});
+
+describe('isFinishedDownloadStatus', () => {
+  it.each(['completed', 'cancelled', 'interrupted'] as const)('allows removal of %s records', (status) => {
+    expect(isFinishedDownloadStatus(status)).toBe(true);
+  });
+
+  it.each(['waiting', 'progressing', 'paused'] as const)('protects active %s records from removal', (status) => {
+    expect(isFinishedDownloadStatus(status)).toBe(false);
   });
 });
