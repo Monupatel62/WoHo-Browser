@@ -290,6 +290,27 @@ export class BrowserDataStore {
     return this.listHistory();
   }
 
+  async removeHistoryRange(startAt: string, endAt: string): Promise<HistoryRecord[]> {
+    await this.ensureLoaded();
+    const startDate = new Date(startAt);
+    const endDate = new Date(endAt);
+    const start = startDate.getTime();
+    const end = endDate.getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) ||
+        startDate.toISOString() !== startAt || endDate.toISOString() !== endAt || start > end) {
+      throw new Error('Invalid history date range; no history was changed.');
+    }
+    const next = this.data.history.filter((item) => {
+      const visitedAt = Date.parse(item.visitedAt);
+      return visitedAt < start || visitedAt > end;
+    });
+    if (next.length !== this.data.history.length) {
+      this.data.history = next;
+      await this.persist();
+    }
+    return this.listHistory();
+  }
+
   async clearHistory(): Promise<void> {
     await this.ensureLoaded();
     this.data.history = [];
