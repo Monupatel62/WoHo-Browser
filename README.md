@@ -7,10 +7,27 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 **Planning and specification stage.** The repository does not yet contain the actual browser implementation. All planned features remain unimplemented until code and test evidence confirm them.
 
 ## Start here
+- [Product specification index](docs/product-specification-index.md)
+- [Exhaustive feature catalog](docs/feature-catalog.md)
 - [Master product plan](docs/WOHO_BROWSER_MASTER_PLAN.md)
 - [Release 0 feasibility spike](docs/release-0-spike-plan.md)
 - [Feature requirements](docs/feature-requirements.md)
 - [Architecture](docs/architecture.md)
+
+## Detailed feature specifications
+- [Product scope and personas](docs/product-scope-and-personas.md)
+- [Window and navigation](docs/window-and-navigation.md)
+- [Address bar and search](docs/address-bar-and-search.md)
+- [Tabs and workspaces](docs/tabs-and-workspaces.md)
+- [Bookmarks, history, and sessions](docs/bookmarks-history-sessions.md)
+- [Downloads and file handling](docs/downloads-and-file-handling.md)
+- [Site permissions and private browsing](docs/site-permissions-and-private-browsing.md)
+- [Network security and content safety](docs/network-security-and-content-safety.md)
+- [AI assistant user journeys](docs/ai-assistant-user-flows.md)
+- [Settings and import/export](docs/settings-import-export.md)
+- [Reliability, errors, and recovery](docs/reliability-errors-and-recovery.md)
+- [Accessibility and localization](docs/accessibility-localization.md)
+- [Cross-feature acceptance matrix](docs/cross-feature-acceptance-matrix.md)
 
 ## Security, privacy, and AI
 - [Security model](docs/security-model.md)
