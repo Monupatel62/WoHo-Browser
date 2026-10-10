@@ -514,6 +514,19 @@ function registerIpc(): void {
     publishDownloads();
     return [...downloads.values()].map((record) => ({ ...record }));
   });
+  handle('browser:remove-download-record', async (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid download ID.');
+    const record = downloads.get(id);
+    if (!record) throw new Error('Download record no longer exists.');
+    if (record.status === 'waiting' || record.status === 'progressing' || record.status === 'paused') {
+      throw new Error('Active downloads cannot be removed from the list.');
+    }
+    downloads.delete(id);
+    downloadItems.delete(id);
+    await downloadHistoryStore.remove(id);
+    publishDownloads();
+    return [...downloads.values()].map((item) => ({ ...item }));
+  });
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
     const item = downloadItems.get(id);
