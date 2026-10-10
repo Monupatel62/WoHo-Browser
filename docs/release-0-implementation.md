@@ -12,11 +12,11 @@
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
 - HTTP/HTTPS-only navigation targets, denied popups, and deny-by-default site permissions.
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
-- Bookmark add/remove/list UI and duplicate-URL handling.
+- Bookmark add/remove/list UI and duplicate-URL handling.\n- Initial download manager: Save dialog per download, progress/status, pause/resume/cancel where supported, and reveal completed file in folder.\n- Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, and duplicate bookmark IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation and browser data persistence/validation.
+- Unit tests for navigation, browser data persistence/validation, and download URL/filename safety policy.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
@@ -25,7 +25,7 @@
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
 - No sync, private browsing, extension system, Safe Browsing integration, updater, or signed installer.
-- Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.
+- Bookmark folders, import/export, edit/reorder/search, and selective history deletion/time filters are not implemented yet.\n- Download history is in-memory only; no retry, remove-from-list, or open-after-completion controls yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
 ## Storage design
