@@ -76,6 +76,14 @@ describe('DownloadHistoryStore', () => {
     expect(await readFile(file, 'utf8')).toBe(invalid);
   });
 
+  it('rejects oversized download history without overwriting the source file', async () => {
+    const { store, file } = await createStore();
+    const oversized = Buffer.alloc(1024 * 1024 + 1, 0x20);
+    await writeFile(file, oversized);
+    await expect(store.list()).rejects.toThrow(/too large|byte limit/i);
+    expect((await readFile(file)).byteLength).toBe(oversized.byteLength);
+  });
+
   it('preserves malformed files instead of silently overwriting them', async () => {
     const { store, file } = await createStore();
     await writeFile(file, '{broken', 'utf8');

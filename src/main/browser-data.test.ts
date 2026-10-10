@@ -188,6 +188,14 @@ describe('BrowserDataStore', () => {
     expect(await store.listHistory()).toEqual([]);
   });
 
+  it('rejects oversized profile files without loading or overwriting them', async () => {
+    const { store, file } = await createStore();
+    const oversized = Buffer.alloc(4 * 1024 * 1024 + 1, 0x20);
+    await writeFile(file, oversized);
+    await expect(store.listHistory()).rejects.toThrow(/too large|byte limit/i);
+    expect((await readFile(file)).byteLength).toBe(oversized.byteLength);
+  });
+
   it('preserves malformed existing data instead of silently resetting it', async () => {
     const { store, file } = await createStore();
     await writeFile(file, '{broken json', 'utf8');

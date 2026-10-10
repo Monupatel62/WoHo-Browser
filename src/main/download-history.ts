@@ -1,7 +1,8 @@
-import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { DownloadRecord, DownloadStatus } from '../shared/browser-types';
+import { readFileBounded } from './bounded-file-read';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 
 const MAX_RECORDS = 100;
@@ -78,7 +79,7 @@ export class DownloadHistoryStore {
         try {
           const metadata = await stat(this.filePath);
           if (metadata.size > MAX_FILE_BYTES) throw new Error('Download history is too large; original data was preserved.');
-          const raw = await readFile(this.filePath);
+          const raw = await readFileBounded(this.filePath, MAX_FILE_BYTES);
           if (raw.byteLength > MAX_FILE_BYTES) throw new Error('Download history is too large; original data was preserved.');
           let parsed: unknown;
           try { parsed = JSON.parse(raw.toString('utf8')); } catch {
