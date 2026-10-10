@@ -31,6 +31,9 @@ export function validateBrowserSettings(value: unknown): BrowserSettings {
     throw new Error('Browser settings are invalid.');
   }
   const candidate = value as Record<string, unknown>;
+  if (Object.keys(candidate).some((key) => key !== 'searchProvider' && key !== 'homePageUrl')) {
+    throw new Error('Browser settings contain unknown keys.');
+  }
   if (!isSearchProviderId(candidate.searchProvider) ||
       typeof candidate.homePageUrl !== 'string' ||
       candidate.homePageUrl.length > 2048 ||
