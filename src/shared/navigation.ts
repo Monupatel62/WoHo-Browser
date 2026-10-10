@@ -30,6 +30,24 @@ export function isAllowedNavigationTarget(value: string): boolean {
   return isSafeWebUrl(value);
 }
 
+/**
+ * Frame navigations may legitimately use inherited-origin about: documents or
+ * blob URLs created by a web origin. Reject active local/custom schemes such
+ * as file:, data:, javascript:, and application-specific protocols.
+ */
+export function isAllowedFrameNavigationTarget(value: string): boolean {
+  if (isSafeWebUrl(value)) return true;
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'about:' && !url.search && !url.hash &&
+        (url.pathname === 'blank' || url.pathname === 'srcdoc')) return true;
+    if (url.protocol === 'blob:') return isSafeWebUrl(value.slice('blob:'.length));
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 /** A context-menu link must be a bounded, safe HTTP(S) destination. */
 export function isSafeContextMenuLink(value: string): boolean {
   return value.length <= 4096 && isAllowedNavigationTarget(value);

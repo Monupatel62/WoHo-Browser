@@ -6,7 +6,7 @@ import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
-import { isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
+import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
@@ -319,6 +319,15 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   wc.on('render-process-gone', changed);
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
+  });
+  // Electron exposes this runtime event, but some Electron 44 typings omit it
+  // from WebContents' overload list. Keep the runtime listener narrowly typed.
+  const listenForFrameNavigation = wc.on as unknown as (
+    eventName: string,
+    listener: (event: { preventDefault(): void }, details: { url: string }) => void,
+  ) => typeof wc;
+  listenForFrameNavigation.call(wc, 'will-frame-navigate', (event, details) => {
+    if (!isAllowedFrameNavigationTarget(details.url)) event.preventDefault();
   });
   wc.on('will-redirect', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();

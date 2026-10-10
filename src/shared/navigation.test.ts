@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from './navigation';
+import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from './navigation';
 
 describe('resolveAddressInput', () => {
   it('uses HTTPS for a bare hostname', () => {
@@ -45,5 +45,26 @@ describe('isSafeContextMenuLink', () => {
     expect(isSafeContextMenuLink('javascript:alert(1)')).toBe(false);
     expect(isSafeContextMenuLink('https://user:secret@example.com/')).toBe(false);
     expect(isSafeContextMenuLink('https://example.com/' + 'x'.repeat(4100))).toBe(false);
+  });
+});
+
+describe('isAllowedFrameNavigationTarget', () => {
+  it('allows web URLs and inherited-origin frame documents', () => {
+    expect(isAllowedFrameNavigationTarget('https://example.com/frame')).toBe(true);
+    expect(isAllowedFrameNavigationTarget('http://example.com/frame')).toBe(true);
+    expect(isAllowedFrameNavigationTarget('about:blank')).toBe(true);
+    expect(isAllowedFrameNavigationTarget('about:srcdoc')).toBe(true);
+    expect(isAllowedFrameNavigationTarget('blob:https://example.com/1234')).toBe(true);
+  });
+
+  it.each([
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/win.ini',
+    'ftp://example.com/file',
+    'blob:file:///private.txt',
+    'about:blank?unexpected=1',
+  ])('blocks unsafe frame URL: %s', (url) => {
+    expect(isAllowedFrameNavigationTarget(url)).toBe(false);
   });
 });
