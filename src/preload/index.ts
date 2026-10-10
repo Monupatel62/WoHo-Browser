@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, WoHoBrowserApi } from '../shared/browser-types';
+import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
@@ -17,6 +17,9 @@ const api: WoHoBrowserApi = {
   listHistory: () => ipcRenderer.invoke('browser:list-history') as Promise<HistoryRecord[]>,
   clearHistory: () => ipcRenderer.invoke('browser:clear-history'),
   clearSiteData: () => ipcRenderer.invoke('browser:clear-site-data'),
+  listSitePermissions: () => ipcRenderer.invoke('browser:list-site-permissions') as Promise<SitePermissionDecision[]>,
+  revokeSitePermission: (origin, permission) => ipcRenderer.invoke('browser:revoke-site-permission', origin, permission),
+  forgetSitePermission: (origin, permission) => ipcRenderer.invoke('browser:forget-site-permission', origin, permission),
   listDownloads: () => ipcRenderer.invoke('browser:list-downloads') as Promise<DownloadRecord[]>,
   pauseDownload: (id) => ipcRenderer.invoke('browser:pause-download', id),
   resumeDownload: (id) => ipcRenderer.invoke('browser:resume-download', id),

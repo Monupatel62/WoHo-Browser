@@ -44,3 +44,9 @@
 .find-controls .panel-action:disabled{opacity:.4;cursor:default}
 
 .notice-banner{position:absolute;top:108px;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 15px;background:#173b32;color:#c9f6e7;font-size:12px}.notice-banner button{border:0;background:transparent;color:inherit;font-size:18px;cursor:pointer}
+
+.permission-entry{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;padding:10px 8px}
+.permission-entry strong{font-size:12px;font-weight:650}
+.permission-entry span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#91a0bb}
+.permission-entry small{font-size:11px}
+.permission-allowed{color:#8ee0bb}.permission-blocked{color:#ffb3bd}

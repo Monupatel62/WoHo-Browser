@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord } from '../../shared/browser-types';
+import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
-type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'find' | null;
+type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'find' | null;
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -19,6 +19,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
+  const [sitePermissions, setSitePermissions] = useState<SitePermissionDecision[]>([]);
   const [panel, setPanel] = useState<DataPanel>(null);
   const [findQuery, setFindQuery] = useState('');
   const [findMatches, setFindMatches] = useState(0);
@@ -102,6 +103,7 @@ export default function App() {
       if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
       else if (next === 'history') setHistory(await window.wohoBrowser.listHistory());
       else if (next === 'downloads') setDownloads(await window.wohoBrowser.listDownloads());
+      else if (next === 'permissions') setSitePermissions(await window.wohoBrowser.listSitePermissions());
       setPanel(next);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load browser data.');
@@ -165,11 +167,24 @@ export default function App() {
     }
   }
 
+  async function updateSitePermission(action: 'revoke' | 'forget', decision: SitePermissionDecision) {
+    setError('');
+    try {
+      if (action === 'revoke') await window.wohoBrowser.revokeSitePermission(decision.origin, decision.permission);
+      else await window.wohoBrowser.forgetSitePermission(decision.origin, decision.permission);
+      setSitePermissions(await window.wohoBrowser.listSitePermissions());
+      setNotice(action === 'revoke' ? `Access blocked for ${decision.origin}.` : `Saved decision forgotten for ${decision.origin}; the site will need to ask again.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update site permission.');
+    }
+  }
+
   async function clearSiteData() {
     if (!window.confirm('Clear cookies, cached files, and website storage? This may sign you out of websites. Browsing history and bookmarks will remain.')) return;
     setError(''); setNotice('');
     try {
       await window.wohoBrowser.clearSiteData();
+      setSitePermissions([]);
       setNotice('Cookies, cache, and website storage cleared. Reload open pages if they still show old state.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not clear site data.');
@@ -215,13 +230,14 @@ export default function App() {
       <button className={`data-button ${panel === 'bookmarks' ? 'selected' : ''}`} onClick={() => void showPanel('bookmarks')} title="Bookmarks (Ctrl+B)">Bookmarks</button>
       <button className={`data-button ${panel === 'history' ? 'selected' : ''}`} onClick={() => void showPanel('history')} title="History (Ctrl+H)">History</button>
       <button className={`data-button ${panel === 'downloads' ? 'selected' : ''}`} onClick={() => void showPanel('downloads')} title="Downloads">Downloads{downloads.some((item) => item.status === 'progressing' || item.status === 'waiting' || item.status === 'paused') ? ' •' : ''}</button>
+      <button className={`data-button ${panel === 'permissions' ? 'selected' : ''}`} onClick={() => void showPanel('permissions')} title="Site permissions">Permissions</button>
       <button className={`data-button ${panel === 'find' ? 'selected' : ''}`} onClick={() => void showPanel('find')} title="Find in page (Ctrl+F)">Find</button>
     </div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
     {notice && <div className="notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice">×</button></div>}
-    {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : 'Find in page'}>
+    {panel && <section className={`data-panel ${panel === 'find' ? 'find-panel' : ''}`} aria-label={panel === 'bookmarks' ? 'Saved bookmarks' : panel === 'history' ? 'Browsing history' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}>
       <header className="data-panel-header">
-        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : 'Find in page'}</strong>
+        <strong>{panel === 'bookmarks' ? 'Bookmarks' : panel === 'history' ? 'History' : panel === 'downloads' ? 'Downloads' : panel === 'permissions' ? 'Site permissions' : 'Find in page'}</strong>
         <div>
           {panel === 'history' && <><button className="panel-action" onClick={() => void clearHistory()} disabled={history.length === 0}>Clear history</button><button className="panel-action" onClick={() => void clearSiteData()}>Clear site data</button></>}
           <button className="panel-close" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
@@ -233,6 +249,17 @@ export default function App() {
         <button type="button" className="panel-action" disabled={!findQuery.trim()} onClick={() => void runFind(findQuery, false, true)} aria-label="Previous match">↑</button>
         <button type="submit" className="panel-action" disabled={!findQuery.trim()} aria-label="Next match">↓</button>
       </form>}
+      {panel === 'permissions' && (sitePermissions.length ? <ul className="saved-list">{sitePermissions.map((decision) => <li key={decision.origin + '::' + decision.permission}>
+        <div className="permission-entry">
+          <strong>{decision.permission === 'media' ? 'Camera / microphone' : decision.permission === 'geolocation' ? 'Location' : decision.permission === 'notifications' ? 'Notifications' : decision.permission === 'clipboard-read' ? 'Clipboard access' : decision.permission}</strong>
+          <span>{decision.origin}</span>
+          <small className={decision.allowed ? 'permission-allowed' : 'permission-blocked'}>{decision.allowed ? 'Allowed for this session' : 'Blocked for this session'}</small>
+        </div>
+        <div className="download-actions">
+          {decision.allowed && <button className="panel-action" onClick={() => void updateSitePermission('revoke', decision)}>Block</button>}
+          <button className="panel-action" onClick={() => void updateSitePermission('forget', decision)}>Forget</button>
+        </div>
+      </li>)}</ul> : <p className="empty-data">No site permission decisions yet. Sites must ask through the browser’s trusted prompt.</p>)}
       {panel === 'bookmarks' && (bookmarks.length ? <ul className="saved-list">{bookmarks.map((bookmark) => <li key={bookmark.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
         <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
