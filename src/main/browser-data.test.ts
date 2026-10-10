@@ -17,6 +17,56 @@ afterEach(async () => {
 });
 
 describe('BrowserDataStore', () => {
+  it('exports a versioned bookmark-only format without internal IDs or timestamps', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('Example', 'https://example.com/path?token=secret');
+    const exported = JSON.parse(await store.exportBookmarksJson());
+    expect(exported).toMatchObject({
+      format: 'woho-bookmarks',
+      version: 1,
+      bookmarks: [{ title: 'Example', url: 'https://example.com/path?token=secret' }],
+    });
+    expect(exported.bookmarks[0]).not.toHaveProperty('id');
+    expect(exported.bookmarks[0]).not.toHaveProperty('createdAt');
+    expect(exported.bookmarks[0]).not.toHaveProperty('updatedAt');
+  });
+
+  it('imports valid bookmarks, deduplicates URLs, and updates matching titles', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('Old title', 'https://example.com/');
+    const result = await store.importBookmarksJson(JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [
+        { title: 'Updated title', url: 'https://example.com' },
+        { title: 'Second', url: 'https://example.org/path' },
+        { title: 'Second final', url: 'https://example.org/path' },
+      ],
+    }));
+    expect(result).toHaveLength(2);
+    expect(result.find((item) => item.url === 'https://example.com/')?.title).toBe('Updated title');
+    expect(result.find((item) => item.url === 'https://example.org/path')?.title).toBe('Second final');
+  });
+
+  it('rejects invalid imports atomically without changing existing bookmarks', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('Keep me', 'https://keep.example/');
+    const invalid = JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [
+        { title: 'Would be valid', url: 'https://new.example/' },
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+      ],
+    });
+    await expect(store.importBookmarksJson(invalid)).rejects.toThrow(/HTTP and HTTPS/);
+    expect(await store.listBookmarks()).toMatchObject([{ title: 'Keep me', url: 'https://keep.example/' }]);
+  });
+
+  it('rejects oversized and unsupported bookmark import files', async () => {
+    const { store } = await createStore();
+    await expect(store.importBookmarksJson('x'.repeat(1024 * 1024 + 1))).rejects.toThrow(/1 MiB/);
+    await expect(store.importBookmarksJson(JSON.stringify({ version: 99, bookmarks: [] }))).rejects.toThrow(/unsupported/);
+  });
+
   it('persists bookmarks across store instances and deduplicates URLs', async () => {
     const { store, file } = await createStore();
     const first = await store.addBookmark('Example', 'https://example.com');
