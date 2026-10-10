@@ -18,5 +18,8 @@ describe('isTrustedRendererUrl', () => {
     expect(isTrustedRendererUrl('http://localhost:5173/', 'http://localhost:5173/', expectedPath)).toBe(true);
     expect(isTrustedRendererUrl('http://evil.test/', 'http://localhost:5173/', expectedPath)).toBe(false);
     expect(isTrustedRendererUrl('http://localhost:5173/other', 'http://localhost:5173/', expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('http://localhost:5173/?unexpected=1', 'http://localhost:5173/', expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('http://localhost:5173/#unexpected', 'http://localhost:5173/', expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('http://user@localhost:5173/', 'http://localhost:5173/', expectedPath)).toBe(false);
   });
 });

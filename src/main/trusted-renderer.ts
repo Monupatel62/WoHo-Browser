@@ -7,7 +7,8 @@ export function isTrustedRendererUrl(value: string, devRendererUrl: string | und
     const actual = new URL(value);
     if (devRendererUrl) {
       const expected = new URL(devRendererUrl);
-      return actual.origin === expected.origin && actual.pathname === expected.pathname;
+      return !actual.username && !actual.password && actual.origin === expected.origin &&
+        actual.pathname === expected.pathname && actual.search === expected.search && actual.hash === expected.hash;
     }
     if (actual.protocol !== 'file:' || actual.search || actual.hash) return false;
     return resolve(fileURLToPath(actual)) === resolve(expectedFilePath);
