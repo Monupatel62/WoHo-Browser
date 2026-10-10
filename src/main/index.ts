@@ -29,6 +29,7 @@ let overlayPanelHeight = 0;
 let browserSettingsStore: BrowserSettingsStore;
 let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
 let browserSessionStore: BrowserSessionStore | null = null;
+let isRestoringSession = false;
 let mainWindow: BrowserWindow | null = null;
 let startupComplete = false;
 let browserSession: Electron.Session;
@@ -288,7 +289,7 @@ function getState(): BrowserState {
 }
 
 function persistSessionTabs(): void {
-  if (!browserSessionStore || !browserSettings.restoreSession) return;
+  if (!browserSessionStore || !browserSettings.restoreSession || isRestoringSession) return;
   const urls = tabOrder.flatMap((id) => {
     if (privateTabRegistry.has(id)) return [];
     const view = views.get(id);
@@ -313,7 +314,13 @@ async function restoreSessionTabs(): Promise<void> {
     void createTab();
     return;
   }
-  for (const url of urls) void createTab(url);
+  isRestoringSession = true;
+  try {
+    await Promise.all(urls.map((url) => createTab(url)));
+  } finally {
+    isRestoringSession = false;
+    persistSessionTabs();
+  }
 }
 
 function publishState(): void {
