@@ -65,7 +65,7 @@ function parseRecord<T extends BookmarkRecord | HistoryRecord>(
   value: unknown,
   kind: 'bookmark' | 'history',
 ): T {
-  if (!isRecord(value) || typeof value.id !== 'string' || value.id.length > 100 ||
+  if (!isRecord(value) || typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 100 ||
       typeof value.title !== 'string' || value.title.length > MAX_TITLE_LENGTH ||
       typeof value.url !== 'string' || typeof (kind === 'bookmark' ? value.createdAt : value.visitedAt) !== 'string') {
     throw new Error('Browser data file contains an invalid record; original data was preserved.');
@@ -102,6 +102,11 @@ function parseData(raw: string): { data: PersistedBrowserData; historyRedacted: 
   for (const bookmark of bookmarks) {
     if (ids.has(bookmark.id)) throw new Error('Browser data contains duplicate bookmark IDs; original data was preserved.');
     ids.add(bookmark.id);
+  }
+  const historyIds = new Set<string>();
+  for (const entry of history) {
+    if (historyIds.has(entry.id)) throw new Error('Browser data contains duplicate history IDs; original data was preserved.');
+    historyIds.add(entry.id);
   }
   const historyRedacted = value.history.some((row, index) => isRecord(row) && typeof row.url === 'string' && row.url !== history[index]?.url);
   return { data: { version: DATA_VERSION, bookmarks, history }, historyRedacted };
