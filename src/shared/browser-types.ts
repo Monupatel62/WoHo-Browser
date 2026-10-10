@@ -24,6 +24,7 @@ export interface WoHoBrowserApi {
   resumeDownload(id: string): Promise<void>;
   cancelDownload(id: string): Promise<void>;
   revealDownload(id: string): Promise<void>;
+  setOverlayPanelOpen(open: boolean): Promise<void>;
   onDownloadsChanged(callback: (downloads: DownloadRecord[]) => void): () => void;
   onStateChanged(callback: (state: BrowserState) => void): () => void;
 }
