@@ -2,6 +2,7 @@ import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, t
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
+import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus } from '../shared/browser-types';
 
@@ -43,23 +44,6 @@ function pruneDownloadRecords(): void {
     if (downloads.size <= MAX_DOWNLOAD_RECORDS) break;
     if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') downloads.delete(id);
   }
-}
-
-function safeDownloadFilename(value: string): string {
-  const leaf = value.split('/').pop()?.split(String.fromCharCode(92)).pop() ?? '';
-  const forbidden = '<>:' + String.fromCharCode(34) + '/\\|?*';
-  const safe = [...leaf].map((character) => character < ' ' || forbidden.includes(character) ? '_' : character).join('').replace(/[. ]+$/g, '').trim();
-  return (safe || 'download').slice(0, 255);
-}
-
-function safeDownloadUrl(value: string): string | null {
-  try {
-    const url = new URL(value);
-    if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password) return null;
-    url.search = '';
-    url.hash = '';
-    return url.toString().slice(0, 4096);
-  } catch { return null; }
 }
 
 function registerDownloadHandling(): void {
