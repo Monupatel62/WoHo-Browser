@@ -428,7 +428,7 @@ function registerIpc(): void {
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
   handle('browser:clear-site-data', async () => {
-    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache()]);
+    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
     permissionDecisions(browserSession).clear();
   });
   handle('browser:list-site-permissions', () => [...permissionDecisions(browserSession).entries()].map(([key, allowed]) => {
