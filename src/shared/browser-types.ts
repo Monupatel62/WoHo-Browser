@@ -1,3 +1,4 @@
+import type { BrowserSettings } from './browser-settings';
 export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
@@ -8,6 +9,9 @@ export interface DownloadRecord { id: string; filename: string; url: string; sta
 export interface FindResult { tabId: string; requestId: number; activeMatchOrdinal: number; matches: number; finalUpdate: boolean; }
 export interface WoHoBrowserApi {
   getState(): Promise<BrowserState>;
+  getSettings(): Promise<BrowserSettings>;
+  updateSettings(settings: BrowserSettings): Promise<BrowserSettings>;
+  resetSettings(): Promise<BrowserSettings>;
   openTab(url?: string): Promise<void>;
   openPrivateTab(url?: string): Promise<void>;
   closeTab(id: string): Promise<void>;
