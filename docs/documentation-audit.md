@@ -33,7 +33,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - Per-item download-record removal, retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
 - Settings import/export, bookmark folders/edit/reorder, history time filters/range deletion, and other broader roadmap items remain unimplemented.
 - Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. The configured CI gate rejects high/critical advisories, so moderate advisories require explicit triage rather than being described as absent.
-- Documentation files that still describe the project as “planning/specification only” or position AI assistance as part of the current product conflict with the current README and implementation status and should be kept aligned.
+- Some legacy AI-related specification files remain in the repository. Treat them as out-of-scope reference material, not authorization to add AI integrations; keep the README and master plan as the current product-scope references.
 
 ## Corrections in this audit
 
