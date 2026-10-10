@@ -23,4 +23,4 @@ Restart persistence, delete verification, malformed/oversized imports, duplicate
 
 ## Current implementation note
 
-The current JSON store is version 1 and caps the file at 4 MiB, bookmarks at 5,000, and history at 1,000 entries. It validates HTTP(S) URLs and refuses URLs containing embedded credentials. Private browsing does not exist yet, so users should treat the saved history as sensitive data. No AI history or AI integration is implemented.
+The current JSON store is version 1 and caps the file at 4 MiB, bookmarks at 500, history at 500 entries, and saved URLs at 2,048 characters. It validates HTTP(S) URLs and refuses URLs containing embedded credentials. Private browsing does not exist yet, so users should treat the saved history as sensitive data. No AI history or AI integration is implemented.
