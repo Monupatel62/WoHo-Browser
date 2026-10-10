@@ -61,6 +61,6 @@ describe('BrowserSettingsStore', () => {
   it('reset restores the documented defaults', async () => {
     const { store } = await createStore();
     await store.update({ searchProvider: 'bing', homePageUrl: 'https://example.org/', restoreSession: true });
-    await expect(store.reset()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/' });
+    await expect(store.reset()).resolves.toEqual({ searchProvider: 'google', homePageUrl: 'https://www.google.com/', restoreSession: false });
   });
 });
