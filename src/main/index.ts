@@ -316,6 +316,24 @@ function registerIpc(): void {
     await Promise.all([browserSession.clearStorageData(), browserSession.clearCache()]);
     sessionPermissionDecisions.clear();
   });
+  handle('browser:list-site-permissions', () => [...sessionPermissionDecisions.entries()].map(([key, allowed]) => {
+    const separator = key.lastIndexOf('::');
+    return { origin: key.slice(0, separator), permission: key.slice(separator + 2), allowed };
+  }).sort((a, b) => a.origin.localeCompare(b.origin) || a.permission.localeCompare(b.permission)));
+  handle('browser:revoke-site-permission', (_event, rawOrigin: unknown, rawPermission: unknown) => {
+    if (typeof rawOrigin !== 'string' || typeof rawPermission !== 'string') throw new Error('Invalid site permission request.');
+    const origin = getPermissionOrigin(rawOrigin);
+    const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
+    if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
+    sessionPermissionDecisions.set(key, false);
+  });
+  handle('browser:forget-site-permission', (_event, rawOrigin: unknown, rawPermission: unknown) => {
+    if (typeof rawOrigin !== 'string' || typeof rawPermission !== 'string') throw new Error('Invalid site permission request.');
+    const origin = getPermissionOrigin(rawOrigin);
+    const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
+    if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
+    sessionPermissionDecisions.delete(key);
+  });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
