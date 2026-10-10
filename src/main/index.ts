@@ -6,6 +6,8 @@ import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './
 import { openRecoverableBrowserDataStore } from './recoverable-browser-data';
 import { BrowserSettingsStore } from './browser-settings';
 import { openRecoverableBrowserSettingsStore } from './recoverable-browser-settings';
+import { BrowserSessionStore } from './browser-session-store';
+import { openRecoverableBrowserSessionStore } from './recoverable-browser-session';
 import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
@@ -26,6 +28,7 @@ const DATA_PANEL_HEIGHT = 360;
 let overlayPanelHeight = 0;
 let browserSettingsStore: BrowserSettingsStore;
 let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
+let browserSessionStore: BrowserSessionStore | null = null;
 let mainWindow: BrowserWindow | null = null;
 let startupComplete = false;
 let browserSession: Electron.Session;
@@ -284,6 +287,35 @@ function getState(): BrowserState {
   return { tabs, activeTabId };
 }
 
+function persistSessionTabs(): void {
+  if (!browserSessionStore || !browserSettings.restoreSession) return;
+  const urls = tabOrder.flatMap((id) => {
+    if (privateTabRegistry.has(id)) return [];
+    const view = views.get(id);
+    if (!view || view.webContents.isDestroyed()) return [];
+    const url = view.webContents.getURL();
+    return isAllowedNavigationTarget(url) ? [url] : [];
+  });
+  void browserSessionStore.save(urls).catch((error: unknown) => {
+    console.error('Could not persist normal-tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
+  });
+}
+
+async function restoreSessionTabs(): Promise<void> {
+  let urls: string[] = [];
+  if (browserSettings.restoreSession && browserSessionStore) {
+    try { urls = await browserSessionStore.load(); }
+    catch (error) {
+      console.error('Could not load saved tab session:', error instanceof Error ? error.message : 'Unknown session load error');
+    }
+  }
+  if (urls.length === 0) {
+    void createTab();
+    return;
+  }
+  for (const url of urls) void createTab(url);
+}
+
 function publishState(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('browser:state', getState());
 }
@@ -307,12 +339,13 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   const changed = () => { layoutViews(); publishState(); };
   wc.on('did-navigate', (_event, url) => {
     changed();
+    persistSessionTabs();
     if (!shouldPersistBrowsingHistory(privateTabRegistry.has(id))) return;
     void browserDataStore.recordVisit(url, wc.getTitle()).catch((error: unknown) => {
       console.error('Could not persist browser history:', error instanceof Error ? error.message : 'Unknown storage error');
     });
   });
-  wc.on('did-navigate-in-page', changed);
+  wc.on('did-navigate-in-page', () => { changed(); persistSessionTabs(); });
   wc.on('found-in-page', (_event, result) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       const payload: FindResult = {
@@ -370,6 +403,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     void disposePrivateSession(id);
     const index = tabOrder.indexOf(id);
     if (index >= 0) tabOrder.splice(index, 1);
+    persistSessionTabs();
     if (activeTabId === id) activeTabId = tabOrder[Math.max(0, index - 1)] ?? tabOrder[0] ?? null;
     layoutViews();
     publishState();
@@ -423,10 +457,17 @@ function registerIpc(): void {
   handle('browser:get-settings', () => browserSettingsStore.get());
   handle('browser:update-settings', async (_event, candidate: unknown) => {
     browserSettings = await browserSettingsStore.update(candidate);
+    if (browserSettings.restoreSession) persistSessionTabs();
+    else if (browserSessionStore) {
+      void browserSessionStore.save([]).catch((error: unknown) => {
+        console.error('Could not clear saved tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
+      });
+    }
     return { ...browserSettings };
   });
   handle('browser:reset-settings', async () => {
     browserSettings = await browserSettingsStore.reset();
+    if (browserSessionStore) void browserSessionStore.save([]).catch(() => undefined);
     return { ...browserSettings };
   });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
@@ -697,6 +738,19 @@ if (!hasSingleInstanceLock) {
     },
   );
   browserSettings = await browserSettingsStore.get();
+  browserSessionStore = await openRecoverableBrowserSessionStore(
+    join(userDataPath, 'session-state.json'),
+    join(userDataPath, 'session-state-recovery.json'),
+    () => join(userDataPath, 'session-state-' + randomUUID() + '.json'),
+    async (title, message, detail) => {
+      await dialog.showMessageBox({
+        type: 'warning', title, message, detail, buttons: ['Continue'], noLink: true,
+      });
+    },
+  );
+  if (!browserSettings.restoreSession) {
+    await browserSessionStore.save([]);
+  }
   browserDataStore = await openRecoverableBrowserDataStore(
     join(userDataPath, 'browser-data.json'),
     join(userDataPath, 'browser-data-recovery.json'),
@@ -743,9 +797,9 @@ if (!hasSingleInstanceLock) {
   registerDownloadHandling();
   registerIpc();
   createWindow();
-  void createTab();
+  void restoreSessionTabs();
   startupComplete = true;
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void createTab(); } });
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) { createWindow(); void restoreSessionTabs(); } });
   });
 }
 
