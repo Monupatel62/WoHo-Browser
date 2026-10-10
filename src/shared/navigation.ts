@@ -11,7 +11,7 @@ export function isSafeWebUrl(value: string): boolean {
 export function resolveAddressInput(input: string, searchEngine = DEFAULT_SEARCH_ENGINE): string {
   const value = input.trim();
   if (!value) throw new Error('Enter a website address or search query.');
-  if (SCHEME_PREFIX.test(value)) {
+  const isHostWithPort = /^[^/\\s:]+:\\d+(?:\\/|$)/.test(value);\n  if (SCHEME_PREFIX.test(value) && !isHostWithPort) {
     if (!isSafeWebUrl(value)) throw new Error('Only HTTP and HTTPS addresses are supported.');
     return new URL(value).toString();
   }
