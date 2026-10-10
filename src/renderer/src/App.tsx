@@ -6,6 +6,15 @@ import { filterSavedEntries } from '../../shared/saved-entry-search';
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
 type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'find' | null;
 
+function localDateKey(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -20,6 +29,8 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [historyStartDate, setHistoryStartDate] = useState('');
+  const [historyEndDate, setHistoryEndDate] = useState('');
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [sitePermissions, setSitePermissions] = useState<SitePermissionDecision[]>([]);
   const [panel, setPanel] = useState<DataPanel>(null);
@@ -34,7 +45,11 @@ export default function App() {
   const active = state.tabs.find((tab) => tab.id === state.activeTabId);
   const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
   const visibleBookmarks = filterSavedEntries(bookmarks, savedSearch);
-  const visibleHistory = filterSavedEntries(history, savedSearch);
+  const visibleHistory = filterSavedEntries(history, savedSearch).filter((entry) => {
+    const date = localDateKey(entry.visitedAt);
+    return Boolean(date) && (!historyStartDate || date >= historyStartDate) && (!historyEndDate || date <= historyEndDate);
+  });
+  const historyRangeValid = Boolean(historyStartDate && historyEndDate && historyStartDate <= historyEndDate);
   activeTabIdRef.current = active?.id ?? null;
 
   useEffect(() => {
@@ -233,6 +248,23 @@ export default function App() {
     }
   }
 
+  async function clearHistoryRange() {
+    if (!historyRangeValid) {
+      setError('Choose a valid start date and end date.');
+      return;
+    }
+    if (!window.confirm(`Delete browsing history from ${historyStartDate} through ${historyEndDate}? This cannot be undone.`)) return;
+    setError(''); setNotice('');
+    try {
+      const startAt = new Date(`${historyStartDate}T00:00:00`).toISOString();
+      const endAt = new Date(`${historyEndDate}T23:59:59.999`).toISOString();
+      setHistory(await window.wohoBrowser.removeHistoryRange(startAt, endAt));
+      setNotice(`History from ${historyStartDate} through ${historyEndDate} deleted.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete history range.');
+    }
+  }
+
   async function clearFinishedDownloads() {
     if (!window.confirm('Remove finished download records? Downloaded files on disk will not be deleted.')) return;
     setError('');
@@ -299,7 +331,12 @@ export default function App() {
       </header>
       {(panel === 'bookmarks' || panel === 'history') && <div className="find-controls">
         <input value={savedSearch} onChange={(event) => setSavedSearch(event.target.value.slice(0, 200))} aria-label={panel === 'bookmarks' ? 'Search bookmarks' : 'Search browsing history'} placeholder={panel === 'bookmarks' ? 'Search bookmarks' : 'Search history'} maxLength={200} />
-        <button type="button" className="panel-action" disabled={!savedSearch} onClick={() => setSavedSearch('')}>Clear</button>
+        {panel === 'history' && <>
+          <label>From <input type="date" value={historyStartDate} aria-label="Filter history from date" onChange={(event) => setHistoryStartDate(event.target.value)} /></label>
+          <label>To <input type="date" value={historyEndDate} aria-label="Filter history through date" onChange={(event) => setHistoryEndDate(event.target.value)} /></label>
+          <button type="button" className="panel-action" disabled={!historyRangeValid || history.length === 0} onClick={() => void clearHistoryRange()}>Delete range</button>
+        </>}
+        <button type="button" className="panel-action" disabled={!savedSearch && !historyStartDate && !historyEndDate} onClick={() => { setSavedSearch(''); setHistoryStartDate(''); setHistoryEndDate(''); }}>Clear filters</button>
       </div>}
       {panel === 'find' && <form className="find-controls" onSubmit={(event) => { event.preventDefault(); void runFind(findQuery, true, true); }}>
         <input ref={findInputRef} value={findQuery} onChange={(event) => { setFindQuery(event.target.value); void runFind(event.target.value, true, false); }} aria-label="Find text on current page" placeholder="Find on this page" maxLength={500} />
