@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAllowedNavigationTarget, resolveAddressInput } from './navigation';
+import { isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from './navigation';
 
 describe('resolveAddressInput', () => {
   it('uses HTTPS for a bare hostname', () => {
@@ -34,5 +34,16 @@ describe('isAllowedNavigationTarget', () => {
     expect(isAllowedNavigationTarget('https://user:secret@example.com')).toBe(false);
     expect(isAllowedNavigationTarget('file:///tmp/a')).toBe(false);
     expect(isAllowedNavigationTarget('javascript:alert(1)')).toBe(false);
+  });
+});
+
+
+describe('isSafeContextMenuLink', () => {
+  it('allows bounded HTTP(S) links only', () => {
+    expect(isSafeContextMenuLink('https://example.com/path')).toBe(true);
+    expect(isSafeContextMenuLink('http://example.com/path')).toBe(true);
+    expect(isSafeContextMenuLink('javascript:alert(1)')).toBe(false);
+    expect(isSafeContextMenuLink('https://user:secret@example.com/')).toBe(false);
+    expect(isSafeContextMenuLink('https://example.com/' + 'x'.repeat(4100))).toBe(false);
   });
 });
