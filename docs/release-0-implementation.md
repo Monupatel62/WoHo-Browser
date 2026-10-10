@@ -7,7 +7,7 @@
 - Electron desktop shell with React/TypeScript browser chrome.
 - Electron `WebContentsView` per tab using a dedicated persistent browser session.
 - Address bar with HTTPS-by-default bare hostnames and configurable Google, Bing, or DuckDuckGo search fallback. A Settings panel persists a validated HTTP(S) home/new-tab URL, selected search provider, and an opt-in normal-tab session-restore setting locally; settings and session files use validation and separate recovery files without overwriting corrupt originals.
-- Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, keyboard shortcuts (including Ctrl+F), and per-tab renderer-crash indication with a user-triggered reload action.
+- Back, forward, reload/stop, open/close/select tabs, find-in-page with next/previous/count/clear, keyboard shortcuts (including Ctrl+F), per-tab renderer-crash indication, and main-frame navigation-failure feedback with a user-triggered reload action. Common offline/DNS/timeout/refused-connection and certificate/TLS failures receive safe messages; certificate errors are not bypassed.
 - Narrow preload API and main-process IPC sender/frame checks.
 - Website renderer settings: Node integration off, context isolation on, sandbox on, web security on.
 - HTTP/HTTPS-only main-frame navigation, explicit subframe navigation policy (HTTP(S), inherited-origin `about:blank`/`about:srcdoc`, and web-origin `blob:` only), and denied popups. Right-clicking a valid HTTP(S) link offers Open Link in New Tab and Copy Link Address; new tabs inherit private mode. Allowlisted site permissions (media, geolocation, notifications, clipboard-read) use a native trusted prompt; decisions last for the app session and can be reset by clearing site data. Unknown permissions remain denied.
@@ -31,7 +31,7 @@
 
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
-- No sync, extension system, Safe Browsing integration, updater, or signed installer.
+- No sync, extension system, Safe Browsing integration, updater, or signed installer. Main-frame navigation failures have browser-chrome feedback, but custom full-page network/certificate error screens and end-to-end network transition testing remain incomplete.
 - Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, bookmark editing/reordering, import preview/per-row import reporting, history multi-select deletion and additional retention controls are not implemented yet.
 - Download history is persisted locally and bounded; retry, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
