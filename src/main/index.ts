@@ -2,6 +2,7 @@ import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, M
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
+import { openRecoverableBrowserDataStore } from './recoverable-browser-data';
 import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
@@ -600,7 +601,16 @@ if (!hasSingleInstanceLock) {
 
   app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData');
-  browserDataStore = new BrowserDataStore(join(userDataPath, 'browser-data.json'));
+  browserDataStore = await openRecoverableBrowserDataStore(
+    join(userDataPath, 'browser-data.json'),
+    join(userDataPath, 'browser-data-recovery.json'),
+    () => join(userDataPath, 'browser-data-' + randomUUID() + '.json'),
+    async (title, message, detail) => {
+      await dialog.showMessageBox({
+        type: 'warning', title, message, detail, buttons: ['Continue'], noLink: true,
+      });
+    },
+  );
   const primaryDownloadHistoryPath = join(userDataPath, 'download-history.json');
   downloadHistoryStore = new DownloadHistoryStore(primaryDownloadHistoryPath);
   try {
