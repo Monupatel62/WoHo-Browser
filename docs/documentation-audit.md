@@ -30,6 +30,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - No Safe Browsing or phishing/malware reputation integration is present.
 - No signed installer or auto-updater is implemented.
 - No extension system, sync, password manager, or credential storage is implemented.
+- Browser profile and download-history startup recovery now preserve corrupt originals and fall back to separate files; Windows runtime recovery behavior still needs manual verification.
 - Per-item download-record removal, retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
 - Settings import/export, bookmark folders/edit/reorder, history time filters/range deletion, and other broader roadmap items remain unimplemented.
 - Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. The configured CI gate rejects high/critical advisories, so moderate advisories require explicit triage rather than being described as absent.
