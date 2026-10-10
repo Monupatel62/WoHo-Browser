@@ -57,4 +57,31 @@ describe('BrowserDataStore', () => {
     await expect(store.listHistory()).rejects.toThrow(/unsupported/);
     expect(await readFile(file, 'utf8')).toBe(raw);
   });
+  it('redacts query strings and fragments from new history visits while preserving bookmarks', async () => {
+    const { store } = await createStore();
+    const sensitiveUrl = 'https://example.com/private?token=secret#session';
+    await store.recordVisit(sensitiveUrl, 'Private page');
+    expect((await store.listHistory())[0].url).toBe('https://example.com/private');
+    const bookmarks = await store.addBookmark('Explicit bookmark', sensitiveUrl);
+    expect(bookmarks[0].url).toBe(sensitiveUrl);
+  });
+
+  it('migrates existing history records to remove query strings and fragments on load', async () => {
+    const { store, file } = await createStore();
+    const legacy = {
+      version: 1,
+      bookmarks: [],
+      history: [{
+        id: 'legacy-history', title: 'Private page',
+        url: 'https://example.com/private?access_token=secret#session',
+        visitedAt: '2026-10-10T10:00:00.000Z',
+      }],
+    };
+    await writeFile(file, JSON.stringify(legacy), 'utf8');
+    expect((await store.listHistory())[0].url).toBe('https://example.com/private');
+    const persisted = JSON.parse(await readFile(file, 'utf8'));
+    expect(persisted.history[0].url).toBe('https://example.com/private');
+    expect(await readFile(file, 'utf8')).not.toContain('access_token=secret');
+  });
+
 });

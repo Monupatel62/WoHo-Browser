@@ -50,6 +50,13 @@ function validateUrl(value: string): string {
   return url.toString();
 }
 
+function sanitizeHistoryUrl(value: string): string {
+  const url = new URL(value);
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -75,10 +82,10 @@ function parseRecord<T extends BookmarkRecord | HistoryRecord>(
     }
     return { id: value.id, title: safeTitle(value.title), url, createdAt: value.createdAt, updatedAt: value.updatedAt } as T;
   }
-  return { id: value.id, title: safeTitle(value.title), url, visitedAt: value.visitedAt } as T;
+  return { id: value.id, title: safeTitle(value.title), url: sanitizeHistoryUrl(url), visitedAt: value.visitedAt } as T;
 }
 
-function parseData(raw: string): PersistedBrowserData {
+function parseData(raw: string): { data: PersistedBrowserData; historyRedacted: boolean } {
   let value: unknown;
   try { value = JSON.parse(raw); } catch {
     throw new Error('Browser data file is unreadable JSON; original data was preserved.');
@@ -96,7 +103,8 @@ function parseData(raw: string): PersistedBrowserData {
     if (ids.has(bookmark.id)) throw new Error('Browser data contains duplicate bookmark IDs; original data was preserved.');
     ids.add(bookmark.id);
   }
-  return { version: DATA_VERSION, bookmarks, history };
+  const historyRedacted = value.history.some((row, index) => isRecord(row) && typeof row.url === 'string' && row.url !== history[index]?.url);
+  return { data: { version: DATA_VERSION, bookmarks, history }, historyRedacted };
 }
 
 async function atomicWrite(filePath: string, contents: string): Promise<void> {
@@ -134,7 +142,11 @@ export class BrowserDataStore {
           if (raw.byteLength > MAX_FILE_BYTES) {
             throw new Error('Browser data file is too large; original data was preserved.');
           }
-          this.data = parseData(raw.toString('utf8'));
+          const parsed = parseData(raw.toString('utf8'));
+          this.data = parsed.data;
+          if (parsed.historyRedacted) {
+            await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
+          }
         } catch (error) {
           if (!isRecord(error) || error.code !== 'ENOENT') throw error;
           this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
@@ -193,7 +205,7 @@ export class BrowserDataStore {
   async recordVisit(rawUrl: string, title: string): Promise<void> {
     await this.ensureLoaded();
     let url: string;
-    try { url = validateUrl(rawUrl); } catch { return; }
+    try { url = sanitizeHistoryUrl(validateUrl(rawUrl)); } catch { return; }
     const last = this.data.history[0];
     if (last?.url === url && Date.now() - Date.parse(last.visitedAt) < 1500) return;
     this.data.history.unshift({ id: randomUUID(), title: safeTitle(title), url, visitedAt: new Date().toISOString() });
