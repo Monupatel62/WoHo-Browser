@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
-import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus } from '../shared/browser-types';
+import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
@@ -172,6 +172,18 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     });
   });
   wc.on('did-navigate-in-page', changed);
+  wc.on('found-in-page', (_event, result) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const payload: FindResult = {
+        tabId: id,
+        requestId: result.requestId,
+        activeMatchOrdinal: result.activeMatchOrdinal,
+        matches: result.matches,
+        finalUpdate: result.finalUpdate,
+      };
+      mainWindow.webContents.send('browser:find-results', payload);
+    }
+  });
   wc.on('page-title-updated', changed);
   wc.on('did-start-loading', changed);
   wc.on('did-stop-loading', changed);
@@ -231,6 +243,16 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
+  handle('browser:find-in-page', (_event, query: unknown, forward: unknown, findNext: unknown) => {
+    if (typeof query !== 'string' || query.length > 500 || typeof forward !== 'boolean' || typeof findNext !== 'boolean') {
+      throw new Error('Invalid find-in-page request.');
+    }
+    const view = activeView();
+    if (!view) throw new Error('No active tab.');
+    if (!query.trim()) { view.webContents.stopFindInPage('clearSelection'); return 0; }
+    return view.webContents.findInPage(query, { forward, findNext });
+  });
+  handle('browser:stop-find-in-page', () => activeView()?.webContents.stopFindInPage('clearSelection'));
   handle('browser:set-overlay-panel-open', (_event, open: unknown) => {
     if (typeof open !== 'boolean') throw new Error('Invalid panel state.');
     overlayPanelOpen = open;
