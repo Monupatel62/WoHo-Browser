@@ -1,0 +1,49 @@
+name: WoHo Browser CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Lint, typecheck, tests, and build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Inspect dependency advisories
+        shell: pwsh
+        run: |
+          npm audit --json > npm-audit.json
+          if ($LASTEXITCODE -ne 0) {
+            node -e "const a = require('./npm-audit.json'); for (const [name, v] of Object.entries(a.vulnerabilities || {})) console.log(name + ': ' + v.severity + ' fix=' + JSON.stringify(v.fixAvailable) + ' via=' + v.via.map(x => typeof x === 'string' ? x : x.name + ' ' + x.range).join(', '));"
+          }
+      - name: Enforce high and critical dependency audit
+        run: npm audit --audit-level=high
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Package unsigned Windows installer
+        run: npm run package:win
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: woho-browser-windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14

@@ -4,7 +4,7 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 
 ## Project status
 
-**Planning and specification stage.** The repository does not yet contain the actual browser implementation. All planned features remain unimplemented until code and test evidence confirm them.
+**Release 0 prototype in progress.** The branch `feat/release-0-browser-prototype` now contains the first Electron/Chromium browser shell and navigation slice. Runtime, CI, and security verification are still pending; do not treat it as production-ready.
 
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
@@ -12,6 +12,7 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 - [Exhaustive feature catalog](docs/feature-catalog.md)
 - [Master product plan](docs/WOHO_BROWSER_MASTER_PLAN.md)
 - [Release 0 feasibility spike](docs/release-0-spike-plan.md)
+- [Release 0 implementation status](docs/release-0-implementation.md)
 - [Feature requirements](docs/feature-requirements.md)
 - [Architecture](docs/architecture.md)
 
@@ -66,8 +67,22 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
-## Proposed initial stack
+## Development setup
+
+Requirements: Node.js 24 and npm.
+
+```bash
+npm install
+npm run lint
+npm run typecheck
+npm test
+npm run dev
+```
+
+Build bundles with `npm run build`. On Windows, `npm run package:win` creates an unsigned development installer. Signing and auto-updates are not configured.
+
+## Initial stack
 Electron + TypeScript + React is selected for the Release 0 prototype only. The final production decision depends on the feasibility spike. This does not promise full Chrome extension compatibility, DRM, sync, or Chrome feature parity.
 
 ## Important
-The repository currently contains planning documents, not a working browser. Do not treat the product as production-ready until implementation, security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.
+This branch contains an initial working-code prototype, but it has not yet been built or run in this authoring environment. CI must pass and Windows runtime behavior must be tested before calling the prototype verified. Do not treat the product as production-ready until security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.
