@@ -56,3 +56,32 @@ The first prototype must launch, open an HTTPS URL, navigate back/forward, displ
 
 ## 9. Architecture decision records
 For each major choice record: context, requirements, options considered, decision, security impact, trade-offs, and revisit conditions. Keep framework and engine selection marked OPEN until a prototype and comparison are reviewed.
+
+
+## 10. Concrete process and view model (review update)
+The Release 0 spike will use Electron's supported WebContentsView API for website tabs, with browser chrome rendered separately. This is a prototype decision, not proof of complete browser parity. Do not use deprecated BrowserView or the webview tag without a reviewed exception.
+
+### Process boundaries
+- **Main process:** lifecycle, trusted window creation, navigation policy, permission mediation, downloads, updates, and narrowly scoped IPC handlers.
+- **Chrome renderer:** browser controls and settings only. It must not host arbitrary websites.
+- **Website web contents:** untrusted origin-specific page content with Node integration disabled, context isolation, and sandboxing where supported.
+- **AI broker:** separate module/service boundary; it receives only explicitly approved context and has no unrestricted shell or filesystem capability.
+- **Utility process:** only for work that needs process isolation; a utility process alone is not an OS sandbox.
+
+### Internal pages
+Prefer local, bundled UI resources for settings/history rather than exposing a broad custom protocol. If a custom scheme is necessary, register it as standard/secure where supported, restrict its handler to known bundled assets, reject traversal and arbitrary paths, and never let website origins access privileged internal routes. Internal pages must use a separate trust policy and must not accept arbitrary HTML from page content.
+
+### Storage decision
+Storage engine remains open under ADR-0004. Prototype settings with versioned storage and evaluate SQLite for queryable records. Any native SQLite module must have documented Electron ABI rebuild, packaging/ASAR, migration, and corruption-recovery handling.
+
+### IPC catalog
+Use the channel groups in docs/ipc-contract.md. Every channel needs sender/origin validation, a typed schema, size limits, authorization, structured errors, timeout/cancellation where relevant, and negative tests. No generic IPC bridge.
+
+### Release 0 implementation order
+1. App lifecycle and trusted chrome.
+2. WebContentsView tab prototype.
+3. URL/navigation and popup policy.
+4. Permission handlers and safe external protocols.
+5. Basic tests and packaging.
+6. Only then add history/bookmarks/download persistence.
+
