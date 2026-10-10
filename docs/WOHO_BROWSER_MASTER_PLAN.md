@@ -69,10 +69,12 @@ A Chromium-based desktop browser with a built-in AI side panel, source-aware pag
 ### Release 3 — Productivity and privacy
 - Tab groups/workspaces and session restore.
 - Reader view and export of user-selected notes.
-- Permission controls for camera, microphone, notifications, location, and pop-ups.
-- Tracking/ad blocking only after a maintainable filter-update and exception design is chosen.
-- Optional profile separation and improved private-session behavior.
+- Reader view and export of user-selected notes.
+- Tracking/ad blocking only after a maintainable filter-update, privacy, exception, and filter-maintenance design is approved.
+- Richer site controls and validated privacy features beyond the Release 1 private-session baseline.
 - Import/export of bookmarks and other supported user data.
+
+Permission request/check handlers and a tested non-persistent private session are foundation/MVP requirements, not features deferred to this release.
 
 ### Release 4 — Controlled AI actions
 - User-defined workflows for limited browsing tasks.
@@ -92,7 +94,7 @@ A Chromium-based desktop browser with a built-in AI side panel, source-aware pag
 ## 4. Technical direction
 
 ### Proposed starting point
-Evaluate Electron + TypeScript + React for the first Windows MVP. Electron is a practical route to a desktop shell but does not mean the product is a full Chromium fork. Keep a documented decision record comparing Electron with CEF or a custom Chromium build before committing to engine-level requirements.
+Electron + TypeScript + React is selected for the Release 0 feasibility prototype only, as recorded in ADR-0001. Electron is a practical route to a desktop shell but is not a custom Chromium fork. The production commitment remains conditional on the Release 0 spike; compare relevant alternatives only to the extent needed to validate packaging, security controls, licensing, compatibility, and maintenance capacity.
 
 ### Suggested application boundaries
 - Main process: application lifecycle, windows, trusted system integration, updates, and permission mediation.
@@ -198,7 +200,7 @@ Private browsing must not promise invisibility to websites, networks, employers,
 - Tabs show loading, audio, and crash states where supported.
 - AI side panel is optional and can be closed without affecting normal browsing.
 - Show the active domain clearly before sensitive operations.
-- Give understandable permission prompts with allow-once, allow-for-session, and deny options where technically appropriate.
+- Give browser-controlled, accessible permission prompts with deny by default and clearly documented allow/remember semantics. Do not promise allow-once or allow-for-session until the selected engine supports the exact behavior and tests verify it.
 - Use clear empty, loading, offline, error, and retry states.
 - Support keyboard-first use and accessible contrast.
 - Avoid copying Chrome branding, icons, or protected visual assets. Create original WoHo Browser identity.
@@ -256,7 +258,7 @@ A feature is done only when:
 7. Build a minimal vertical slice: launch → open HTTPS URL → navigate → close cleanly.
 8. Add tabs and safe navigation policies.
 9. Add bookmarks/history/downloads with tests.
-10. Package a signed or clearly labeled development installer; establish signing/update requirements before public production releases.
+10. Package a clearly labeled development build for the R0 spike; production distribution must use a signed installer and verified update path. A development build is not a production release.
 11. Run a security review before exposing AI features.
 12. Add AI page Q&A behind explicit user action and data disclosure.
 13. Test with a small group and validate whether users would pay.
@@ -313,8 +315,8 @@ Update this table only with verified repository evidence.
 - Preserve a changelog of important plan updates with date, summary, and reason.
 
 
-## 15. Review-driven scope resolution (supersedes conflicting earlier statements)
-This section resolves inconsistencies found during independent review.
+## 15. Controlling scope clarifications
+This section records the controlling interpretation for earlier roadmap wording. Where earlier prose differs, the explicit requirements and release mapping below control; revise the earlier prose as part of normal documentation maintenance.
 
 - **Engine:** Electron + TypeScript + React is selected for the Release 0 prototype only. See ADR-0001. A production commitment depends on the feasibility spike.
 - **Permission policy:** permission request/check handlers, navigation policy, popup policy, and trusted/untrusted view separation are Release 0 foundation work. Permission controls are not deferred to Release 3.
@@ -330,4 +332,4 @@ This section resolves inconsistencies found during independent review.
 - **Roadmap work:** do not spend time on passwords, passkeys, sync, DRM, full extension compatibility, Linux, Android, or enterprise controls until target-user validation and separate feasibility decisions justify them.
 
 ## 16. Documentation index
-The README.md links the product plan, requirements, architecture, security and privacy documents, AI specifications, release policies, and ADRs. Keep it updated whenever a new planning document is added.
+Start with docs/product-specification-index.md and docs/feature-catalog.md. The README.md links the detailed feature specifications, architecture, security/privacy documents, AI specifications, release policies, and ADRs. Keep it updated whenever a planning document is added.
