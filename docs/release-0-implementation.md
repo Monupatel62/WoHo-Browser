@@ -18,12 +18,12 @@
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
 - Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, and a “Clear finished” action that removes records without deleting saved files. Private downloads are excluded from the normal store.
-- Startup recovery for corrupt or unsupported download-history files: the original file is preserved, a warning is shown, and the browser can continue using a separate recovery file.
+- Startup recovery for corrupt or unsupported browser profile data and download-history files: the original file is preserved, a warning is shown, and the browser can continue using a separate recovery file (with a uniquely named fallback if the recovery file is also unreadable).
 - Download source URLs are restricted to HTTP(S), embedded credentials are rejected, query/fragment values are not retained in UI metadata, and suggested filenames are sanitized.
 - Chronological history UI, navigation from history, and clear-all history.
 - Validation for saved URL schemes, URL length, embedded credentials, timestamps, schema version, record counts, duplicate bookmark/history/download IDs, and empty persisted IDs.
 - Corrupt/unsupported/oversized storage data is rejected without silently overwriting the original file.
-- Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, IPC sender/main-frame authorization, frame navigation scheme policy, and private-tab history exclusion through WebContents destruction.
+- Unit tests for navigation and context-menu link policy, browser data persistence/validation and URL-redaction migration, individual history deletion, saved-entry search, persistent download-history validation/retention/removal races, browser-data startup recovery fallback, download URL/filename safety policy, find-query validation, site permission origin/allowlist policy and prompt deduplication, exact renderer trust, IPC sender/main-frame authorization, frame navigation scheme policy, and private-tab history exclusion through WebContents destruction.
 - Windows CI workflow for lint, typecheck, tests, dependency audit gate, build, unsigned NSIS packaging, and installer artifact upload.
 - CodeQL workflow.
 
