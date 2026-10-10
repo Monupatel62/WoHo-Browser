@@ -31,6 +31,7 @@ describe('BrowserSettingsStore', () => {
   it('rejects unsupported providers, unsafe URLs, credentials, and oversized values', async () => {
     const { store } = await createStore();
     await expect(store.update({ searchProvider: 'custom', homePageUrl: 'https://example.com/' })).rejects.toThrow(/unsupported/);
+    await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/', surprise: true } as never)).rejects.toThrow(/unknown keys/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'file:///secret' })).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://user:pass@example.com/' })).rejects.toThrow(/unsupported/);
     await expect(store.update({ searchProvider: 'google', homePageUrl: 'https://example.com/' + 'x'.repeat(2100) })).rejects.toThrow(/unsupported/);
