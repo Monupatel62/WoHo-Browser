@@ -1,4 +1,4 @@
-import { stat, readFile } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
 import { atomicWriteFile } from './browser-data';
 import { readFileBounded } from './bounded-file-read';
 import {
