@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
+import { normalizeFindQuery } from '../shared/find-query';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
@@ -243,13 +244,12 @@ function registerIpc(): void {
     });
   };
   handle('browser:get-state', () => getState());
-  handle('browser:find-in-page', (_event, query: unknown, forward: unknown, findNext: unknown) => {
-    if (typeof query !== 'string' || query.length > 500 || typeof forward !== 'boolean' || typeof findNext !== 'boolean') {
-      throw new Error('Invalid find-in-page request.');
-    }
+  handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
+    if (typeof forward !== 'boolean' || typeof findNext !== 'boolean') throw new Error('Invalid find-in-page request.');
+    const query = normalizeFindQuery(rawQuery);
     const view = activeView();
     if (!view) throw new Error('No active tab.');
-    if (!query.trim()) { view.webContents.stopFindInPage('clearSelection'); return 0; }
+    if (!query) { view.webContents.stopFindInPage('clearSelection'); return 0; }
     return view.webContents.findInPage(query, { forward, findNext });
   });
   handle('browser:stop-find-in-page', () => activeView()?.webContents.stopFindInPage('clearSelection'));
