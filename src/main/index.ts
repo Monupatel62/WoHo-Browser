@@ -122,7 +122,12 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
 
 function registerPrivateDownloadHandling(privateSession: Electron.Session): void {
   privateSession.on('will-download', (event, item) => {
-    if (!safeDownloadUrl(item.getURL())) { event.preventDefault(); return; }
+    // A late download event can arrive after tab disposal has begun. Reject it
+    // before pausing the item or opening a native Save dialog.
+    if (disposedPrivateSessions.has(privateSession) || !safeDownloadUrl(item.getURL())) {
+      event.preventDefault();
+      return;
+    }
     // Pause synchronously so the download cannot write to the default folder
     // while the asynchronous Save dialog is open.
     item.pause();
