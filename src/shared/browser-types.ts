@@ -12,6 +12,8 @@ export interface WoHoBrowserApi {
   getSettings(): Promise<BrowserSettings>;
   updateSettings(settings: BrowserSettings): Promise<BrowserSettings>;
   resetSettings(): Promise<BrowserSettings>;
+  exportSettings(): Promise<boolean>;
+  importSettings(): Promise<BrowserSettings | null>;
   openTab(url?: string): Promise<void>;
   openPrivateTab(url?: string): Promise<void>;
   closeTab(id: string): Promise<void>;
