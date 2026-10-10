@@ -450,6 +450,17 @@ function registerIpc(): void {
     permissionDecisions(browserSession).delete(key);
   });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
+  handle('browser:clear-finished-downloads', async () => {
+    const finished = [...downloads.values()].filter((record) =>
+      record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted');
+    for (const record of finished) {
+      downloads.delete(record.id);
+      downloadItems.delete(record.id);
+    }
+    await Promise.all(finished.map((record) => downloadHistoryStore.remove(record.id)));
+    publishDownloads();
+    return [...downloads.values()].map((record) => ({ ...record }));
+  });
   handle('browser:pause-download', (_event, id: unknown) => {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid download ID.');
     const item = downloadItems.get(id);
