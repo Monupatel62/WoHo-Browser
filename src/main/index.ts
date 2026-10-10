@@ -539,9 +539,39 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
-  downloadHistoryStore = new DownloadHistoryStore(join(app.getPath('userData'), 'download-history.json'));
-  for (const record of await downloadHistoryStore.list()) downloads.set(record.id, record);
+  const userDataPath = app.getPath('userData');
+  browserDataStore = new BrowserDataStore(join(userDataPath, 'browser-data.json'));
+  const primaryDownloadHistoryPath = join(userDataPath, 'download-history.json');
+  downloadHistoryStore = new DownloadHistoryStore(primaryDownloadHistoryPath);
+  try {
+    for (const record of await downloadHistoryStore.list()) downloads.set(record.id, record);
+  } catch (error) {
+    // A malformed or incompatible history file must not prevent the browser from launching.
+    // Keep the original untouched and use a separate store for future downloads.
+    await dialog.showMessageBox({
+      type: 'warning',
+      title: 'Download history could not be loaded',
+      message: 'WoHo Browser will continue using a separate download history file. The original history file has not been overwritten.',
+      detail: error instanceof Error ? error.message : 'Unknown download history error.',
+      buttons: ['Continue'],
+      noLink: true,
+    });
+    const recoveryPath = join(userDataPath, 'download-history-recovery.json');
+    downloadHistoryStore = new DownloadHistoryStore(recoveryPath);
+    try {
+      for (const record of await downloadHistoryStore.list()) downloads.set(record.id, record);
+    } catch (recoveryError) {
+      await dialog.showMessageBox({
+        type: 'warning',
+        title: 'Recovery download history unavailable',
+        message: 'The recovery history file is also unreadable. WoHo Browser will start with an empty, separate download history file; both existing files will be preserved.',
+        detail: recoveryError instanceof Error ? recoveryError.message : 'Unknown recovery history error.',
+        buttons: ['Continue'],
+        noLink: true,
+      });
+      downloadHistoryStore = new DownloadHistoryStore(join(userDataPath, 'download-history-' + randomUUID() + '.json'));
+    }
+  }
   browserSession = session.fromPartition('persist:woho-browser');
   configurePermissionHandlers(browserSession);
   registerDownloadHandling();
