@@ -15,6 +15,7 @@ import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permiss
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
+import { selectRestorableTabUrls } from '../shared/session-policy';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedIpcSender } from './ipc-security';
@@ -290,13 +291,13 @@ function getState(): BrowserState {
 
 function persistSessionTabs(): void {
   if (!browserSessionStore || !browserSettings.restoreSession || isRestoringSession) return;
-  const urls = tabOrder.flatMap((id) => {
-    if (privateTabRegistry.has(id)) return [];
+  const urls = selectRestorableTabUrls(tabOrder.map((id) => {
     const view = views.get(id);
-    if (!view || view.webContents.isDestroyed()) return [];
-    const url = view.webContents.getURL();
-    return isAllowedNavigationTarget(url) ? [url] : [];
-  });
+    return {
+      url: view && !view.webContents.isDestroyed() ? view.webContents.getURL() : '',
+      isPrivate: privateTabRegistry.has(id),
+    };
+  }));
   void browserSessionStore.save(urls).catch((error: unknown) => {
     console.error('Could not persist normal-tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
   });
