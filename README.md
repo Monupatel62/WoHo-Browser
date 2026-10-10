@@ -4,26 +4,52 @@ WoHo Browser is a planned WoHoTech desktop browser focused on dependable browsin
 
 ## Project status
 
-**Planning and specification stage.** Features in the roadmap are proposals until implementation and test evidence confirms them. The repository does not yet contain the actual browser implementation.
+**Planning and specification stage.** The repository does not yet contain the actual browser implementation. All planned features remain unimplemented until code and test evidence confirm them.
 
-## Master plan
-
+## Start here
 - [Master product plan](docs/WOHO_BROWSER_MASTER_PLAN.md)
-- [Feature requirements and acceptance criteria](docs/feature-requirements.md)
-- [Proposed architecture](docs/architecture.md)
+- [Release 0 feasibility spike](docs/release-0-spike-plan.md)
+- [Feature requirements](docs/feature-requirements.md)
+- [Architecture](docs/architecture.md)
+
+## Security, privacy, and AI
 - [Security model](docs/security-model.md)
 - [Threat model](docs/threat-model.md)
+- [IPC contract](docs/ipc-contract.md)
 - [Privacy requirements](docs/privacy.md)
+- [Data model and retention](docs/data-model-and-retention.md)
+- [Telemetry policy](docs/telemetry-policy.md)
+- [AI broker specification](docs/ai-broker-spec.md)
+- [WoHo AI DevKit integration](docs/devkit-integration-spec.md)
+- [Future agent security design](docs/agent-security-design.md)
+
+## Product and release engineering
+- [UI/UX and trusted UI](docs/ui-ux-spec.md)
+- [Platform support matrix](docs/platform-support.md)
+- [Extension strategy](docs/extension-strategy.md)
+- [Update and signing requirements](docs/update-and-signing.md)
 - [Testing and release gates](docs/testing-and-release.md)
-- [Business validation plan](docs/monetization-and-validation.md)
+- [Performance and compatibility budgets](docs/performance-and-compatibility-budgets.md)
+- [Dependency, license, and SBOM policy](docs/dependency-license-sbom-policy.md)
+- [Incident response and CVE policy](docs/incident-response-and-cve-policy.md)
+
+## Business validation
+- [Competitive analysis](docs/competitive-analysis.md)
+- [Monetization and validation](docs/monetization-and-validation.md)
+
+## Architecture decisions
+- [ADR-0001: Engine and platform](docs/decisions/ADR-0001-engine-and-platform.md)
+- [ADR-0002: Tab view model](docs/decisions/ADR-0002-tab-view-model.md)
+- [ADR-0003: Updater](docs/decisions/ADR-0003-updater.md)
+- [ADR-0004: Storage](docs/decisions/ADR-0004-storage.md)
+- [ADR-0005: License](docs/decisions/ADR-0005-license.md)
+
+## Contribution and security
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## Proposed initial stack
-
-- Electron + TypeScript + React, subject to a documented technical decision
-- Chromium-based rendering through the selected framework
-- Optional AI integration through a controlled broker
-- GitHub Actions for CI and security checks
+Electron + TypeScript + React is selected for the Release 0 prototype only. The final production decision depends on the feasibility spike. This does not promise full Chrome extension compatibility, DRM, sync, or Chrome feature parity.
 
 ## Important
-
-This repository is in planning. The README does not claim that the browser or listed features have been implemented. Do not treat the product as production-ready until implementation, security review, tests, packaging, update verification, and release checks are complete.
+The repository currently contains planning documents, not a working browser. Do not treat the product as production-ready until implementation, security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.
