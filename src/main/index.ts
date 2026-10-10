@@ -11,6 +11,7 @@ import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { getDownloadIdsToPrune } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
 import { isTrustedIpcSender } from './ipc-security';
+import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
