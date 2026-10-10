@@ -32,5 +32,6 @@ describe('readFileBounded', () => {
     const file = await createFile('x');
     await expect(readFileBounded(file, -1)).rejects.toThrow(/non-negative safe integer/);
     await expect(readFileBounded(file, 1.5)).rejects.toThrow(/non-negative safe integer/);
+    await expect(readFileBounded(file, Number.MAX_SAFE_INTEGER)).rejects.toThrow(/16 MiB/);
   });
 });
