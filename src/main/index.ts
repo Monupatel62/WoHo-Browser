@@ -6,6 +6,7 @@ import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedNavigationTarget, resolveAddressInput } from '../shared/navigation';
+import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
 
 const CHROME_HEIGHT = 108;
@@ -231,7 +232,7 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   const changed = () => { layoutViews(); publishState(); };
   wc.on('did-navigate', (_event, url) => {
     changed();
-    if (privateTabIds.has(id)) return;
+    if (!shouldPersistBrowsingHistory(privateTabIds.has(id))) return;
     void browserDataStore.recordVisit(url, wc.getTitle()).catch((error: unknown) => {
       console.error('Could not persist browser history:', error instanceof Error ? error.message : 'Unknown storage error');
     });
