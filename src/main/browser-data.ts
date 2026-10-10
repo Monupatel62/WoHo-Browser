@@ -145,7 +145,7 @@ export class BrowserDataStore {
           const parsed = parseData(raw.toString('utf8'));
           this.data = parsed.data;
           if (parsed.historyRedacted) {
-            await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\\n');
+            await atomicWrite(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
           }
         } catch (error) {
           if (!isRecord(error) || error.code !== 'ENOENT') throw error;
