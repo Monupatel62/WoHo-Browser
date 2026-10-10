@@ -280,6 +280,7 @@ export default function App() {
       </li>)}</ul> : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
       {panel === 'history' && (history.length ? <ul className="saved-list">{history.map((entry) => <li key={entry.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(entry.url)}><strong>{entry.title}</strong><span>{entry.url}</span><small>{new Date(entry.visitedAt).toLocaleString()}</small></button>
+        <button className="saved-remove" aria-label={`Delete history entry ${entry.title}`} onClick={() => void window.wohoBrowser.removeHistory(entry.id).then(setHistory).catch(() => setError('Could not delete history entry.'))}>×</button>
       </li>)}</ul> : <p className="empty-data">No browsing history saved.</p>)}
       {panel === 'downloads' && (downloads.length ? <ul className="download-list">{[...downloads].reverse().map((item) => {
         const progress = item.totalBytes > 0 ? Math.min(100, Math.round(item.receivedBytes / item.totalBytes * 100)) : 0;
