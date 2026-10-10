@@ -201,6 +201,16 @@ export default function App() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not open saved page.'); }
   }
 
+  async function openSavedUrlInNewTab(url: string) {
+    try {
+      if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) await window.wohoBrowser.openPrivateTab(url);
+      else await window.wohoBrowser.openTab(url);
+      setPanel(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not open saved page in a new tab.');
+    }
+  }
+
   async function runDownloadAction(action: 'pause' | 'resume' | 'cancel' | 'reveal', id: string) {
     setError('');
     try {
@@ -357,10 +367,12 @@ export default function App() {
       </li>)}</ul> : <p className="empty-data">No site permission decisions yet. Sites must ask through the browser’s trusted prompt.</p>)}
       {panel === 'bookmarks' && (bookmarks.length ? (visibleBookmarks.length ? <ul className="saved-list">{visibleBookmarks.map((bookmark) => <li key={bookmark.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
+        <button className="panel-action" aria-label={`Open bookmark ${bookmark.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(bookmark.url)}>New tab</button>
         <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
       </li>)}</ul> : <p className="empty-data">No bookmarks match your search.</p>) : <p className="empty-data">No bookmarks yet. Use ☆ to save the current page.</p>)}
       {panel === 'history' && (history.length ? (visibleHistory.length ? <ul className="saved-list">{visibleHistory.map((entry) => <li key={entry.id}>
         <button className="saved-open" onClick={() => void openSavedUrl(entry.url)}><strong>{entry.title}</strong><span>{entry.url}</span><small>{new Date(entry.visitedAt).toLocaleString()}</small></button>
+        <button className="panel-action" aria-label={`Open history entry ${entry.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(entry.url)}>New tab</button>
         <button className="saved-remove" aria-label={`Delete history entry ${entry.title}`} onClick={() => void window.wohoBrowser.removeHistory(entry.id).then(setHistory).catch(() => setError('Could not delete history entry.'))}>×</button>
       </li>)}</ul> : <p className="empty-data">No history entries match your search.</p>) : <p className="empty-data">No browsing history saved.</p>)}
       {panel === 'downloads' && (downloads.length ? <ul className="download-list">{[...downloads].reverse().map((item) => {
