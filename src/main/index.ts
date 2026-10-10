@@ -444,6 +444,10 @@ function registerIpc(): void {
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
+  handle('browser:remove-history', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid history ID.');
+    return browserDataStore.removeHistory(id);
+  });
   handle('browser:clear-site-data', async () => {
     await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
     permissionDecisions(browserSession).clear();

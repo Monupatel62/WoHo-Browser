@@ -17,6 +17,7 @@ const api: WoHoBrowserApi = {
   removeBookmark: (id) => ipcRenderer.invoke('browser:remove-bookmark', id) as Promise<BookmarkRecord[]>,
   listHistory: () => ipcRenderer.invoke('browser:list-history') as Promise<HistoryRecord[]>,
   clearHistory: () => ipcRenderer.invoke('browser:clear-history'),
+  removeHistory: (id) => ipcRenderer.invoke('browser:remove-history', id) as Promise<HistoryRecord[]>,
   clearSiteData: () => ipcRenderer.invoke('browser:clear-site-data'),
   listSitePermissions: () => ipcRenderer.invoke('browser:list-site-permissions') as Promise<SitePermissionDecision[]>,
   revokeSitePermission: (origin, permission) => ipcRenderer.invoke('browser:revoke-site-permission', origin, permission),

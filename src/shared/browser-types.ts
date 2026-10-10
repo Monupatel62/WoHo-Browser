@@ -22,6 +22,7 @@ export interface WoHoBrowserApi {
   removeBookmark(id: string): Promise<BookmarkRecord[]>;
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
+  removeHistory(id: string): Promise<HistoryRecord[]>;
   clearSiteData(): Promise<void>;
   listSitePermissions(): Promise<SitePermissionDecision[]>;
   revokeSitePermission(origin: string, permission: string): Promise<void>;

@@ -35,6 +35,21 @@ describe('BrowserDataStore', () => {
     expect(await new BrowserDataStore(file).listHistory()).toEqual([]);
   });
 
+  it('deletes one history entry and preserves other entries across restart', async () => {
+    const { store, file } = await createStore();
+    await store.recordVisit('https://example.com/one', 'One');
+    await store.recordVisit('https://example.org/two', 'Two');
+    const before = await store.listHistory();
+    expect(before).toHaveLength(2);
+
+    const remaining = await store.removeHistory(before[0].id);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe(before[1].id);
+    expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
+      { id: before[1].id, url: 'https://example.com/one' },
+    ]);
+  });
+
   it('does not save unsupported schemes or URLs with embedded credentials', async () => {
     const { store } = await createStore();
     await expect(store.addBookmark('Unsafe', 'javascript:alert(1)')).rejects.toThrow(/HTTP and HTTPS/);
