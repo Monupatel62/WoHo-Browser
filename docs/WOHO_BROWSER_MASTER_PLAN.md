@@ -311,3 +311,23 @@ Update this table only with verified repository evidence.
 - Make small, reviewable changes with regression tests.
 - Do not claim code has been built, tested, deployed, or released unless the relevant evidence has been checked.
 - Preserve a changelog of important plan updates with date, summary, and reason.
+
+
+## 15. Review-driven scope resolution (supersedes conflicting earlier statements)
+This section resolves inconsistencies found during independent review.
+
+- **Engine:** Electron + TypeScript + React is selected for the Release 0 prototype only. See ADR-0001. A production commitment depends on the feasibility spike.
+- **Permission policy:** permission request/check handlers, navigation policy, popup policy, and trusted/untrusted view separation are Release 0 foundation work. Permission controls are not deferred to Release 3.
+- **Private browsing:** a non-persistent private session is a Windows MVP (Release 1) requirement, subject to tests proving no private visit is written to normal history.
+- **Release mapping:** use R0 (feasibility/security foundation), R1 (Windows MVP), R2 (user-controlled AI), R3 (validated productivity/privacy), and R4 (controlled AI actions). Requirements and acceptance criteria live in docs/feature-requirements.md.
+- **Telemetry:** off by default. Use CI/release tests and voluntary tester feedback for early metrics. No remote user telemetry until the policy, consent, fields, retention, and opt-out are separately approved.
+- **AI DevKit:** no integration until its actual package/tool inventory, license, dependencies, process boundary, and tool manifest are reviewed. See docs/devkit-integration-spec.md.
+- **Release 5 is split:** Linux, Android, sync, enterprise management, and a custom Chromium fork are separate future tracks, not one release. Android is a separate product direction because Electron desktop architecture is not portable.
+- **Custom Chromium:** not planned. Reopen only through an ADR after a validated requirement and a realistic security-maintenance plan.
+- **Estimates:** at 15–20 hours/week, Release 0 spike is estimated at 4–6 weeks; Windows MVP at 4–6 months; user-controlled AI at 2–3 months; productivity/privacy at 3–4 months. These are rough planning estimates, not commitments. Controlled AI actions may require 4–6+ months and remain blocked pending a separate security review.
+- **First-tab behavior:** closing the last tab returns to a documented new-tab page; closing the application window exits the window normally. Confirm this behavior in UX tests.
+- **Privacy and metrics:** never collect browsing content merely to measure active users. See docs/telemetry-policy.md.
+- **Roadmap work:** do not spend time on passwords, passkeys, sync, DRM, full extension compatibility, Linux, Android, or enterprise controls until target-user validation and separate feasibility decisions justify them.
+
+## 16. Documentation index
+The README.md links the product plan, requirements, architecture, security and privacy documents, AI specifications, release policies, and ADRs. Keep it updated whenever a new planning document is added.
