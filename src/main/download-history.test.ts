@@ -57,6 +57,15 @@ describe('DownloadHistoryStore', () => {
     expect(rows[0].id).toBe('download-104');
   });
 
+  it('does not resurrect a record when an older upsert completes after removal', async () => {
+    const { store, file } = await createStore();
+    await store.upsert(record());
+    await store.remove('download-1');
+    await store.upsert(record({ status: 'interrupted' }));
+    expect(await store.list()).toEqual([]);
+    expect(JSON.parse(await readFile(file, 'utf8')).downloads).toEqual([]);
+  });
+
   it('preserves malformed files instead of silently overwriting them', async () => {
     const { store, file } = await createStore();
     await writeFile(file, '{broken', 'utf8');
