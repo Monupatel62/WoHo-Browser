@@ -14,7 +14,7 @@
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
-- Bookmark add/remove/list UI and duplicate-URL handling.
+- Bookmark add/remove/list UI, duplicate-URL handling, and versioned JSON bookmark import/export with bounded input, URL validation, transactional merge, and a warning before exporting potentially sensitive URLs.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
 - Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, a “Clear finished” action, and per-item removal of finished records without deleting saved files. Private downloads are excluded from the normal store.
@@ -32,7 +32,7 @@
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer.
-- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, import/export, bookmark editing/reordering, history time filters, multi-select deletion, and clear-range controls are not implemented yet.
+- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark folders, bookmark editing/reordering, import preview/per-row import reporting, history time filters, multi-select deletion, and clear-range controls are not implemented yet.
 - Download history is persisted locally and bounded; retry, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
