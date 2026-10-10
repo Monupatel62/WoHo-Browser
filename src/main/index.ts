@@ -163,6 +163,7 @@ function registerIpc(): void {
   handle('browser:back', () => { const view = activeView(); if (view?.webContents.navigationHistory.canGoBack()) view.webContents.navigationHistory.goBack(); });
   handle('browser:forward', () => { const view = activeView(); if (view?.webContents.navigationHistory.canGoForward()) view.webContents.navigationHistory.goForward(); });
   handle('browser:reload', () => activeView()?.webContents.reload());
+  handle('browser:stop', () => activeView()?.webContents.stop());
 }
 
 function createWindow(): void {
