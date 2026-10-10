@@ -2,6 +2,7 @@ import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, t
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrowserDataStore } from './browser-data';
+import { DownloadHistoryStore } from './download-history';
 import { safeDownloadFilename, safeDownloadUrl } from '../shared/download-policy';
 import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
@@ -19,6 +20,7 @@ let activeTabId: string | null = null;
 const tabOrder: string[] = [];
 const views = new Map<string, WebContentsView>();
 let browserDataStore: BrowserDataStore;
+let downloadHistoryStore: DownloadHistoryStore;
 const downloads = new Map<string, DownloadRecord>();
 const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
@@ -102,13 +104,22 @@ function setDownloadStatus(id: string, status: DownloadStatus): void {
     if (item.getSavePath()) record.savePath = item.getSavePath();
   }
   publishDownloads();
+  const snapshot = downloads.get(id);
+  if (snapshot && downloadHistoryStore) void downloadHistoryStore.upsert(snapshot).catch((error: unknown) => {
+    console.error('Could not persist download history:', error instanceof Error ? error.message : 'Unknown storage error');
+  });
 }
 
 function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): void {
   if (downloads.size <= maxRecords) return;
   for (const [id, record] of downloads) {
     if (downloads.size <= maxRecords) break;
-    if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') downloads.delete(id);
+    if (record.status === 'completed' || record.status === 'cancelled' || record.status === 'interrupted') {
+      downloads.delete(id);
+      void downloadHistoryStore.remove(id).catch((error: unknown) => {
+        console.error('Could not prune download history:', error instanceof Error ? error.message : 'Unknown storage error');
+      });
+    }
   }
 }
 
@@ -131,6 +142,9 @@ function registerDownloadHandling(): void {
     };
     downloads.set(id, record);
     downloadItems.set(id, item);
+    void downloadHistoryStore.upsert(record).catch((error: unknown) => {
+      console.error('Could not persist download history:', error instanceof Error ? error.message : 'Unknown storage error');
+    });
     pruneDownloadRecords();
     publishDownloads();
     item.on('updated', (_updateEvent, state) => {
@@ -476,8 +490,10 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => { layoutViews(); publishState(); });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   browserDataStore = new BrowserDataStore(join(app.getPath('userData'), 'browser-data.json'));
+  downloadHistoryStore = new DownloadHistoryStore(join(app.getPath('userData'), 'download-history.json'));
+  for (const record of await downloadHistoryStore.list()) downloads.set(record.id, record);
   browserSession = session.fromPartition('persist:woho-browser');
   configurePermissionHandlers(browserSession);
   registerDownloadHandling();
