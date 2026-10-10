@@ -1,6 +1,6 @@
 # Address Bar and Search Specification
 
-**Status:** Planned.
+**Status:** Partially implemented. URL/query classification and HTTP(S)-only navigation are implemented; users can select Google, Bing, or DuckDuckGo and configure the home/new-tab URL. Suggestions, paste-and-go, and provider privacy links remain planned.
 
 ## Input classification
 Accept URL, hostname/path, or plain-language query. Explicit supported schemes are parsed as URLs. Hostname-plus-port input is navigation only when it passes documented validation. Plain text uses the configured search provider. Ambiguous or invalid input must not silently open local files or launch external applications. Search templates must be validated and encode query values safely.
