@@ -1,7 +1,7 @@
 # Security Policy
 
 ## Reporting a vulnerability
-Do not publish exploitable vulnerability details in a public issue. Use GitHub Private vulnerability reporting for this repository if enabled. If unavailable, open a minimal public issue asking for a private reporting route; do not include exploit details, credentials, or personal data.
+Do not publish exploitable vulnerability details in a public issue. The repository owner must enable GitHub Private Vulnerability Reporting before production release and verify that reports reach a monitored inbox. Until it is enabled, do not publish exploit details in a public issue; contact the repository owner through a known private channel and request a secure reporting route. Never include exploit details, credentials, or personal data in a public issue.
 
 No dedicated security email address is configured here. Do not guess an address.
 
