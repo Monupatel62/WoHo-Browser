@@ -65,7 +65,6 @@ export function parseBrowserSettingsImport(raw: string): BrowserSettings {
   }
   const document = parsed as Record<string, unknown>;
   if (Object.keys(document).some((key) => key !== 'version' && key !== 'settings') ||
-      !isSearchProviderId('google') ||
       (document.version !== 1 && document.version !== 2) ||
       typeof document.settings !== 'object' || document.settings === null || Array.isArray(document.settings)) {
     throw new Error('Settings import structure or version is unsupported.');
