@@ -27,6 +27,7 @@ export interface WoHoBrowserApi {
   revokeSitePermission(origin: string, permission: string): Promise<void>;
   forgetSitePermission(origin: string, permission: string): Promise<void>;
   listDownloads(): Promise<DownloadRecord[]>;
+  clearFinishedDownloads(): Promise<DownloadRecord[]>;
   pauseDownload(id: string): Promise<void>;
   resumeDownload(id: string): Promise<void>;
   cancelDownload(id: string): Promise<void>;

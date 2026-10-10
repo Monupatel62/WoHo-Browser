@@ -16,7 +16,7 @@ Never auto-open or execute downloaded files. Opening requires a deliberate user 
 
 ## UI
 
-Implemented: name, progress/status, pause/resume/cancel where supported, and Show in folder for completed downloads. Retry, remove-from-list, open-after-completion, and detailed destination/source UI remain planned. Unknown total size must not show misleading percentages. “Remove from list” is distinct from deleting the file; deletion requires a separate clear confirmation.
+Implemented: name, progress/status, pause/resume/cancel where supported, Show in folder for completed downloads, and a “Clear finished” action that removes completed/cancelled/interrupted records while leaving active downloads visible. The action confirms that records are removed but files on disk are not deleted. Retry, per-item remove-from-list, open-after-completion, and detailed destination/source UI remain planned. Unknown total size must not show misleading percentages.
 
 ## Failure and privacy
 

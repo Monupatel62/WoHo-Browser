@@ -54,11 +54,22 @@ async function atomicWrite(filePath: string, contents: string): Promise<void> {
 /** Bounded, local-only normal-profile download history. Private downloads must never be passed here. */
 export class DownloadHistoryStore {
   private records: DownloadRecord[] = [];
+  private removedIds = new Set<string>();
   private loaded = false;
   private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly filePath: string) {}
+
+  private rememberRemovedId(id: string): void {
+    this.removedIds.add(id);
+    // The store is bounded; keep tombstones bounded too while covering in-flight writes.
+    while (this.removedIds.size > MAX_RECORDS * 2) {
+      const oldest = this.removedIds.values().next().value;
+      if (oldest === undefined) break;
+      this.removedIds.delete(oldest);
+    }
+  }
 
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
@@ -117,6 +128,7 @@ export class DownloadHistoryStore {
   async upsert(record: DownloadRecord): Promise<void> {
     await this.ensureLoaded();
     const safeRecord = parseDownload(record);
+    if (this.removedIds.has(safeRecord.id)) return;
     const existing = this.records.findIndex((item) => item.id === safeRecord.id);
     if (existing >= 0) this.records.splice(existing, 1);
     this.records.unshift({ ...safeRecord });
@@ -125,6 +137,7 @@ export class DownloadHistoryStore {
   }
 
   async remove(id: string): Promise<void> {
+    this.rememberRemovedId(id);
     await this.ensureLoaded();
     const next = this.records.filter((record) => record.id !== id);
     if (next.length === this.records.length) return;

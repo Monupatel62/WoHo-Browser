@@ -22,6 +22,7 @@ const api: WoHoBrowserApi = {
   revokeSitePermission: (origin, permission) => ipcRenderer.invoke('browser:revoke-site-permission', origin, permission),
   forgetSitePermission: (origin, permission) => ipcRenderer.invoke('browser:forget-site-permission', origin, permission),
   listDownloads: () => ipcRenderer.invoke('browser:list-downloads') as Promise<DownloadRecord[]>,
+  clearFinishedDownloads: () => ipcRenderer.invoke('browser:clear-finished-downloads') as Promise<DownloadRecord[]>,
   pauseDownload: (id) => ipcRenderer.invoke('browser:pause-download', id),
   resumeDownload: (id) => ipcRenderer.invoke('browser:resume-download', id),
   cancelDownload: (id) => ipcRenderer.invoke('browser:cancel-download', id),
