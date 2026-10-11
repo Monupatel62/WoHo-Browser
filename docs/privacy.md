@@ -24,8 +24,10 @@
 | Crash diagnostics | Off unless consent is obtained | Opt in/out and explain fields |
 | Sync data | Not collected until sync is designed and launched | Account, encryption, export, deletion controls |
 
-## Future AI disclosure
-AI integration is out of scope and absent from this prototype. If a future version adds remote AI, identify the provider before processing, show the context being sent, and explain applicable provider policies. Never include cookies, passwords, hidden form fields, or unrelated browsing history in AI context. Do not advertise local-model options unless they are supported and tested.
+## AI scope exclusion
+
+WoHo Browser does not include AI features and does not send page content, prompts, or browsing data to AI providers. AI integrations and their data flows are out of scope, not planned release work.
+
 
 ## Private browsing
 Document precisely which local records are not retained and which data may still be visible to websites, networks, employers, DNS resolvers, or internet providers. Do not promise protection against device monitoring or network observation.
