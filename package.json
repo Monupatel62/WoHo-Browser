@@ -41,7 +41,8 @@
     "files": [
       "out/main/**/*",
       "out/preload/**/*",
-      "out/renderer/**/*",
+      "out/renderer/index.html",
+      "out/renderer/assets/**/*",
       "package.json"
     ],
     "win": {
