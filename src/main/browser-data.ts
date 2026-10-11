@@ -8,6 +8,14 @@ export interface BookmarkRecord {
   id: string;
   title: string;
   url: string;
+  folderId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookmarkFolderRecord {
+  id: string;
+  name: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,14 +28,17 @@ export interface HistoryRecord {
 }
 
 interface PersistedBrowserData {
-  version: 1;
+  version: 2;
   bookmarks: BookmarkRecord[];
+  folders: BookmarkFolderRecord[];
   history: HistoryRecord[];
 }
 
-const DATA_VERSION = 1 as const;
+const DATA_VERSION = 2 as const;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_BOOKMARKS = 500;
+const MAX_BOOKMARK_FOLDERS = 100;
+const MAX_FOLDER_NAME_LENGTH = 80;
 const MAX_HISTORY = 500;
 const MAX_TITLE_LENGTH = 512;
 const MAX_URL_LENGTH = 2048;
