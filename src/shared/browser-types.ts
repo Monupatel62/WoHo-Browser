@@ -16,6 +16,7 @@ export interface WoHoBrowserApi {
   openTab(url?: string): Promise<void>;
   openPrivateTab(url?: string): Promise<void>;
   closeTab(id: string): Promise<void>;
+  reopenClosedTab(): Promise<void>;
   selectTab(id: string): Promise<void>;
   navigate(url: string): Promise<void>;
   goBack(): Promise<void>;
