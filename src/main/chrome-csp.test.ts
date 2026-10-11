@@ -11,7 +11,8 @@ describe('trusted chrome renderer Content Security Policy', () => {
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("script-src 'self'");
     const scriptDirective = policy.split(";").map((part) => part.trim()).find((part) => part.startsWith("script-src "));
-    expect(scriptDirective).toBe("script-src 'self'");
+    expect(scriptDirective).toBe("script-src 'self' file:");
+    expect(scriptDirective).not.toContain("'unsafe-inline'");
     expect(policy).toContain("object-src 'none'");
     expect(policy).toContain("frame-src 'none'");
     expect(policy).toContain("base-uri 'none'");
