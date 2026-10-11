@@ -14,17 +14,18 @@ Required checks should include:
 - Unit and integration tests.
 - Dependency installation and vulnerability scanning. `package-lock.json` is committed and CI uses `npm ci` for reproducible dependency installation.
 - Secret scanning and static analysis.
-- Build and package smoke tests; generate a SHA-256 manifest for the unsigned Windows installer.
+- Build and package smoke tests, including launching the packaged Windows app until the chrome renderer loads and initial tab navigation starts; generate a SHA-256 manifest for the unsigned Windows installer.
 - Relevant Windows end-to-end tests.
 - License inventory and third-party notices check.
 
 ## Test layers
 1. Unit: URL validation, settings migration, policy decisions, AI limits.
 2. Integration: IPC boundaries, tabs, sessions, downloads, permissions, storage.
-3. End-to-end: install, launch, navigate, tab operations, errors, restart, uninstall.
-4. Security: malicious origins, forged IPC, prompt injection, unsafe protocols, download abuse, update integrity.
-5. Compatibility: common sites, redirects, authentication, media, scaling, keyboard navigation.
-6. Release: clean-machine install, version display, update, failed-update recovery, uninstall.
+3. Automated packaged-app smoke: launch the unpacked packaged executable in an isolated profile and verify the chrome renderer loads and initial tab navigation starts. This is not a substitute for manual end-to-end testing.
+4. End-to-end: install, launch, navigate, tab operations, errors, restart, uninstall.
+5. Security: malicious origins, forged IPC, prompt injection, unsafe protocols, download abuse, update integrity.
+6. Compatibility: common sites, redirects, authentication, media, scaling, keyboard navigation.
+7. Release: clean-machine install, version display, update, failed-update recovery, uninstall.
 
 ## Release checklist
 - [ ] Version and release notes match the built artifact.
