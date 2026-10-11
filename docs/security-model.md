@@ -53,7 +53,7 @@ The following controls must be checked against the exact selected Electron versi
 - Enforce navigation policy with navigation events such as will-navigate and deny or safely mediate new windows through setWindowOpenHandler.
 - Deny javascript:, data:, file:, and custom schemes for ordinary web navigation unless a specific reviewed feature requires a narrowly scoped exception.
 - Keep remote debugging disabled in production.
-- Review Electron fuses, including disabling run-as-Node behavior where compatible with the build, and evaluate ASAR integrity protection for the chosen packaging approach.
+- Packaged builds are configured to disable run-as-Node, Node options injection, inspector CLI flags, and extra file-protocol privileges; enable cookie encryption and embedded ASAR integrity validation; and load app code only from ASAR. Verify the fuses in the produced Windows installer before release. Cookie encryption is a one-way storage transition; disabling it after release can make the cookie store unusable.
 - Never silently bypass certificate errors. External protocol launches must be allowlisted and user initiated.
 - Render page titles, favicons, and URL text safely; do not allow webpage content to imitate trusted chrome.
 - Do not render model output as active HTML. Disable remote Markdown images by default to prevent exfiltration.
