@@ -23,6 +23,9 @@ import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import android.net.http.SslError
 import java.net.URI
 
@@ -46,7 +49,13 @@ class MainActivity : Activity() {
     }
 
     private fun buildUi() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(4)) }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(dp(8) + bars.left, dp(8) + bars.top, dp(8) + bars.right, dp(4) + bars.bottom)
+            insets
+        }
         val addressRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         addressBar = EditText(this).apply {
             setSingleLine(true); hint = "Search or enter address"; imeOptions = EditorInfo.IME_ACTION_GO
