@@ -175,6 +175,44 @@ describe('BrowserDataStore', () => {
     expect((await new BrowserDataStore(file).listBookmarks())[0].title).toBe('Example updated');
   });
 
+  it('retries bulk history deletion after a failed write', async () => {
+    const { file } = await createStore();
+    let failWrites = false;
+    const store = new BrowserDataStore(file, async (path, contents) => {
+      if (failWrites) throw new Error('simulated disk failure');
+      await writeFile(path, contents, 'utf8');
+    });
+    await store.recordVisit('https://example.com/secret?token=removed', 'Example');
+    const [entry] = await store.listHistory();
+
+    failWrites = true;
+    await expect(store.removeHistoryEntries([entry.id])).rejects.toThrow('simulated disk failure');
+    failWrites = false;
+    await store.removeHistoryEntries([entry.id]);
+
+    expect(JSON.parse(await readFile(file, 'utf8')).history).toEqual([]);
+    expect(await new BrowserDataStore(file).listHistory()).toEqual([]);
+  });
+
+  it('retries date-range history deletion after a failed write', async () => {
+    const { file } = await createStore();
+    let failWrites = false;
+    const store = new BrowserDataStore(file, async (path, contents) => {
+      if (failWrites) throw new Error('simulated disk failure');
+      await writeFile(path, contents, 'utf8');
+    });
+    await store.recordVisit('https://example.com/range', 'Example');
+
+    failWrites = true;
+    await expect(store.removeHistoryRange('2000-01-01T00:00:00.000Z', '2100-01-01T00:00:00.000Z'))
+      .rejects.toThrow('simulated disk failure');
+    failWrites = false;
+    await store.removeHistoryRange('2000-01-01T00:00:00.000Z', '2100-01-01T00:00:00.000Z');
+
+    expect(JSON.parse(await readFile(file, 'utf8')).history).toEqual([]);
+    expect(await new BrowserDataStore(file).listHistory()).toEqual([]);
+  });
+
   it('records visit metadata and clears history durably', async () => {
     const { store, file } = await createStore();
     await store.recordVisit('https://example.com/', 'Example');
