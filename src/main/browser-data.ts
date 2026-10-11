@@ -134,7 +134,10 @@ export class BrowserDataStore {
   private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
-  constructor(private readonly filePath: string) {}
+  constructor(
+    private readonly filePath: string,
+    private readonly writeAtomically: (filePath: string, contents: string) => Promise<void> = atomicWriteFile,
+  ) {}
 
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
@@ -178,7 +181,7 @@ export class BrowserDataStore {
 
   private persist(): Promise<void> {
     const snapshot = JSON.stringify(this.data, null, 2) + '\n';
-    const pendingWrite = this.writeQueue.catch(() => undefined).then(() => atomicWriteFile(this.filePath, snapshot));
+    const pendingWrite = this.writeQueue.catch(() => undefined).then(() => this.writeAtomically(this.filePath, snapshot));
     this.writeQueue = pendingWrite;
     return pendingWrite;
   }
@@ -411,10 +414,10 @@ export class BrowserDataStore {
     if (ids.length === 0) return this.listHistory();
     const selected = new Set(ids);
     const next = this.data.history.filter((item) => !selected.has(item.id));
-    if (next.length !== this.data.history.length) {
-      this.data.history = next;
-      await this.persist();
-    }
+    this.data.history = next;
+    // Persist even when the selected IDs are already absent in memory: a prior
+    // failed write may have left the old rows on disk.
+    await this.persist();
     return this.listHistory();
   }
 
@@ -432,10 +435,9 @@ export class BrowserDataStore {
       const visitedAt = Date.parse(item.visitedAt);
       return visitedAt < start || visitedAt > end;
     });
-    if (next.length !== this.data.history.length) {
-      this.data.history = next;
-      await this.persist();
-    }
+    this.data.history = next;
+    // Retrying the same range must still flush a prior in-memory deletion.
+    await this.persist();
     return this.listHistory();
   }
 
