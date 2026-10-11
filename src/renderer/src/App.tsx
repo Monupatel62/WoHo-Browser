@@ -236,10 +236,12 @@ export default function App() {
   async function importBookmarks() {
     setError(''); setNotice('');
     try {
-      const next = await window.wohoBrowser.importBookmarks();
-      if (next === null) return;
-      setBookmarks(next);
-      setNotice('Bookmarks imported. Matching URLs were updated; saved files and browsing history were not changed.');
+      const result = await window.wohoBrowser.importBookmarks();
+      if (result === null) return;
+      setBookmarks(result.bookmarks);
+      setNotice('Bookmark import complete: ' + result.added + ' added, ' + result.updated +
+        ' updated, ' + result.duplicatesSkipped + ' duplicate rows and ' + result.invalidSkipped +
+        ' invalid rows skipped. Files and browsing history were not changed.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not import bookmarks.');
     }
