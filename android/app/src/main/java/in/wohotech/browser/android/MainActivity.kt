@@ -73,6 +73,7 @@ class MainActivity : Activity() {
         controls.addView(button("‹", "Go back") { activeWebView()?.let { if (it.canGoBack()) it.goBack() } })
         controls.addView(button("›", "Go forward") { activeWebView()?.let { if (it.canGoForward()) it.goForward() } })
         controls.addView(button("↻", "Reload page") { activeWebView()?.reload() })
+        controls.addView(button("History", "Show recent browsing history") { showHistory() })
         bookmarkButton = button("☆", "Save current bookmark") { saveCurrentBookmark() }
         controls.addView(bookmarkButton)
         controls.addView(button("Bookmarks", "Show saved bookmarks") { showBookmarks() })
@@ -188,8 +189,16 @@ class MainActivity : Activity() {
         val url = webView.url ?: return
         if (!BrowserUrlPolicy.isAllowedUrl(url)) return
         val bookmarks = readRecords("bookmarks")
-        if (bookmarks.any { it.optString("url") == url }) { Toast.makeText(this, "Bookmark already saved.", Toast.LENGTH_SHORT).show(); return }
-        bookmarks.put(org.json.JSONObject().put("title", webView.title.orEmpty().take(512)).put("url", url))
+        val existingIndex = (0 until bookmarks.length()).firstOrNull { bookmarks.optJSONObject(it)?.optString("url") == url }
+        if (existingIndex != null) {
+            val updated = org.json.JSONArray()
+            for (i in 0 until bookmarks.length()) if (i != existingIndex) updated.put(bookmarks.getJSONObject(i))
+            preferences.edit().putString("bookmarks", boundedJson(updated, 5000)).apply()
+            updateActiveBookmarkButton()
+            Toast.makeText(this, "Bookmark removed from this device.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        bookmarks.put(org.json.JSONObject().put("title", webView.title.orEmpty().take(512).ifBlank { url }).put("url", url))
         preferences.edit().putString("bookmarks", boundedJson(bookmarks, 5000)).apply()
         updateActiveBookmarkButton()
         Toast.makeText(this, "Bookmark saved on this device.", Toast.LENGTH_SHORT).show()
@@ -208,6 +217,29 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this).setTitle("Bookmarks").setItems(labels) { _, which ->
             val url = records.optJSONObject(which)?.optString("url").orEmpty()
             if (BrowserUrlPolicy.isAllowedUrl(url)) activeWebView()?.loadUrl(url)
+        }.setNegativeButton("Close", null).show()
+    }
+
+    private fun showHistory() {
+        val records = readRecords("history")
+        if (records.length() == 0) {
+            AlertDialog.Builder(this).setTitle("History").setMessage("No browsing history is saved on this device.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        val start = (records.length() - 100).coerceAtLeast(0)
+        val recent = (start until records.length()).reversed().mapNotNull { records.optJSONObject(it) }
+        val labels = recent.map { record ->
+            val title = record.optString("title").ifBlank { record.optString("url") }.take(60)
+            val host = try { URI(record.optString("url")).host.orEmpty() } catch (_: Exception) { "" }
+            if (host.isBlank()) title else "$title — $host"
+        }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Recent history").setItems(labels) { _, which ->
+            val url = recent.getOrNull(which)?.optString("url").orEmpty()
+            if (BrowserUrlPolicy.isAllowedUrl(url)) activeWebView()?.loadUrl(url)
+        }.setNeutralButton("Clear history") { _, _ ->
+            preferences.edit().remove("history").apply()
+            Toast.makeText(this, "Browsing history cleared from this device.", Toast.LENGTH_SHORT).show()
         }.setNegativeButton("Close", null).show()
     }
 
