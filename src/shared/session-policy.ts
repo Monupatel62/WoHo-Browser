@@ -14,3 +14,12 @@ export function selectRestorableTabUrls(tabs: readonly SessionTabCandidate[]): s
     .slice(-MAX_RESTORED_TABS)
     .map((tab) => new URL(tab.url).toString());
 }
+
+/** Session snapshots are allowed only while restore is enabled and the window is live. */
+export function shouldPersistSessionTabs(
+  restoreSession: boolean,
+  isRestoringSession: boolean,
+  isClosingWindow: boolean,
+): boolean {
+  return restoreSession && !isRestoringSession && !isClosingWindow;
+}
