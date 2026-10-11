@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="WoHo Browser platform status, documentation and local bookmark portability.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<title>WoHo Browser — Companion</title><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+</head>
+<body>
+<header class="site-header"><a class="brand" href="#home" aria-label="WoHo Browser home"><span class="brand-mark">W</span><span>WoHo Browser</span></a><nav aria-label="Main navigation"><a href="#platforms">Platforms</a><a href="#bookmarks">Bookmark tools</a><a href="#security">Security</a></nav></header>
+<main id="home">
+<section class="hero"><p class="eyebrow">WOHOTECH · BROWSER PROJECT</p><h1>Browse with clarity.<br><span>Keep control of your data.</span></h1><p class="lead">WoHo Browser is being built with local-first privacy, clear permissions, and honest platform support. This companion site does not browse websites itself.</p><a class="primary-link" href="#platforms">View platform status</a></section>
+<section id="platforms" class="section"><div class="section-heading"><div><p class="eyebrow">PLATFORM STATUS</p><h2>One product vision, platform-specific apps</h2></div><p class="muted">Build status is shown honestly; a plan is not a release.</p></div>
+<div class="cards"><article class="platform-card"><span class="platform-icon" aria-hidden="true">▣</span><h3>Windows desktop</h3><p>The full desktop browser prototype. Packaged runtime verification is still in progress.</p><span class="status status-progress">Prototype · in progress</span></article>
+<article class="platform-card"><span class="platform-icon" aria-hidden="true">▯</span><h3>Android</h3><p>Native mobile browser foundation. Device testing and feature work are still required.</p><span class="status status-planned">Development foundation</span></article>
+<article class="platform-card"><span class="platform-icon" aria-hidden="true">◎</span><h3>Web companion</h3><p>Documentation, status information, and local bookmark import/export. Not a full browser engine.</p><span class="status status-progress">Companion portal</span></article></div></section>
+<section id="bookmarks" class="section bookmark-section"><p class="eyebrow">LOCAL-ONLY TOOL</p><h2>Bookmark import and export</h2><p class="muted">Choose a WoHo bookmark JSON file to inspect it in this browser. The file is processed locally; it is not uploaded. Only HTTP and HTTPS links are accepted.</p>
+<div class="tool-actions"><label class="file-button" for="bookmark-file">Choose bookmark file</label><input id="bookmark-file" type="file" accept=".json,application/json"><button id="export-example" type="button" class="secondary-button">Export sample file</button></div>
+<p id="bookmark-status" role="status" aria-live="polite">No file selected.</p><ul id="bookmark-list" class="bookmark-list" aria-label="Imported bookmarks"></ul><p class="tiny">Import limit: 1 MiB and 5,000 entries. Imported titles are displayed as text, never HTML.</p></section>
+<section id="security" class="section security-section"><p class="eyebrow">PRIVACY BY DESIGN</p><h2>Your browsing data stays yours</h2><ul class="security-list"><li>No browsing history, cookies, passwords, or browser profiles are collected by this companion.</li><li>Bookmark import/export runs locally without a server upload.</li><li>No AI assistants, AI services, agents, or model runtimes are included.</li><li>Downloads and release artifacts will be listed only after their integrity and release status are verified.</li></ul></section>
+</main><footer><span>WoHo Browser · WoHoTech</span><span>Prototype status · Not a production release</span></footer>
+</body></html>
