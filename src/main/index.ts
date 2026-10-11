@@ -1,5 +1,6 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, protocol, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
-import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { extname, join, resolve } from 'node:path';
+import { resolveRendererAssetPath } from './renderer-asset-path';
 import { readFile } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { readFileBounded } from './bounded-file-read';
@@ -881,20 +882,9 @@ function registerTrustedRendererProtocol(): void {
       return new Response('Not found', { status: 404 });
     }
 
-    let pathname: string;
-    try {
-      pathname = decodeURIComponent(url.pathname);
-    } catch {
-      return new Response('Bad request', { status: 400 });
-    }
-    if (pathname === '/') pathname = '/index.html';
-
     const rendererRoot = resolve(app.getAppPath(), 'out/renderer');
-    const target = resolve(rendererRoot, '.' + pathname);
-    const relativePath = relative(rendererRoot, target);
-    if (relativePath === '..' || relativePath.startsWith('..' + sep) || isAbsolute(relativePath)) {
-      return new Response('Forbidden', { status: 403 });
-    }
+    const target = resolveRendererAssetPath(rendererRoot, url.pathname);
+    if (!target) return new Response('Not found', { status: 404 });
 
     try {
       const body = await readFile(target);
