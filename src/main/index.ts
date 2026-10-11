@@ -14,6 +14,7 @@ import { normalizeFindQuery } from '../shared/find-query';
 import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permission-policy';
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
+import { rememberClosedTab, takeRecentlyClosedTab } from '../shared/closed-tab-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
 import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/session-policy';
 import { isFinishedDownloadStatus, pruneDownloadRecordsDurably } from '../shared/download-retention';
@@ -57,6 +58,7 @@ const permissionPromptEpochsBySession = new WeakMap<Electron.Session, Permission
 const privateTabRegistry = new PrivateTabRegistry();
 const tabCrashRegistry = new TabCrashRegistry();
 const navigationErrorsByTab = new Map<string, string>();
+const recentlyClosedTabUrls: string[] = [];
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
 const disposedPrivateSessions = new WeakSet<Electron.Session>();
@@ -441,6 +443,12 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     changed();
   });
   wc.on('render-process-gone', () => { tabCrashRegistry.markCrashed(id); changed(); });
+  wc.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta) || !input.shift || input.key.toLowerCase() !== 't') return;
+    event.preventDefault();
+    if (privateTabRegistry.has(id)) return;
+    void reopenRecentlyClosedTab();
+  });
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
   });
@@ -525,6 +533,13 @@ async function createTab(target?: string, isPrivate = false): Promise<void> {
   }
 }
 
+async function reopenRecentlyClosedTab(): Promise<void> {
+  const result = takeRecentlyClosedTab(recentlyClosedTabUrls);
+  if (!result.url) return;
+  recentlyClosedTabUrls.splice(0, recentlyClosedTabUrls.length, ...result.remaining);
+  await createTab(result.url, false);
+}
+
 function registerIpc(): void {
   const handle = (channel: string, fn: (event: IpcMainInvokeEvent, ...args: any[]) => unknown) => {
     ipcMain.handle(channel, (event, ...args) => {
@@ -576,10 +591,16 @@ function registerIpc(): void {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
     activeTabId = id; layoutViews(); publishState();
   });
+  handle('browser:reopen-closed-tab', () => reopenRecentlyClosedTab());
   handle('browser:close-tab', (_event, id: unknown) => {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
     const view = views.get(id)!;
     const index = tabOrder.indexOf(id);
+    const wasPrivate = privateTabRegistry.has(id);
+    if (!wasPrivate && !view.webContents.isDestroyed()) {
+      recentlyClosedTabUrls.splice(0, recentlyClosedTabUrls.length,
+        ...rememberClosedTab(recentlyClosedTabUrls, view.webContents.getURL(), false));
+    }
     mainWindow?.contentView.removeChildView(view);
     views.delete(id);
     void disposePrivateSession(id);

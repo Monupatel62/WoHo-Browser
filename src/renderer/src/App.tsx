@@ -111,6 +111,9 @@ export default function App() {
         event.preventDefault(); void window.wohoBrowser.openPrivateTab();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
         event.preventDefault(); addressRef.current?.focus(); addressRef.current?.select();
+      } else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 't') {
+        event.preventDefault();
+        if (!active?.isPrivate) void window.wohoBrowser.reopenClosedTab();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 't') {
         event.preventDefault();
         if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) void window.wohoBrowser.openPrivateTab();

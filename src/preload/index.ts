@@ -10,6 +10,7 @@ const api: WoHoBrowserApi = {
   openTab: (url) => ipcRenderer.invoke('browser:open-tab', url),
   openPrivateTab: (url) => ipcRenderer.invoke('browser:open-private-tab', url),
   closeTab: (id) => ipcRenderer.invoke('browser:close-tab', id),
+  reopenClosedTab: () => ipcRenderer.invoke('browser:reopen-closed-tab'),
   selectTab: (id) => ipcRenderer.invoke('browser:select-tab', id),
   navigate: (url) => ipcRenderer.invoke('browser:navigate', url),
   goBack: () => ipcRenderer.invoke('browser:back'),
