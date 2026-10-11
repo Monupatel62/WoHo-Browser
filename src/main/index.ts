@@ -17,7 +17,7 @@ import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
 import { selectRestorableTabUrls } from '../shared/session-policy';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
-import { getOrCreatePermissionPrompt, PermissionPromptEpoch } from '../shared/permission-prompt';
+import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
@@ -108,19 +108,21 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
     const promptWindow = mainWindow;
     const epoch = permissionPromptEpoch(targetSession);
     const capturedGeneration = epoch.capture();
-    const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, async () => {
-      if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession) || !epoch.isCurrent(capturedGeneration)) return false;
-      const { response } = await dialog.showMessageBox(promptWindow, {
-        type: 'question', title: 'Website permission request',
-        message: origin + ' wants access to ' + label + '.',
-        detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
-        buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
-      });
-      if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession) || !epoch.isCurrent(capturedGeneration)) return false;
-      const allowed = response === 0;
-      decisions.set(key, allowed);
-      return allowed;
-    });
+    const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, () =>
+      runPermissionPromptForEpoch(epoch, capturedGeneration, async () => {
+        if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+        const { response } = await dialog.showMessageBox(promptWindow, {
+          type: 'question', title: 'Website permission request',
+          message: origin + ' wants access to ' + label + '.',
+          detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
+          buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
+        });
+        if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+        const allowed = response === 0;
+        if (epoch.isCurrent(capturedGeneration)) decisions.set(key, allowed);
+        return allowed;
+      }),
+    );
     void prompt.then((allowed) => callback(disposedPrivateSessions.has(targetSession) || !epoch.isCurrent(capturedGeneration) ? false : allowed)).catch(() => callback(false));
   });
   targetSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
