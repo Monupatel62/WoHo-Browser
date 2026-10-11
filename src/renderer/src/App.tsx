@@ -247,6 +247,60 @@ export default function App() {
     }
   }
 
+  async function createBookmarkFolder() {
+    const name = window.prompt('Name the new bookmark folder:');
+    if (name === null) return;
+    setError(''); setNotice('');
+    try {
+      const folders = await window.wohoBrowser.createBookmarkFolder(name);
+      setBookmarkFolders(folders);
+      const created = folders.find((folder) => folder.name.toLocaleLowerCase('en-US') === name.trim().normalize('NFC').toLocaleLowerCase('en-US'));
+      if (created) setBookmarkFolderFilter(created.id);
+      setNotice('Bookmark folder created.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not create bookmark folder.');
+    }
+  }
+
+  async function renameBookmarkFolder() {
+    const folder = bookmarkFolders.find((item) => item.id === bookmarkFolderFilter);
+    if (!folder) return;
+    const name = window.prompt('Rename bookmark folder:', folder.name);
+    if (name === null) return;
+    setError(''); setNotice('');
+    try {
+      setBookmarkFolders(await window.wohoBrowser.renameBookmarkFolder(folder.id, name));
+      setNotice('Bookmark folder renamed.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not rename bookmark folder.');
+    }
+  }
+
+  async function deleteBookmarkFolder() {
+    const folder = bookmarkFolders.find((item) => item.id === bookmarkFolderFilter);
+    if (!folder || !window.confirm('Delete folder "' + folder.name + '"? Bookmarks inside it will be moved to Unfiled, not deleted.')) return;
+    setError(''); setNotice('');
+    try {
+      const result = await window.wohoBrowser.deleteBookmarkFolder(folder.id);
+      setBookmarkFolders(result.folders);
+      setBookmarks(result.bookmarks);
+      setBookmarkFolderFilter('all');
+      setNotice('Folder deleted. Its bookmarks were kept in Unfiled.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete bookmark folder.');
+    }
+  }
+
+  async function moveBookmarkToFolder(bookmarkId: string, rawFolderId: string) {
+    const folderId = rawFolderId || null;
+    setError('');
+    try {
+      setBookmarks(await window.wohoBrowser.moveBookmarkToFolder(bookmarkId, folderId));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not move bookmark.');
+    }
+  }
+
   async function exportBookmarks() {
     if (!window.confirm('Export saved bookmarks to a JSON file? The export may contain sensitive URLs. Keep the file in a secure location.')) return;
     setError(''); setNotice('');
