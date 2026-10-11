@@ -595,7 +595,57 @@ function registerIpc(): void {
       }
       throw error;
     }
-    return browserDataStore.importBookmarksJson(raw.toString('utf8'));
+    const preview = await browserDataStore.previewBookmarkImportJson(raw.toString('utf8'));
+    const skippedRows = preview.rows.filter((row) => row.status === 'invalid' || row.status === 'duplicate');
+    const visibleSkippedRows = skippedRows.slice(0, 12);
+    const rowDetails = visibleSkippedRows.map((row) => 'Row ' + row.row + ': ' + (row.reason ?? row.status)).join('\n');
+    const moreRows = skippedRows.length > visibleSkippedRows.length
+      ? '\n…plus ' + (skippedRows.length - visibleSkippedRows.length) + ' more skipped rows.'
+      : '';
+    if (!preview.canImport) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        title: 'Bookmark import cannot proceed',
+        message: preview.limitError ?? 'No valid bookmarks were found in this file.',
+        detail: rowDetails + moreRows,
+        buttons: ['Close'],
+        noLink: true,
+      });
+      return null;
+    }
+    const detail = [
+      'New bookmarks: ' + preview.newCount,
+      'Existing bookmarks to update: ' + preview.updateCount,
+      'Duplicate rows skipped: ' + preview.duplicateCount,
+      'Invalid rows skipped: ' + preview.invalidCount,
+      rowDetails,
+      moreRows,
+      '',
+      'Only validated rows will be imported. Existing matching URLs will be updated.',
+    ].filter(Boolean).join('\n');
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      title: 'Review bookmark import',
+      message: 'Import ' + preview.validBookmarks.length + ' unique valid bookmarks?',
+      detail,
+      buttons: ['Import valid bookmarks', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true,
+    });
+    if (response !== 0) return null;
+    const imported = await browserDataStore.importBookmarksJson(JSON.stringify({
+      format: 'woho-bookmarks',
+      version: 1,
+      bookmarks: preview.validBookmarks,
+    }));
+    return {
+      bookmarks: imported,
+      added: preview.newCount,
+      updated: preview.updateCount,
+      duplicatesSkipped: preview.duplicateCount,
+      invalidSkipped: preview.invalidCount,
+    };
   });
   handle('browser:list-history', () => browserDataStore.listHistory());
   handle('browser:clear-history', () => browserDataStore.clearHistory());
