@@ -142,8 +142,8 @@ Security is a release gate, not a later polish task.
 - Use a narrow, typed preload API; never expose unrestricted Node.js APIs to pages.
 - Validate every IPC message, including sender origin/frame, payload schema, size, and permitted operation.
 - Deny unexpected navigation, new windows, custom protocols, and permission requests by default; allow only deliberate, tested cases.
-- Never execute code or shell commands taken from a webpage, prompt, downloaded file, or model response.
-- Treat page text as untrusted input and defend against prompt injection. Page content must not override system policy or permission checks.
+- Never execute code or shell commands taken from a webpage or downloaded file.
+- Treat all web content as untrusted. It must not override browser security policy or gain privileged desktop access.
 - Keep secrets out of renderer storage, logs, crash reports, and repository history.
 - Protect AI provider keys; explain that a key entered by the user may be stored locally and define how.
 - Apply request timeouts, response-size limits, concurrency limits, and cancellation.
@@ -193,7 +193,7 @@ Monetization should follow user trust and product usefulness. Validate willingne
 4. Custom deployments: paid integration or configuration for organizations.
 5. Support contracts: response-time commitments and maintenance for business customers.
 
-Do not depend on advertising or selling browsing history. Do not imply revenue is likely until customer interviews, pilots, or paid commitments support it. Track AI cost per active user and gross margin before offering unlimited AI usage.
+Do not depend on advertising or selling browsing history. Do not imply revenue is likely until customer interviews, pilots, or paid commitments support it. 
 
 ## 10. Quality strategy and release gates
 
