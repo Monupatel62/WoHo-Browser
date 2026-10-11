@@ -353,6 +353,33 @@ describe('BrowserDataStore', () => {
     expect(await readFile(file, 'utf8')).not.toContain('access_token=secret');
   });
 
+  it('surfaces migration write failures and retries through the injected writer', async () => {
+    const { file } = await createStore();
+    const legacy = {
+      version: 1,
+      bookmarks: [],
+      history: [{
+        id: 'legacy-history', title: 'Private page',
+        url: 'https://example.com/private?token=secret#session',
+        visitedAt: '2026-10-10T10:00:00.000Z',
+      }],
+    };
+    const original = JSON.stringify(legacy);
+    await writeFile(file, original, 'utf8');
+    let failWrites = true;
+    const store = new BrowserDataStore(file, async (path, contents) => {
+      if (failWrites) throw new Error('simulated migration write failure');
+      await writeFile(path, contents, 'utf8');
+    });
+
+    await expect(store.listHistory()).rejects.toThrow('simulated migration write failure');
+    expect(await readFile(file, 'utf8')).toBe(original);
+
+    failWrites = false;
+    expect((await store.listHistory())[0].url).toBe('https://example.com/private');
+    expect(JSON.parse(await readFile(file, 'utf8')).history[0].url).toBe('https://example.com/private');
+  });
+
   it('rejects duplicate history IDs without overwriting the source file', async () => {
     const { store, file } = await createStore();
     const entry = {
