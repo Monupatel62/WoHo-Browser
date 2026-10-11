@@ -19,7 +19,6 @@
 - [Downloads and file handling](downloads-and-file-handling.md)
 - [Site permissions and private browsing](site-permissions-and-private-browsing.md)
 - [Network security and content safety](network-security-and-content-safety.md)
-- [AI assistant journeys](ai-assistant-user-flows.md)
 - [Settings and import/export](settings-import-export.md)
 - [Reliability and recovery](reliability-errors-and-recovery.md)
 - [Accessibility and localization](accessibility-localization.md)
