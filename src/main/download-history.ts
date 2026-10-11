@@ -60,7 +60,10 @@ export class DownloadHistoryStore {
   private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
-  constructor(private readonly filePath: string) {}
+  constructor(
+    private readonly filePath: string,
+    private readonly writeAtomically: (filePath: string, contents: string) => Promise<void> = atomicWrite,
+  ) {}
 
   private rememberRemovedId(id: string): void {
     this.removedIds.add(id);
@@ -107,7 +110,7 @@ export class DownloadHistoryStore {
 
   private persist(): Promise<void> {
     const snapshot = JSON.stringify({ version: 1, downloads: this.records }, null, 2) + '\n';
-    const pending = this.writeQueue.catch(() => undefined).then(() => atomicWrite(this.filePath, snapshot));
+    const pending = this.writeQueue.catch(() => undefined).then(() => this.writeAtomically(this.filePath, snapshot));
     this.writeQueue = pending;
     return pending;
   }
@@ -141,8 +144,9 @@ export class DownloadHistoryStore {
     this.rememberRemovedId(id);
     await this.ensureLoaded();
     const next = this.records.filter((record) => record.id !== id);
-    if (next.length === this.records.length) return;
     this.records = next;
+    // Persist even if this ID is already absent in memory: a prior write may
+    // have failed after the in-memory deletion, leaving the on-disk row intact.
     await this.persist();
   }
 }
