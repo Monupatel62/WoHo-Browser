@@ -118,6 +118,12 @@ export default function App() {
         event.preventDefault();
         if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) void window.wohoBrowser.openPrivateTab();
         else void window.wohoBrowser.openTab();
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === '+' || event.key === '=')) {
+        event.preventDefault(); void window.wohoBrowser.setZoom('in').catch(() => setError('Could not change page zoom.'));
+      } else if ((event.ctrlKey || event.metaKey) && event.key === '-') {
+        event.preventDefault(); void window.wohoBrowser.setZoom('out').catch(() => setError('Could not change page zoom.'));
+      } else if ((event.ctrlKey || event.metaKey) && event.key === '0') {
+        event.preventDefault(); void window.wohoBrowser.setZoom('reset').catch(() => setError('Could not reset page zoom.'));
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w') {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
