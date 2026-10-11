@@ -5,6 +5,19 @@ $app = Get-ChildItem release/win-unpacked -Filter *.exe -File |
   Select-Object -First 1
 if (-not $app) { throw 'Could not find the packaged WoHo Browser executable for startup smoke testing.' }
 
+$asarPath = Join-Path $app.DirectoryName 'resources/app.asar'
+$asarCli = Join-Path (Get-Location) 'node_modules/@electron/asar/bin/asar.js'
+if (-not (Test-Path -LiteralPath $asarPath)) { throw 'Packaged app.asar is missing.' }
+if (-not (Test-Path -LiteralPath $asarCli)) { throw 'The @electron/asar inspection CLI is missing.' }
+$asarEntries = & node $asarCli list $asarPath
+if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the packaged app.asar archive.' }
+$normalizedEntries = @($asarEntries | ForEach-Object { ($_ -replace '\\', '/').TrimStart('/') })
+foreach ($requiredEntry in @('out/main/index.js', 'out/preload/index.js', 'out/renderer/index.html')) {
+  if ($normalizedEntries -notcontains $requiredEntry) {
+    throw "Packaged app.asar is missing required application entry: $requiredEntry"
+  }
+}
+
 $profileRoot = Join-Path $env:RUNNER_TEMP ('woho-browser-smoke-' + [guid]::NewGuid().ToString('N'))
 $originalAppData = $env:APPDATA
 $originalSmokeFlag = $env:WOHO_BROWSER_SMOKE_TEST
