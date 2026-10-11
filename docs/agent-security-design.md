@@ -1,3 +1,5 @@
+> **Archived reference only (2026-10-11):** WoHo Browser has no AI agent feature and no AI agent is planned. This document does not authorize implementation. Do not add agent runtime, AI dependencies, tool execution, or AI UI to the browser.
+
 # WoHo Browser Agent Security Design
 
 Status: Future design. Release 4 is blocked until reviewed and tested.

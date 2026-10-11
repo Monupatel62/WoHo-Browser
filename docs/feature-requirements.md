@@ -20,14 +20,10 @@ This document defines observable acceptance criteria. It does not mean features 
 - **Keyboard access:** key navigation and focus indicators work for core controls.
 - **Error handling:** offline, DNS, TLS, timeout, and provider failures have clear retry paths.
 
-## P2 — AI assistant
-- AI actions require a user gesture.
-- User can inspect context before remote submission.
-- Provider and privacy/cost information are visible.
-- Responses show source excerpts or page references where feasible.
-- Timeouts, cancellation, oversized responses, and provider failures are handled.
-- AI text cannot invoke privileged APIs directly.
-- Sensitive actions always require a separate permission check and confirmation.
+## P2 — Deferred browser improvements
+
+Potential non-AI browser improvements must be explicitly approved, assigned a requirement ID, and given security, privacy, accessibility, and test plans before implementation. This section does not authorize new features.
+
 
 ## P3 — Advanced features
 - Workspaces/tab groups, reader view, data import/export.
@@ -63,24 +59,22 @@ These IDs are the source of truth for acceptance tracking. A requirement is not 
 - **R1-007:** Installer, uninstall, version display, and documented update behavior work on the declared Windows matrix.
 - **R1-008:** Find-in-page and bounded per-tab zoom are implemented (Ctrl+Plus/Equals, Ctrl+Minus, Ctrl+0; zoom controls are available in Settings). Context menus currently support safe HTTP(S) link open/copy actions. Print/PDF export, fullscreen behavior, and default-browser registration are deferred: they require separate platform-specific UX, security, and Windows end-to-end validation before being exposed.
 
-### R2 — User-controlled AI
-- **R2-001:** AI requests require explicit user action.
-- **R2-002:** Show context/provider before remote submission.
-- **R2-003:** Render output safely without active HTML or remote images by default.
-- **R2-004:** Apply timeout, cancellation, response-size, and cost/rate limits.
-- **R2-005:** AI responses cannot call privileged APIs or perform actions directly.
+### R2 — Reserved; no current feature commitment
+
+There are no R2 AI requirements. Any future R2 work must be a non-AI browser capability explicitly approved by the product owner before being added here.
+
 
 ### R3+ — Later validated features
 - **R3-001:** Workspaces/tab groups and data import/export.
 - **R3-002:** Extension strategy is validated before compatibility is promised.
 - **R3-003:** Password management, passkeys, sync, enterprise policies, and DRM require separate security and feasibility decisions.
-- **R4-001:** Autonomous agent actions remain blocked until the agent security design is reviewed.
+- AI agents and autonomous AI actions are out of scope; this is not a pending implementation item.
 
 ## Candidate performance budgets
 See docs/performance-and-compatibility-budgets.md. The listed numbers are targets to validate on reference hardware, not measured performance claims.
 
 ## Scope alignment
-Master-plan release names map to R0/R1/R2/R3/R4 above. Installer and default-deny permission policy are R0/R1 requirements; private browsing belongs in R1. A feature may be deferred only by recording a reason and updating the relevant release decision.
+Release mapping is R0 (feasibility/security foundation), R1 (Windows MVP), and later non-AI browser improvements only after explicit approval. Installer and default-deny permission policy are R0/R1 requirements; private browsing belongs in R1. A feature may be deferred only by recording a reason and updating the relevant release decision.
 
 
 ## Detailed feature acceptance IDs
@@ -106,15 +100,10 @@ These additional IDs connect the feature specifications to testable behavior. Th
 - **R1-024 Runtime maintenance:** release process checks supported Electron/Chromium runtime status and relevant security advisories.
 - **R1-025 File origin marking:** Windows download behavior documents and tests Mark-of-the-Web preservation where supported.
 
-### R2 — AI assistant detail
-- **R2-006 Context minimization:** only explicitly selected and necessary page context is included in a request.
-- **R2-007 Remote consent:** before remote submission, users can inspect context and identify the provider/data destination.
-- **R2-008 Provider transparency:** provider/model, retention limitations, and potential usage/cost are disclosed.
-- **R2-009 Safe output:** model responses are rendered inertly; remote Markdown images and active HTML are disabled by default.
-- **R2-010 Prompt-injection resistance:** page content cannot override policy, reveal secrets, or authorize a tool action.
-- **R2-011 Cancellation and limits:** timeout, cancellation, input/output size, and provider failure are tested.
-- **R2-012 Secret handling:** provider credentials are not exposed to website renderers, telemetry, logs, or diagnostic exports.
-- **R2-013 Private-session isolation:** AI context and conversation storage follow the documented private-session policy.
+### R2 — No AI requirements
+
+No AI acceptance IDs are active. AI assistant, agent, API/service, DevKit, model runtime, and AI data handling are out of scope and must not be implemented.
+
 
 ### R3 — Productivity and privacy (gated)
 - **R3-004 Workspaces:** group/workspace create, rename, switch, move, and delete semantics are documented and tested before release.
