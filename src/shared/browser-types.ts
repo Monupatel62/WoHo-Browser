@@ -1,3 +1,4 @@
+import type { ZoomAction } from './zoom-policy';
 import type { BrowserSettings } from './browser-settings';
 export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; isCrashed: boolean; navigationError?: string; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
@@ -23,6 +24,7 @@ export interface WoHoBrowserApi {
   goForward(): Promise<void>;
   reload(): Promise<void>;
   stop(): Promise<void>;
+  setZoom(action: ZoomAction): Promise<number>;
   listBookmarks(): Promise<BookmarkRecord[]>;
   addBookmark(title: string, url: string): Promise<BookmarkRecord[]>;
   updateBookmark(id: string, title: string, url: string): Promise<BookmarkRecord[]>;
