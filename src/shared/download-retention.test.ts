@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadRecord } from './browser-types';
-import { getDownloadIdsToPrune, isFinishedDownloadStatus } from './download-retention';
+import { getDownloadIdsToPrune, isFinishedDownloadStatus, pruneDownloadRecordsDurably } from './download-retention';
 
 function row(id: string, startedAt: string, status: DownloadRecord['status'] = 'completed'): DownloadRecord {
   return {
@@ -48,5 +48,44 @@ describe('isFinishedDownloadStatus', () => {
 
   it.each(['waiting', 'progressing', 'paused'] as const)('protects active %s records from removal', (status) => {
     expect(isFinishedDownloadStatus(status)).toBe(false);
+  });
+});
+
+describe('pruneDownloadRecordsDurably', () => {
+  it('removes in-memory rows only after persistent removal succeeds', async () => {
+    const records = [
+      row('newest', '2026-10-10T12:00:00.000Z'),
+      row('oldest', '2026-10-10T10:00:00.000Z'),
+    ];
+    const removed: string[] = [];
+    const persisted: string[] = [];
+    await expect(pruneDownloadRecordsDurably(
+      records,
+      1,
+      async (id) => {
+        persisted.push(id);
+        if (id === 'oldest') throw new Error('disk write failed');
+      },
+      (id) => removed.push(id),
+    )).rejects.toThrow('disk write failed');
+    expect(persisted).toEqual(['oldest']);
+    expect(removed).toEqual([]);
+  });
+
+  it('prunes oldest rows sequentially after each durable deletion', async () => {
+    const records = [
+      row('newest', '2026-10-10T12:00:00.000Z'),
+      row('oldest', '2026-10-10T10:00:00.000Z'),
+      row('middle', '2026-10-10T11:00:00.000Z'),
+    ];
+    const order: string[] = [];
+    const removed = await pruneDownloadRecordsDurably(
+      records,
+      1,
+      async (id) => { order.push('persist:' + id); },
+      (id) => { order.push('memory:' + id); },
+    );
+    expect(removed).toEqual(['oldest', 'middle']);
+    expect(order).toEqual(['persist:oldest', 'memory:oldest', 'persist:middle', 'memory:middle']);
   });
 });
