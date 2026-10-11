@@ -24,7 +24,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 ## Implementation limits and unresolved release gates
 
 - This is a development prototype, not a production-ready browser or a Chrome-parity claim.
-- Windows runtime behavior and clean-machine install/uninstall still need manual end-to-end verification. CI packaging success is not proof that the installer launches correctly.
+- Windows runtime behavior and clean-machine install/uninstall still need manual end-to-end verification. A new CI smoke test launches the packaged executable with an isolated profile and waits for the chrome renderer to load and initial tab navigation to start; this is stronger than packaging-only evidence but is not a substitute for manual install, website compatibility, restart, and uninstall testing.
 - Frame-navigation policy has unit coverage, but website compatibility and native Electron event behavior require runtime verification.
 - Native site-permission prompt, revocation, and private-session cleanup require manual Windows/Electron testing.
 - No Safe Browsing or phishing/malware reputation integration is present.
@@ -46,6 +46,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 4. Explicitly retained the no-AI-integration scope and the unchosen-license constraint.
 5. Recorded exact post-merge `main` CI and CodeQL evidence.
 6. Added regression fixes for active-session site-data clearing and retryable durable download/history deletion, including retention pruning.
+7. Added an automated packaged-app startup smoke test while retaining manual Windows end-to-end verification as an open release gate.
 7. Added a committed npm lockfile and switched CI to `npm ci`; exact-head and fresh-main checks passed.
 8. Scoped Site permissions controls to the active tab session, including isolated private-session decisions.
 9. Listed known release gates and remaining work without claiming completion.
