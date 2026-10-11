@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BrowserDataStore } from './browser-data';
 
 const temporaryDirectories: string[] = [];
@@ -45,6 +45,52 @@ describe('BrowserDataStore', () => {
     expect(result).toHaveLength(2);
     expect(result.find((item) => item.url === 'https://example.com/')?.title).toBe('Updated title');
     expect(result.find((item) => item.url === 'https://example.org/path')?.title).toBe('Second final');
+  });
+
+  it('previews imports row by row and identifies new, update, duplicate, and invalid rows', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('Existing old title', 'https://existing.example/');
+    const raw = JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [
+        { title: 'First duplicate', url: 'https://new.example/' },
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+        { title: 'Existing updated', url: 'https://existing.example' },
+        { title: 'Last duplicate wins', url: 'https://new.example' },
+      ],
+    });
+    const preview = await store.previewBookmarkImportJson(raw);
+    expect(preview).toMatchObject({
+      newCount: 1, updateCount: 1, duplicateCount: 1, invalidCount: 1, canImport: true,
+      rows: [
+        { row: 1, status: 'duplicate' },
+        { row: 2, status: 'invalid', reason: expect.stringContaining('HTTP(S)') },
+        { row: 3, status: 'update' },
+        { row: 4, status: 'new' },
+      ],
+      validBookmarks: [
+        { title: 'Existing updated', url: 'https://existing.example/' },
+        { title: 'Last duplicate wins', url: 'https://new.example/' },
+      ],
+    });
+    expect(await store.listBookmarks()).toMatchObject([{ title: 'Existing old title' }]);
+  });
+
+  it('blocks import previews that would exceed the bookmark limit', async () => {
+    const { store } = await createStore();
+    await store.importBookmarksJson(JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: Array.from({ length: 500 }, (_, index) => ({
+        title: 'Bookmark ' + index, url: 'https://example.com/' + index,
+      })),
+    }));
+    const preview = await store.previewBookmarkImportJson(JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [{ title: 'One too many', url: 'https://extra.example/' }],
+    }));
+    expect(preview.canImport).toBe(false);
+    expect(preview.limitError).toMatch(/500-bookmark limit/);
+    expect(await store.listBookmarks()).toHaveLength(500);
   });
 
   it('rejects invalid imports atomically without changing existing bookmarks', async () => {
@@ -152,22 +198,31 @@ describe('BrowserDataStore', () => {
   });
 
   it('deletes only history visits within an inclusive date-time range', async () => {
-    const { store, file } = await createStore();
-    await store.recordVisit('https://example.com/before', 'Before');
-    await store.recordVisit('https://example.com/inside-start', 'Inside start');
-    await store.recordVisit('https://example.com/inside-end', 'Inside end');
-    await store.recordVisit('https://example.com/after', 'After');
-    const before = await store.listHistory();
-    const records = new Map(before.map((item) => [item.title, item]));
-    const start = records.get('Inside start')!.visitedAt;
-    const end = records.get('Inside end')!.visitedAt;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-10T10:00:00.000Z'));
+    try {
+      const { store, file } = await createStore();
+      await store.recordVisit('https://example.com/before', 'Before');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/inside-start', 'Inside start');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/inside-end', 'Inside end');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/after', 'After');
+      const before = await store.listHistory();
+      const records = new Map(before.map((item) => [item.title, item]));
+      const start = records.get('Inside start')!.visitedAt;
+      const end = records.get('Inside end')!.visitedAt;
 
-    const remaining = await store.removeHistoryRange(start, end);
-    expect(remaining.map((item) => item.title).sort()).toEqual(['After', 'Before']);
-    expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
-      { title: 'After' },
-      { title: 'Before' },
-    ]);
+      const remaining = await store.removeHistoryRange(start, end);
+      expect(remaining.map((item) => item.title).sort()).toEqual(['After', 'Before']);
+      expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
+        { title: 'After' },
+        { title: 'Before' },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('rejects invalid or reversed history ranges without changing data', async () => {

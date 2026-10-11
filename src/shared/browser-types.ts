@@ -2,6 +2,7 @@ import type { BrowserSettings } from './browser-settings';
 export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; isCrashed: boolean; navigationError?: string; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
 export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
+export interface BookmarkImportResult { bookmarks: BookmarkRecord[]; added: number; updated: number; duplicatesSkipped: number; invalidSkipped: number; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
 export interface SitePermissionDecision { origin: string; permission: string; allowed: boolean; }
 export type DownloadStatus = 'waiting' | 'progressing' | 'paused' | 'completed' | 'cancelled' | 'interrupted';
@@ -26,7 +27,7 @@ export interface WoHoBrowserApi {
   updateBookmark(id: string, title: string, url: string): Promise<BookmarkRecord[]>;
   removeBookmark(id: string): Promise<BookmarkRecord[]>;
   exportBookmarks(): Promise<boolean>;
-  importBookmarks(): Promise<BookmarkRecord[] | null>;
+  importBookmarks(): Promise<BookmarkImportResult | null>;
   listHistory(): Promise<HistoryRecord[]>;
   clearHistory(): Promise<void>;
   removeHistory(id: string): Promise<HistoryRecord[]>;
