@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { BrowserSettings } from '../shared/browser-settings';
-import type { BookmarkImportResult, BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
+import type { BookmarkFolderRecord, BookmarkImportResult, BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
@@ -17,6 +17,11 @@ const api: WoHoBrowserApi = {
   reload: () => ipcRenderer.invoke('browser:reload'),
   stop: () => ipcRenderer.invoke('browser:stop'),
   listBookmarks: () => ipcRenderer.invoke('browser:list-bookmarks') as Promise<BookmarkRecord[]>,
+  listBookmarkFolders: () => ipcRenderer.invoke('browser:list-bookmark-folders') as Promise<BookmarkFolderRecord[]>,
+  createBookmarkFolder: (name) => ipcRenderer.invoke('browser:create-bookmark-folder', name) as Promise<BookmarkFolderRecord[]>,
+  renameBookmarkFolder: (id, name) => ipcRenderer.invoke('browser:rename-bookmark-folder', id, name) as Promise<BookmarkFolderRecord[]>,
+  deleteBookmarkFolder: (id) => ipcRenderer.invoke('browser:delete-bookmark-folder', id) as Promise<{ folders: BookmarkFolderRecord[]; bookmarks: BookmarkRecord[] }>,
+  moveBookmarkToFolder: (bookmarkId, folderId) => ipcRenderer.invoke('browser:move-bookmark-to-folder', bookmarkId, folderId) as Promise<BookmarkRecord[]>,
   addBookmark: (title, url) => ipcRenderer.invoke('browser:add-bookmark', title, url) as Promise<BookmarkRecord[]>,
   updateBookmark: (id, title, url) => ipcRenderer.invoke('browser:update-bookmark', id, title, url) as Promise<BookmarkRecord[]>,
   removeBookmark: (id) => ipcRenderer.invoke('browser:remove-bookmark', id) as Promise<BookmarkRecord[]>,
