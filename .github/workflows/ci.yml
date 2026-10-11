@@ -21,8 +21,8 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies from lockfile
+        run: npm ci
       - name: Inspect dependency advisories
         shell: pwsh
         run: |
@@ -52,10 +52,22 @@ jobs:
         run: npm test
       - name: Package unsigned Windows installer
         run: npm run package:win
-      - name: Upload Windows installer artifact
+      - name: Generate installer SHA-256 manifest
+        shell: pwsh
+        run: |
+          $installers = Get-ChildItem release -Filter *.exe -File
+          if (-not $installers) { throw 'No Windows installer was produced.' }
+          $lines = foreach ($installer in $installers) {
+            $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($installer.Name)"
+          }
+          $lines | Set-Content -Path release/SHA256SUMS.txt -Encoding ascii
+      - name: Upload Windows installer and checksum artifact
         uses: actions/upload-artifact@v4
         with:
           name: woho-browser-windows-unsigned
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
