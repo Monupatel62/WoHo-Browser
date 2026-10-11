@@ -17,7 +17,7 @@ import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
 import { selectRestorableTabUrls } from '../shared/session-policy';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
-import { getOrCreatePermissionPrompt } from '../shared/permission-prompt';
+import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
@@ -45,6 +45,7 @@ const downloadItems = new Map<string, DownloadItem>();
 const MAX_DOWNLOAD_RECORDS = 100;
 const permissionDecisionsBySession = new WeakMap<Electron.Session, Map<string, boolean>>();
 const pendingPermissionPromptsBySession = new WeakMap<Electron.Session, Map<string, Promise<boolean>>>();
+const permissionPromptEpochsBySession = new WeakMap<Electron.Session, PermissionPromptEpoch>();
 const privateTabRegistry = new PrivateTabRegistry();
 const tabCrashRegistry = new TabCrashRegistry();
 const navigationErrorsByTab = new Map<string, string>();
@@ -87,6 +88,12 @@ function pendingPermissionPrompts(targetSession: Electron.Session): Map<string, 
   return prompts;
 }
 
+function permissionPromptEpoch(targetSession: Electron.Session): PermissionPromptEpoch {
+  let epoch = permissionPromptEpochsBySession.get(targetSession);
+  if (!epoch) { epoch = new PermissionPromptEpoch(); permissionPromptEpochsBySession.set(targetSession, epoch); }
+  return epoch;
+}
+
 function configurePermissionHandlers(targetSession: Electron.Session): void {
   targetSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     if (disposedPrivateSessions.has(targetSession)) { callback(false); return; }
@@ -99,20 +106,24 @@ function configurePermissionHandlers(targetSession: Electron.Session): void {
     const label = PERMISSION_LABELS[permission];
     if (!label) { callback(false); return; }
     const promptWindow = mainWindow;
-    const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, async () => {
-      if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
-      const { response } = await dialog.showMessageBox(promptWindow, {
-        type: 'question', title: 'Website permission request',
-        message: origin + ' wants access to ' + label + '.',
-        detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
-        buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
-      });
-      if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
-      const allowed = response === 0;
-      decisions.set(key, allowed);
-      return allowed;
-    });
-    void prompt.then((allowed) => callback(disposedPrivateSessions.has(targetSession) ? false : allowed)).catch(() => callback(false));
+    const epoch = permissionPromptEpoch(targetSession);
+    const capturedGeneration = epoch.capture();
+    const prompt = getOrCreatePermissionPrompt(pendingPermissionPrompts(targetSession), key, () =>
+      runPermissionPromptForEpoch(epoch, capturedGeneration, async () => {
+        if (!promptWindow || promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+        const { response } = await dialog.showMessageBox(promptWindow, {
+          type: 'question', title: 'Website permission request',
+          message: origin + ' wants access to ' + label + '.',
+          detail: 'Allow only if you trust this website. This decision applies only to this browser session.',
+          buttons: ['Allow for this session', 'Block'], defaultId: 1, cancelId: 1, noLink: true,
+        });
+        if (promptWindow.isDestroyed() || disposedPrivateSessions.has(targetSession)) return false;
+        const allowed = response === 0;
+        if (epoch.isCurrent(capturedGeneration)) decisions.set(key, allowed);
+        return allowed;
+      }),
+    );
+    void prompt.then((allowed) => callback(disposedPrivateSessions.has(targetSession) || !epoch.isCurrent(capturedGeneration) ? false : allowed)).catch(() => callback(false));
   });
   targetSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
     if (!webContents || disposedPrivateSessions.has(targetSession)) return false;
@@ -676,8 +687,11 @@ function registerIpc(): void {
     return browserDataStore.removeHistoryRange(startAt, endAt);
   });
   handle('browser:clear-site-data', async () => {
-    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
+    // Invalidate open native permission prompts before awaiting storage cleanup so
+    // a late click on “Allow” cannot recreate a grant after the user clears data.
+    permissionPromptEpoch(browserSession).invalidate();
     permissionDecisions(browserSession).clear();
+    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
   });
   handle('browser:list-site-permissions', () => [...permissionDecisions(browserSession).entries()].map(([key, allowed]) => {
     const separator = key.lastIndexOf('::');

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getOrCreatePermissionPrompt } from './permission-prompt';
+import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from './permission-prompt';
 
 describe('getOrCreatePermissionPrompt', () => {
   it('shares one pending prompt and removes it after completion', async () => {
@@ -31,5 +31,51 @@ describe('getOrCreatePermissionPrompt', () => {
     await expect(getOrCreatePermissionPrompt(pending, 'key', async () => { throw new Error('dialog failed'); })).rejects.toThrow('dialog failed');
     await expect(getOrCreatePermissionPrompt(pending, 'key', async () => true)).resolves.toBe(true);
     expect(pending.size).toBe(0);
+  });
+});
+
+
+describe('PermissionPromptEpoch', () => {
+  it('invalidates decisions captured before site data is cleared', () => {
+    const epoch = new PermissionPromptEpoch();
+    const pendingGeneration = epoch.capture();
+    expect(epoch.isCurrent(pendingGeneration)).toBe(true);
+    epoch.invalidate();
+    expect(epoch.isCurrent(pendingGeneration)).toBe(false);
+    expect(epoch.isCurrent(epoch.capture())).toBe(true);
+  });
+
+  it('invalidates each earlier generation when cleared repeatedly', () => {
+    const epoch = new PermissionPromptEpoch();
+    const first = epoch.capture();
+    epoch.invalidate();
+    const second = epoch.capture();
+    epoch.invalidate();
+    expect(epoch.isCurrent(first)).toBe(false);
+    expect(epoch.isCurrent(second)).toBe(false);
+  });
+});
+
+
+describe('runPermissionPromptForEpoch', () => {
+  it('denies a late Allow result after site data clear invalidates the prompt', async () => {
+    const epoch = new PermissionPromptEpoch();
+    const captured = epoch.capture();
+    let resolveDialog!: (allowed: boolean) => void;
+    const dialog = vi.fn(() => new Promise<boolean>((resolve) => { resolveDialog = resolve; }));
+    const pending = runPermissionPromptForEpoch(epoch, captured, dialog);
+    expect(dialog).toHaveBeenCalledTimes(1);
+    epoch.invalidate();
+    resolveDialog(true);
+    await expect(pending).resolves.toBe(false);
+  });
+
+  it('does not open a dialog when its captured generation is already stale', async () => {
+    const epoch = new PermissionPromptEpoch();
+    const captured = epoch.capture();
+    epoch.invalidate();
+    const dialog = vi.fn(async () => true);
+    await expect(runPermissionPromptForEpoch(epoch, captured, dialog)).resolves.toBe(false);
+    expect(dialog).not.toHaveBeenCalled();
   });
 });
