@@ -1,0 +1,10 @@
+[[allowlists]]
+description = "Narrow documentation-only Gitleaks false positives in historical Android release checklist wording."
+paths = [
+  '''docs/android-application-plan\.md''',
+]
+regexTarget = "line"
+regexes = [
+  '''A successful Gradle build alone is not an Android release\. Require automated tests, engine-specific integration tests, manual device coverage, a signed artifact with protected key custody, permission/privacy review, store-policy review, release notes, and an owner-maintained vulnerability-reporting path\.''',
+  '''A successful Gradle build alone is not an Android release\. Require automated tests, engine-specific integration tests, manual device coverage, a signed artifact with signing credentials stored securely, permission/privacy review, Android distribution-policy review, release notes, and a maintained vulnerability-reporting path\.''',
+]
