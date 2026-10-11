@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BrowserDataStore } from './browser-data';
 
 const temporaryDirectories: string[] = [];
@@ -198,22 +198,31 @@ describe('BrowserDataStore', () => {
   });
 
   it('deletes only history visits within an inclusive date-time range', async () => {
-    const { store, file } = await createStore();
-    await store.recordVisit('https://example.com/before', 'Before');
-    await store.recordVisit('https://example.com/inside-start', 'Inside start');
-    await store.recordVisit('https://example.com/inside-end', 'Inside end');
-    await store.recordVisit('https://example.com/after', 'After');
-    const before = await store.listHistory();
-    const records = new Map(before.map((item) => [item.title, item]));
-    const start = records.get('Inside start')!.visitedAt;
-    const end = records.get('Inside end')!.visitedAt;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-10T10:00:00.000Z'));
+    try {
+      const { store, file } = await createStore();
+      await store.recordVisit('https://example.com/before', 'Before');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/inside-start', 'Inside start');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/inside-end', 'Inside end');
+      vi.advanceTimersByTime(1000);
+      await store.recordVisit('https://example.com/after', 'After');
+      const before = await store.listHistory();
+      const records = new Map(before.map((item) => [item.title, item]));
+      const start = records.get('Inside start')!.visitedAt;
+      const end = records.get('Inside end')!.visitedAt;
 
-    const remaining = await store.removeHistoryRange(start, end);
-    expect(remaining.map((item) => item.title).sort()).toEqual(['After', 'Before']);
-    expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
-      { title: 'After' },
-      { title: 'Before' },
-    ]);
+      const remaining = await store.removeHistoryRange(start, end);
+      expect(remaining.map((item) => item.title).sort()).toEqual(['After', 'Before']);
+      expect(await new BrowserDataStore(file).listHistory()).toMatchObject([
+        { title: 'After' },
+        { title: 'Before' },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('rejects invalid or reversed history ranges without changing data', async () => {
