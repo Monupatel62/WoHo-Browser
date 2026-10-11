@@ -32,3 +32,14 @@ export class PermissionPromptEpoch {
     return capturedGeneration === this.generation;
   }
 }
+
+/** Return false when a native prompt resolves after its session generation changed. */
+export async function runPermissionPromptForEpoch(
+  epoch: PermissionPromptEpoch,
+  capturedGeneration: number,
+  create: () => Promise<boolean>,
+): Promise<boolean> {
+  if (!epoch.isCurrent(capturedGeneration)) return false;
+  const allowed = await create();
+  return epoch.isCurrent(capturedGeneration) ? allowed : false;
+}
