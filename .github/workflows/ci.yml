@@ -52,6 +52,9 @@ jobs:
         run: npm test
       - name: Package unsigned Windows installer
         run: npm run package:win
+      - name: Smoke test packaged application startup
+        shell: pwsh
+        run: .github/scripts/smoke-packaged-app.ps1
       - name: Verify packaged Electron fuses
         shell: pwsh
         run: |
