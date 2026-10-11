@@ -18,7 +18,8 @@ foreach ($requiredEntry in @('out/main/index.js', 'out/preload/index.js', 'out/r
   }
 }
 Write-Host ("Verified renderer-related ASAR entries: " + (($normalizedEntries | Where-Object { $_ -like 'out/renderer/*' }) -join ', '))
-$rendererHtml = (& node $asarCli extract-file $asarPath 'out/renderer/index.html') -join "`n"
+$rendererEntry = 'out/renderer/index.html' -replace '/', [IO.Path]::DirectorySeparatorChar
+$rendererHtml = (& node $asarCli extract-file $asarPath $rendererEntry) -join "`n"
 if ($LASTEXITCODE -ne 0 -or -not $rendererHtml.Contains('<!doctype html>')) {
   throw 'The renderer entry exists in the ASAR index but could not be extracted as HTML.'
 }
