@@ -1,6 +1,6 @@
 # Site Permissions, Privacy Controls, and Private Browsing
 
-**Status:** Partially implemented. The current prototype prompts through a native trusted dialog for the explicit allowlist of media, geolocation, notifications, and clipboard-read. Decisions are held in memory for the current app session. The Site permissions panel lists current normal-profile decisions, can block a previously allowed capability for the rest of the session, or forget a decision so a future request prompts again. Unsupported permissions remain denied. Private tabs use isolated non-persistent sessions.
+**Status:** Partially implemented. The current prototype prompts through a native trusted dialog for the explicit allowlist of media, geolocation, notifications, and clipboard-read. Decisions are held in memory for the current app session. The Site permissions panel lists decisions for the active tab's session (shared normal-profile decisions in normal tabs, isolated private-session decisions in private tabs), can block a previously allowed capability for the rest of the session, or forget a decision so a future request prompts again. Unsupported permissions remain denied. Private tabs use isolated non-persistent sessions.
 
 ## Permission model
 Permissions are scoped by origin, capability, profile/session, and decision source. Capabilities may include camera, microphone, geolocation, notifications, clipboard, screen capture, popups, autoplay, and device APIs only where supported by the engine. Do not show unsupported controls as if they work.
