@@ -16,7 +16,7 @@ permissions:
   actions: read
 jobs:
   analyze:
-    name: Analyze JavaScript, TypeScript, and Kotlin
+    name: Analyze JavaScript and TypeScript
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
