@@ -29,6 +29,9 @@ import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, Fin
 
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
+const packagedSmokeTest = process.env.WOHO_BROWSER_SMOKE_TEST === '1';
+let smokeRendererLoaded = false;
+let smokeTabNavigationStarted = false;
 let overlayPanelHeight = 0;
 let browserSettingsStore: BrowserSettingsStore;
 let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
@@ -57,6 +60,10 @@ const navigationErrorsByTab = new Map<string, string>();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
 const disposedPrivateSessions = new WeakSet<Electron.Session>();
+
+function maybeFinishPackagedSmokeTest(): void {
+  if (packagedSmokeTest && smokeRendererLoaded && smokeTabNavigationStarted) app.exit(0);
+}
 
 function queueSessionStoreWrite(urls: string[]): Promise<string[]> {
   if (!browserSessionStore) return Promise.reject(new Error('Browser session store is unavailable.'));
@@ -419,7 +426,12 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     }
   });
   wc.on('page-title-updated', changed);
-  wc.on('did-start-loading', () => { navigationErrorsByTab.delete(id); tabCrashRegistry.markReloading(id); changed(); });
+  wc.on('did-start-loading', () => {
+    navigationErrorsByTab.delete(id);
+    tabCrashRegistry.markReloading(id);
+    changed();
+    if (packagedSmokeTest) { smokeTabNavigationStarted = true; maybeFinishPackagedSmokeTest(); }
+  });
   wc.on('did-stop-loading', changed);
   wc.on('did-fail-load', (_event, errorCode, errorDescription, _validatedURL, isMainFrame) => {
     if (!isMainFrame) return;
@@ -870,7 +882,11 @@ function createWindow(): void {
   });
   if (rendererUrl) void mainWindow.loadURL(rendererUrl);
   else void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-  mainWindow.webContents.on('did-finish-load', () => { layoutViews(); publishState(); });
+  mainWindow.webContents.on('did-finish-load', () => {
+    layoutViews();
+    publishState();
+    if (packagedSmokeTest) { smokeRendererLoaded = true; maybeFinishPackagedSmokeTest(); }
+  });
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
