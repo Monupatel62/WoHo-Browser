@@ -27,6 +27,14 @@ describe('BrowserSessionStore', () => {
     await expect(new BrowserSessionStore(file).load()).resolves.toEqual(urls.map((url) => new URL(url).toString()));
   });
 
+  it('durably clears saved URLs before the clear operation resolves', async () => {
+    const { store, file } = await createStore();
+    await store.save(['https://example.com/private?token=secret', 'https://example.org/']);
+    await expect(store.save([])).resolves.toEqual([]);
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ version: 1, urls: [] });
+    await expect(new BrowserSessionStore(file).load()).resolves.toEqual([]);
+  });
+
   it('rejects unsafe, credential-bearing, oversized, and excessive URL lists', async () => {
     const { store } = await createStore();
     await expect(store.save(['file:///private.txt'])).rejects.toThrow(/unsafe URL/);
