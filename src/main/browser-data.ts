@@ -186,7 +186,7 @@ export async function atomicWriteFile(filePath: string, contents: string): Promi
 
 /** Versioned local JSON storage. Corrupt/unknown data is never silently overwritten. */
 export class BrowserDataStore {
-  private data: PersistedBrowserData = { version: DATA_VERSION, bookmarks: [], history: [] };
+  private data: PersistedBrowserData = { version: DATA_VERSION, bookmarks: [], folders: [], history: [] };
   private loaded = false;
   private loading: Promise<void> | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
@@ -206,7 +206,7 @@ export class BrowserDataStore {
           raw = await readFileBounded(this.filePath, MAX_FILE_BYTES);
         } catch (error) {
           if (isRecord(error) && error.code === 'ENOENT') {
-            this.data = { version: DATA_VERSION, bookmarks: [], history: [] };
+            this.data = { version: DATA_VERSION, bookmarks: [], folders: [], history: [] };
             this.loaded = true;
             return;
           }
@@ -217,7 +217,7 @@ export class BrowserDataStore {
         }
         const parsed = parseData(raw.toString('utf8'));
         this.data = parsed.data;
-        if (parsed.historyRedacted) {
+        if (parsed.migrationRequired) {
           // Keep migration writes outside the missing-source-file catch: a failed
           // migration must reject loading instead of silently looking like no data.
           await atomicWriteFile(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
@@ -367,7 +367,7 @@ export class BrowserDataStore {
         existing.title = title;
         existing.updatedAt = now;
       } else {
-        this.data.bookmarks.unshift({ id: randomUUID(), title, url, createdAt: now, updatedAt: now });
+        this.data.bookmarks.unshift({ id: randomUUID(), title, url, folderId: null, createdAt: now, updatedAt: now });
       }
     }
     if (importedByUrl.size > 0) await this.persist();
@@ -389,7 +389,7 @@ export class BrowserDataStore {
       existing.updatedAt = now;
     } else {
       if (this.data.bookmarks.length >= MAX_BOOKMARKS) throw new Error('Bookmark limit reached.');
-      this.data.bookmarks.unshift({ id: randomUUID(), title: safeTitle(title), url, createdAt: now, updatedAt: now });
+      this.data.bookmarks.unshift({ id: randomUUID(), title: safeTitle(title), url, folderId: null, createdAt: now, updatedAt: now });
     }
     await this.persist();
     return this.listBookmarks();
