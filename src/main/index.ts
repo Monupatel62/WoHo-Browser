@@ -887,6 +887,11 @@ function createWindow(): void {
     },
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  if (packagedSmokeTest) {
+    mainWindow.webContents.on('console-message', (_event, details) => {
+      console.error(`Packaged renderer console [${details.level}]: ${details.message} (${details.sourceId}:${details.lineNumber})`);
+    });
+  }
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
   const expectedRendererPath = join(__dirname, '../renderer/index.html');
   const isAllowedChromeNavigation = (value: string) =>
@@ -940,9 +945,12 @@ function createWindow(): void {
       // before reporting a successful packaged startup smoke test.
       void mainWindow?.webContents.executeJavaScript(
         "Boolean(document.querySelector('#root .browser-chrome'))",
-      ).then((rendered) => {
+      ).then(async (rendered) => {
         if (!rendered) {
-          console.error('Packaged smoke test failed: trusted browser chrome did not render.');
+          const diagnostics = await mainWindow?.webContents.executeJavaScript(
+            "JSON.stringify({ readyState: document.readyState, href: location.href, root: document.querySelector('#root')?.innerHTML.slice(0, 500) ?? '', scripts: Array.from(document.scripts).map((script) => script.src) })",
+          ).catch(() => 'Unable to inspect renderer document.');
+          console.error('Packaged smoke test failed: trusted browser chrome did not render.', diagnostics ?? 'Browser window closed before diagnostics.');
           app.exit(1);
           return;
         }
