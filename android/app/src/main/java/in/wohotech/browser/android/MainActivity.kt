@@ -1,4 +1,4 @@
-package in.wohotech.browser.android
+package `in`.wohotech.browser.android
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -49,7 +49,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(4)) }
         val addressRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         addressBar = EditText(this).apply {
-            singleLine = true; hint = "Search or enter address"; imeOptions = EditorInfo.IME_ACTION_GO
+            setSingleLine(true); hint = "Search or enter address"; imeOptions = EditorInfo.IME_ACTION_GO
             contentDescription = "Address and search"; setTextSize(14f); setPadding(dp(10), dp(4), dp(10), dp(4))
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) { navigateFromAddress(); true } else false
