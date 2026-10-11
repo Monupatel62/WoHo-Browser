@@ -934,7 +934,25 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => {
     layoutViews();
     publishState();
-    if (packagedSmokeTest) { smokeRendererLoaded = true; maybeFinishPackagedSmokeTest(); }
+    if (packagedSmokeTest) {
+      // A document load alone does not prove that the bundled renderer script ran.
+      // Verify React mounted the trusted chrome UI (including CSP compatibility)
+      // before reporting a successful packaged startup smoke test.
+      void mainWindow?.webContents.executeJavaScript(
+        "Boolean(document.querySelector('#root .browser-chrome'))",
+      ).then((rendered) => {
+        if (!rendered) {
+          console.error('Packaged smoke test failed: trusted browser chrome did not render.');
+          app.exit(1);
+          return;
+        }
+        smokeRendererLoaded = true;
+        maybeFinishPackagedSmokeTest();
+      }).catch((error: unknown) => {
+        console.error('Packaged smoke test could not verify trusted browser chrome:', error instanceof Error ? error.message : 'Unknown renderer error.');
+        app.exit(1);
+      });
+    }
   });
 }
 
