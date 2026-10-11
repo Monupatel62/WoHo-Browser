@@ -186,9 +186,9 @@ Private browsing must not promise invisibility to websites, networks, employers,
 Monetization should follow user trust and product usefulness. Validate willingness to pay before building payment infrastructure.
 
 1. Free core browser: basic browsing at no charge.
-3. Business edition: centrally managed settings, deployment help, and support.
-4. Custom deployments: paid integration or configuration for organizations.
-5. Support contracts: response-time commitments and maintenance for business customers.
+2. Business edition: centrally managed settings, deployment help, and support.
+3. Custom deployments: paid configuration for organizations.
+4. Support contracts: response-time commitments and maintenance for business customers.
 
 Do not depend on advertising or selling browsing history. Do not imply revenue is likely until customer interviews, pilots, or paid commitments support it. 
 
