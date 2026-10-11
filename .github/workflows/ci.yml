@@ -46,6 +46,10 @@ jobs:
             npm-audit.json
           if-no-files-found: error
           retention-days: 30
+      - name: Test Web companion bookmark validation
+        run: npm run test:web
+      - name: Build and validate Web companion
+        run: npm run build:web
       - name: Lint
         run: npm run lint
       - name: Typecheck
@@ -98,5 +102,36 @@ jobs:
             release/*.exe
             release/SHA256SUMS.txt
             release/electron-fuses.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  android:
+    name: Native Android build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Install Android SDK packages
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Run Android unit tests and debug build
+        run: gradle -p android testDebugUnitTest assembleDebug
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: woho-browser-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
