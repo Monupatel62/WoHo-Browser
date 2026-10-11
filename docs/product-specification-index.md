@@ -40,4 +40,4 @@ Document its user value, entry points, default behavior, all visible states, inp
 AI assistant, AI broker, agent, and DevKit documents are historical design references only. AI features are out of scope and must not be implemented.
 
 ## Current repository status
-The repository is currently a documentation/specification project. The listed browser features are not represented as implemented or production-ready.
+The repository contains a working browser prototype with implemented navigation, tabs, bookmarks/history, private sessions, permissions, downloads, settings, and automated CI checks. It is not production-ready; consult docs/documentation-audit.md for evidence and outstanding release gates.
