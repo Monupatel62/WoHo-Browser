@@ -90,3 +90,24 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - Reviewed Dependabot PRs #93, #94, and #96. Vite 8 conflicts with `electron-vite@5`'s declared Vite peer range (`^5 || ^6 || ^7`); `@vitejs/plugin-react@6` requires Vite 8, so it cannot be applied independently to Vite 7; TypeScript 7 PR fails CI. Do not merge these dependency-only PRs until a compatible, tested toolchain set is available.
 - CVE-2026-97058 remains open: the reviewed GitHub advisory (updated 2026-10-05) lists `sprintf-js <=1.1.3` as affected and no patched version. It is in the development/build dependency tree, not listed as a shipped production dependency. That reduces shipped-runtime exposure but does not make the build pipeline risk-free. No dependency override, fork, or downgrade is justified without compatibility tests and source review.
 - Release gates unchanged: manual Windows install/navigation/permission/private-tab/download/restart/data-recovery/uninstall tests; signed installer and authenticated update mechanism; owner-selected project license and third-party notices; private vulnerability-reporting setup and named monitored inbox/response owner. These require real-machine testing or owner decisions and cannot be claimed complete from CI.
+
+
+## Fresh-main verification addendum — 2026-10-11
+
+This addendum supersedes the older “latest verified main” SHA and workflow IDs above. The older IDs are retained as historical evidence, not current-main evidence.
+
+- **Current main commit checked:** `6a13dfa65e357d8272f0a03b893601110f90a2ac`.
+- **CI:** run [38148847281](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38148847281) passed. Steps include dependency advisory inspection, production and high/critical dependency gates, CycloneDX SBOM, lint, typecheck, unit tests, unsigned Windows packaging, packaged-app startup smoke test, Electron fuse verification, installer SHA-256 manifest, and artifact upload.
+- **CodeQL:** run [38148847325](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38148847325) passed.
+- **Secret scanning:** run [38148847329](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38148847329) passed.
+- These are automated checks on the named commit; they do not establish clean-machine Windows install/uninstall, full site compatibility, signed updates, or production readiness.
+- **Known dependency risk remains unresolved:** CVE-2026-97058 affects the dev/build dependency chain through `sprintf-js@1.1.3`; no patched version is listed in the reviewed advisory. Do not mark fixed without a verified remediation or documented risk acceptance.
+- **Owner decisions remain open:** project license and third-party notices, and confirmation that private vulnerability reporting plus a monitored inbox/responsible owner are operational.
+- **Scope reminder:** AI-related documents in this repository are design-only legacy references. No AI assistant, agent, API, DevKit integration, model download, or AI service is authorized or implemented in the current browser scope.
+
+## Next audit cycle
+
+1. Continue a file-by-file review of main-process event lifecycle, tab/session disposal, IPC validation, storage persistence, and download race/error paths.
+2. For each confirmed defect, add a regression test and record exact source/test evidence.
+3. Keep speculative concerns separate from confirmed defects; do not claim a bug is fixed until the regression test and exact-head CI pass.
+4. Require manual Windows runtime evidence for native permissions, private-session cleanup, navigation policy, storage recovery, install, and uninstall before production sign-off.
