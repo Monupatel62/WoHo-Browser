@@ -113,6 +113,29 @@ describe('BrowserDataStore', () => {
     await expect(store.importBookmarksJson(JSON.stringify({ version: 99, bookmarks: [] }))).rejects.toThrow(/unsupported/);
   });
 
+  it('reorders bookmarks and persists the chosen order', async () => {
+    const { store, file } = await createStore();
+    await store.addBookmark('First', 'https://example.com/first');
+    await store.addBookmark('Second', 'https://example.com/second');
+    await store.addBookmark('Third', 'https://example.com/third');
+    const before = await store.listBookmarks();
+    const ids = [before[2].id, before[0].id, before[1].id];
+    const reordered = await store.reorderBookmarks(ids);
+    expect(reordered.map((bookmark) => bookmark.id)).toEqual(ids);
+    expect((await new BrowserDataStore(file).listBookmarks()).map((bookmark) => bookmark.id)).toEqual(ids);
+  });
+
+  it('rejects incomplete, duplicate, or unknown bookmark order without changing data', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('First', 'https://example.com/first');
+    await store.addBookmark('Second', 'https://example.com/second');
+    const before = await store.listBookmarks();
+    await expect(store.reorderBookmarks([before[0].id])).rejects.toThrow(/Invalid bookmark order/);
+    await expect(store.reorderBookmarks([before[0].id, before[0].id])).rejects.toThrow(/Invalid bookmark order/);
+    await expect(store.reorderBookmarks([before[0].id, 'unknown'])).rejects.toThrow(/every existing bookmark/);
+    expect(await store.listBookmarks()).toEqual(before);
+  });
+
   it('edits bookmark title and URL while preserving ID and creation time', async () => {
     const { store, file } = await createStore();
     const created = await store.addBookmark('Original', 'https://example.com/old');

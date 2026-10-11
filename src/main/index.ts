@@ -565,6 +565,13 @@ function registerIpc(): void {
     if (typeof id !== 'string' || id.length > 100) throw new Error('Invalid bookmark ID.');
     return browserDataStore.removeBookmark(id);
   });
+  handle('browser:reorder-bookmarks', (_event, ids: unknown) => {
+    if (!Array.isArray(ids) || ids.length > 500 ||
+        ids.some((id) => typeof id !== 'string' || id.length === 0 || id.length > 100)) {
+      throw new Error('Invalid bookmark order.');
+    }
+    return browserDataStore.reorderBookmarks(ids);
+  });
   handle('browser:export-bookmarks', async () => {
     if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Browser window is unavailable.');
     const choice = await dialog.showSaveDialog(mainWindow, {

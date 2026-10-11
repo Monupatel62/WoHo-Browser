@@ -31,10 +31,10 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - No signed installer or auto-updater is implemented.
 - No extension system, sync, password manager, or credential storage is implemented.
 - Browser profile and download-history startup recovery now preserve corrupt originals and fall back to separate files; Windows runtime recovery behavior still needs manual verification.
-- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation. A trusted native preview reports new/update/duplicate/invalid row counts and lets users import valid rows only; row-number/reason details are shown for up to 12 skipped rows. Bookmark edit is implemented; folders and reordering remain unimplemented.
+- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation. A trusted native preview reports new/update/duplicate/invalid row counts and lets users import valid rows only; row-number/reason details are shown for up to 12 skipped rows. Bookmark edit and up/down reordering are implemented; folders remain unimplemented.
 - History supports local-date filtering, inclusive date-range deletion, and checkbox-based multi-select deletion of visible entries.
 - Per-item removal of finished download records is implemented and does not delete files. Retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
-- General settings import/export, bookmark folders/reordering, import preview/per-row reporting, retry and partial-download cleanup, and other broader roadmap items remain unimplemented.
+- General settings import/export, bookmark folders, retry and partial-download cleanup, and other broader roadmap items remain unimplemented.
 - Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. CI fails on high/critical advisories; this change adds a CycloneDX SBOM and raw npm audit report as workflow artifacts. The moderate advisory remains open for triage and is not claimed fixed.
 - Some legacy AI-related specification files remain in the repository. Treat them as out-of-scope reference material, not authorization to add AI integrations; keep the README and master plan as the current product-scope references.
 
