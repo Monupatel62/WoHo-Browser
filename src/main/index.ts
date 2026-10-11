@@ -15,7 +15,8 @@ import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permiss
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { rememberClosedTab, takeRecentlyClosedTab } from '../shared/closed-tab-policy';
-import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
+import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, validateBrowserSettings, type BrowserSettings } from '../shared/browser-settings';
+import { saveSettingsAfterSessionPolicy } from './settings-session-transition';
 import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/session-policy';
 import { isFinishedDownloadStatus, pruneDownloadRecordsDurably } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
@@ -571,19 +572,21 @@ function registerIpc(): void {
   handle('browser:get-state', () => getState());
   handle('browser:get-settings', () => browserSettingsStore.get());
   handle('browser:update-settings', async (_event, candidate: unknown) => {
-    browserSettings = await browserSettingsStore.update(candidate);
-    if (browserSettings.restoreSession) {
-      persistSessionTabs();
-    } else if (browserSessionStore) {
-      // Do not report that session restore is disabled until sensitive saved URLs
-      // have actually been removed from the local session file.
-      await queueSessionStoreWrite([]);
-    }
+    const nextSettings = validateBrowserSettings(candidate);
+    browserSettings = await saveSettingsAfterSessionPolicy(
+      nextSettings,
+      () => browserSessionStore ? queueSessionStoreWrite([]) : Promise.resolve(),
+      () => browserSettingsStore.update(nextSettings),
+    );
+    if (browserSettings.restoreSession) persistSessionTabs();
     return { ...browserSettings };
   });
   handle('browser:reset-settings', async () => {
-    browserSettings = await browserSettingsStore.reset();
-    if (browserSessionStore) await queueSessionStoreWrite([]);
+    browserSettings = await saveSettingsAfterSessionPolicy(
+      DEFAULT_BROWSER_SETTINGS,
+      () => browserSessionStore ? queueSessionStoreWrite([]) : Promise.resolve(),
+      () => browserSettingsStore.reset(),
+    );
     return { ...browserSettings };
   });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
