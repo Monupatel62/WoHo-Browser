@@ -291,19 +291,20 @@ Update this table only with verified repository evidence.
 
 | Area | Status | Evidence / next step |
 |---|---|---|
-| Repository | Active implementation prototype | Verified `main` at `aa18425c6a6d84e3503dec5f881e835ddfa1a885` during this audit; re-check branch and CI before each change |
+| Repository | Active implementation prototype | Verified `main` at `7378df81be084debba8fc2d1a1d4ace01a5d1265` on 2026-10-11; fresh-main CI run `38126010114` and CodeQL run `38126010164` passed |
 | Product vision | Drafted; current scope clarified | This build prioritizes a dependable Windows browser; AI assistant/agent/API/service integration is explicitly out of scope |
 | Framework choice | Electron + TypeScript + React selected for R0 prototype only; production decision open | ADR-0001 and `docs/release-0-spike-plan.md`; production commitment remains conditional |
 | Architecture | Partially implemented, not production-verified | `docs/architecture.md`, `docs/security-model.md`, IPC sender checks, isolated WebContentsView tabs, bounded storage and navigation-policy tests |
 | Security model | Partially implemented; automated checks verified on the audited commit | Navigation/popup restrictions, secure-origin permission policy, private-session isolation, bounded profile reads, download URL/name hardening; full threat-model and Windows runtime review remain |
 | Windows MVP | In-progress prototype | Navigation, home button, tabs, bookmarks/history, downloads, permissions, private tabs, settings, opt-in session restore and failure feedback exist; clean Windows runtime, signed installer and release gates remain |
 | AI assistant | Out of scope for the current browser build | No AI integration or AI service calls; revisit only through a separate approved roadmap decision |
-| CI and release | CI and CodeQL workflows implemented; PR-head checks passed for the latest code change, fresh `main` checks pending | Windows lint/typecheck/tests/build and unsigned installer packaging run in CI; code signing, updater, clean-machine install/uninstall and runtime evidence remain |
+| CI and release | CI and CodeQL passed on fresh `main` at `7378df81be084debba8fc2d1a1d4ace01a5d1265` | Windows lint/typecheck/tests/build, unsigned installer packaging, Electron fuse verification, SBOM and audit artifacts run in CI; lockfile/reproducible install, code signing, updater, clean-machine install/uninstall and runtime evidence remain |
 | Monetization | Hypotheses only | Interview target users and validate willingness to pay |
 
 ### Status-ledger changelog
 
 - **2026-10-11:** Replaced stale “documentation stage” and “no workflows found” entries with verified implementation status. The audited `main` commit was `aa18425c6a6d84e3503dec5f881e835ddfa1a885`. The filename-hardening PR head passed Windows CI and CodeQL; fresh checks on that merge commit were still queued. This is not a production-readiness claim: Windows runtime testing, signing, updater integrity, and the full release/security review remain open.
+- **2026-10-11 (follow-up):** Updated the status ledger after PRs #70–#73 and #75. Main is `7378df81be084debba8fc2d1a1d4ace01a5d1265`; fresh-main Windows CI (`38126010114`) and CodeQL (`38126010164`) passed. Recent fixes verify packaged Electron fuses in CI, clear site data for the active session, and preserve durable deletion semantics for download records, retention pruning, and bulk history operations. The browser remains a prototype: clean Windows runtime testing, a committed lockfile, dependency-advisory triage, license/third-party notices, signing, and updater verification remain open.
 
 ## 14. Working agreement for future updates
 
