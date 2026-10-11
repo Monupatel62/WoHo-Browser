@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
+import type { BookmarkFolderRecord, BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SitePermissionDecision } from '../../shared/browser-types';
 import { DEFAULT_BROWSER_SETTINGS, SEARCH_PROVIDERS, type BrowserSettings, type SearchProviderId } from '../../shared/browser-settings';
 import { shouldOpenNewTabPrivately } from '../../shared/privacy-policy';
 import { filterSavedEntries } from '../../shared/saved-entry-search';
@@ -29,6 +29,8 @@ export default function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
+  const [bookmarkFolders, setBookmarkFolders] = useState<BookmarkFolderRecord[]>([]);
+  const [bookmarkFolderFilter, setBookmarkFolderFilter] = useState('all');
   const [editingBookmarkId, setEditingBookmarkId] = useState<string | null>(null);
   const [bookmarkEditTitle, setBookmarkEditTitle] = useState('');
   const [bookmarkEditUrl, setBookmarkEditUrl] = useState('');
@@ -58,7 +60,9 @@ export default function App() {
         ? 'Unencrypted HTTP connection'
         : 'No website loaded';
   const isBookmarked = Boolean(active?.url && bookmarks.some((bookmark) => bookmark.url === active.url));
-  const visibleBookmarks = filterSavedEntries(bookmarks, savedSearch);
+  const visibleBookmarks = filterSavedEntries(bookmarks, savedSearch).filter((bookmark) =>
+    bookmarkFolderFilter === 'all' ||
+    (bookmarkFolderFilter === 'root' ? bookmark.folderId === null : bookmark.folderId === bookmarkFolderFilter));
   const visibleHistory = filterSavedEntries(history, savedSearch).filter((entry) => {
     const date = localDateKey(entry.visitedAt);
     return Boolean(date) && (!historyStartDate || date >= historyStartDate) && (!historyEndDate || date <= historyEndDate);
@@ -73,6 +77,7 @@ export default function App() {
     let mounted = true;
     void window.wohoBrowser.getState().then((next) => { if (mounted) setState(next); }).catch(() => setError('Could not connect to the browser process.'));
     void window.wohoBrowser.listBookmarks().then((items) => { if (mounted) setBookmarks(items); }).catch(() => setError('Could not load bookmarks.'));
+    void window.wohoBrowser.listBookmarkFolders().then((items) => { if (mounted) setBookmarkFolders(items); }).catch(() => setError('Could not load bookmark folders.'));
     void window.wohoBrowser.listDownloads().then((items) => { if (mounted) setDownloads(items); }).catch(() => setError('Could not load downloads.'));
     const unsubscribeDownloads = window.wohoBrowser.onDownloadsChanged((items) => setDownloads(items));
     const unsubscribeFind = window.wohoBrowser.onFindResults((result) => {
@@ -150,7 +155,11 @@ export default function App() {
     setEditingBookmarkId(null);
     if (panel === next) { setPanel(null); return; }
     try {
-      if (next === 'bookmarks') setBookmarks(await window.wohoBrowser.listBookmarks());
+      if (next === 'bookmarks') {
+        const [items, folders] = await Promise.all([window.wohoBrowser.listBookmarks(), window.wohoBrowser.listBookmarkFolders()]);
+        setBookmarks(items);
+        setBookmarkFolders(folders);
+      }
       else if (next === 'history') setHistory(await window.wohoBrowser.listHistory());
       else if (next === 'downloads') setDownloads(await window.wohoBrowser.listDownloads());
       else if (next === 'permissions') setSitePermissions(await window.wohoBrowser.listSitePermissions());
