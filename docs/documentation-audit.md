@@ -31,7 +31,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - No signed installer or auto-updater is implemented.
 - No extension system, sync, password manager, or credential storage is implemented.
 - Browser profile and download-history startup recovery now preserve corrupt originals and fall back to separate files; Windows runtime recovery behavior still needs manual verification.
-- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation; preview and per-row import reporting remain unimplemented. Bookmark edit is implemented; folders and reordering remain unimplemented.
+- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation. A trusted native preview reports new/update/duplicate/invalid row counts and lets users import valid rows only; row-number/reason details are shown for up to 12 skipped rows. Bookmark edit is implemented; folders and reordering remain unimplemented.
 - History supports local-date filtering, inclusive date-range deletion, and checkbox-based multi-select deletion of visible entries.
 - Per-item removal of finished download records is implemented and does not delete files. Retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
 - General settings import/export, bookmark folders/reordering, import preview/per-row reporting, retry and partial-download cleanup, and other broader roadmap items remain unimplemented.
