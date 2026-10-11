@@ -36,6 +36,7 @@ class MainActivity : Activity() {
     private lateinit var webHost: FrameLayout
     private lateinit var progress: ProgressBar
     private lateinit var bookmarkButton: Button
+    private lateinit var securityStatus: android.widget.TextView
     private val preferences by lazy { getSharedPreferences("browser-local-data", Context.MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +59,13 @@ class MainActivity : Activity() {
         addressRow.addView(button("Go", "Navigate to address") { navigateFromAddress() })
         addressRow.addView(button("+", "Open new tab") { openTab("https://www.google.com") })
         root.addView(addressRow)
+        securityStatus = android.widget.TextView(this).apply {
+            text = "No page loaded"
+            textSize = 11f
+            setPadding(dp(6), dp(2), dp(6), dp(2))
+            contentDescription = "Connection security status"
+        }
+        root.addView(securityStatus, LinearLayout.LayoutParams(-1, dp(22)))
 
         val tabsScroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; contentDescription = "Open browser tabs" }
         tabStrip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -114,13 +122,13 @@ class MainActivity : Activity() {
                 return true
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                if (view === activeWebView()) { addressBar.setText(url); progress.visibility = View.VISIBLE; progress.progress = 0 }
+                if (view === activeWebView()) { addressBar.setText(url); progress.visibility = View.VISIBLE; progress.progress = 0; updateSecurityStatus(url) }
                 updateActiveBookmarkButton()
             }
             override fun onPageFinished(view: WebView, url: String) {
                 val tab = tabs.firstOrNull { it.webView === view } ?: return
                 tab.title = view.title?.take(80)?.ifBlank { null } ?: url
-                if (tab.id == activeTabId) { addressBar.setText(url); progress.visibility = View.GONE; updateActiveBookmarkButton() }
+                if (tab.id == activeTabId) { addressBar.setText(url); progress.visibility = View.GONE; updateActiveBookmarkButton(); updateSecurityStatus(url) }
                 renderTabStrip()
                 if (BrowserUrlPolicy.isAllowedUrl(url)) saveHistory(tab.title, url)
             }
@@ -183,6 +191,24 @@ class MainActivity : Activity() {
     }
 
     private fun activeWebView(): WebView? = tabs.firstOrNull { it.id == activeTabId }?.webView
+
+    private fun updateSecurityStatus(url: String) {
+        if (!::securityStatus.isInitialized) return
+        when {
+            url.startsWith("https://", ignoreCase = true) -> {
+                securityStatus.text = "HTTPS · Secure transport"
+                securityStatus.setTextColor(0xFF287A48.toInt())
+            }
+            url.startsWith("http://", ignoreCase = true) -> {
+                securityStatus.text = "HTTP · Not secure"
+                securityStatus.setTextColor(0xFFB3261E.toInt())
+            }
+            else -> {
+                securityStatus.text = "No website loaded"
+                securityStatus.setTextColor(0xFF555555.toInt())
+            }
+        }
+    }
 
     private fun saveCurrentBookmark() {
         val webView = activeWebView() ?: return
@@ -255,6 +281,7 @@ class MainActivity : Activity() {
 
     private fun readRecords(key: String): org.json.JSONArray {
         val raw = preferences.getString(key, "[]") ?: "[]"
+        if (raw.length > 2_000_000) return org.json.JSONArray()
         return try {
             val parsed = org.json.JSONArray(raw)
             val bounded = org.json.JSONArray()
@@ -287,7 +314,7 @@ class MainActivity : Activity() {
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setAllowedOverMetered(true)
                 setAllowedOverRoaming(false)
-                addRequestHeader("User-Agent", userAgent.take(512))
+                addRequestHeader("User-Agent", userAgent.replace(Regex("[\\r\\n]"), "").take(512))
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessed)
             }
             (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
