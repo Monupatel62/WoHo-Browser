@@ -223,6 +223,21 @@ export default function App() {
     }
   }
 
+  async function moveBookmark(id: string, offset: -1 | 1) {
+    const from = bookmarks.findIndex((bookmark) => bookmark.id === id);
+    const to = from + offset;
+    if (from < 0 || to < 0 || to >= bookmarks.length) return;
+    const ids = bookmarks.map((bookmark) => bookmark.id);
+    [ids[from], ids[to]] = [ids[to], ids[from]];
+    setError(''); setNotice('');
+    try {
+      setBookmarks(await window.wohoBrowser.reorderBookmarks(ids));
+      setNotice('Bookmark order saved.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not reorder bookmarks.');
+    }
+  }
+
   async function exportBookmarks() {
     if (!window.confirm('Export saved bookmarks to a JSON file? The export may contain sensitive URLs. Keep the file in a secure location.')) return;
     setError(''); setNotice('');
@@ -522,6 +537,8 @@ export default function App() {
         </form> : <>
           <button className="saved-open" onClick={() => void openSavedUrl(bookmark.url)}><strong>{bookmark.title}</strong><span>{bookmark.url}</span></button>
           <button className="panel-action" aria-label={`Open bookmark ${bookmark.title} in a new tab`} onClick={() => void openSavedUrlInNewTab(bookmark.url)}>New tab</button>
+          <button className="panel-action" aria-label={`Move bookmark ${bookmark.title} up`} title="Move up" disabled={bookmarks.findIndex((item) => item.id === bookmark.id) === 0} onClick={() => void moveBookmark(bookmark.id, -1)}>↑</button>
+          <button className="panel-action" aria-label={`Move bookmark ${bookmark.title} down`} title="Move down" disabled={bookmarks.findIndex((item) => item.id === bookmark.id) === bookmarks.length - 1} onClick={() => void moveBookmark(bookmark.id, 1)}>↓</button>
           <button className="panel-action" aria-label={`Edit bookmark ${bookmark.title}`} onClick={() => startEditingBookmark(bookmark)}>Edit</button>
           <button className="saved-remove" aria-label={`Remove bookmark ${bookmark.title}`} onClick={() => void window.wohoBrowser.removeBookmark(bookmark.id).then(setBookmarks).catch(() => setError('Could not remove bookmark.'))}>×</button>
         </>}
