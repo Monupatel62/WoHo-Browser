@@ -15,7 +15,7 @@ import { createPermissionGrantKey, getPermissionOrigin } from '../shared/permiss
 import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContextMenuLink, resolveAddressInput } from '../shared/navigation';
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
-import { selectRestorableTabUrls } from '../shared/session-policy';
+import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/session-policy';
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
@@ -32,6 +32,8 @@ let browserSettingsStore: BrowserSettingsStore;
 let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
 let browserSessionStore: BrowserSessionStore | null = null;
 let isRestoringSession = false;
+let isClosingWindow = false;
+let allowWindowCloseAfterSessionSave = false;
 let mainWindow: BrowserWindow | null = null;
 let startupComplete = false;
 let browserSession: Electron.Session;
@@ -308,16 +310,19 @@ function getState(): BrowserState {
   return { tabs, activeTabId };
 }
 
-function persistSessionTabs(): void {
-  if (!browserSessionStore || !browserSettings.restoreSession || isRestoringSession) return;
-  const urls = selectRestorableTabUrls(tabOrder.map((id) => {
+function currentSessionTabUrls(): string[] {
+  return selectRestorableTabUrls(tabOrder.map((id) => {
     const view = views.get(id);
     return {
       url: view && !view.webContents.isDestroyed() ? view.webContents.getURL() : '',
       isPrivate: privateTabRegistry.has(id),
     };
   }));
-  void browserSessionStore.save(urls).catch((error: unknown) => {
+}
+
+function persistSessionTabs(): void {
+  if (!browserSessionStore || !shouldPersistSessionTabs(browserSettings.restoreSession, isRestoringSession, isClosingWindow)) return;
+  void browserSessionStore.save(currentSessionTabUrls()).catch((error: unknown) => {
     console.error('Could not persist normal-tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
   });
 }
@@ -765,6 +770,8 @@ function registerIpc(): void {
 }
 
 function createWindow(): void {
+  isClosingWindow = false;
+  allowWindowCloseAfterSessionSave = false;
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 900,
@@ -792,6 +799,31 @@ function createWindow(): void {
     if (!isAllowedChromeNavigation(url)) event.preventDefault();
   });
   mainWindow.on('resize', layoutViews);
+  mainWindow.on('close', (event) => {
+    if (allowWindowCloseAfterSessionSave) {
+      isClosingWindow = true;
+      return;
+    }
+    if (!browserSessionStore || !shouldPersistSessionTabs(browserSettings.restoreSession, isRestoringSession, isClosingWindow)) {
+      isClosingWindow = true;
+      return;
+    }
+
+    // Snapshot the live tabs and hold the close until the queued atomic write
+    // completes. WebContents destruction would otherwise persist an empty list.
+    event.preventDefault();
+    const closingWindow = mainWindow;
+    const urls = currentSessionTabUrls();
+    isClosingWindow = true;
+    void browserSessionStore.save(urls)
+      .catch((error: unknown) => {
+        console.error('Could not persist normal-tab session during close:', error instanceof Error ? error.message : 'Unknown session storage error');
+      })
+      .finally(() => {
+        allowWindowCloseAfterSessionSave = true;
+        if (closingWindow && !closingWindow.isDestroyed()) closingWindow.close();
+      });
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
     overlayPanelHeight = 0;
