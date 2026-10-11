@@ -4,7 +4,7 @@
 
 ## Dependency hygiene
 
-Application and build dependencies are pinned in `package-lock.json` (lockfile version 3); CI uses `npm ci`. Review updates, transitive packages, install scripts, native modules, and network behavior. CI runs `npm audit --json`, prints a dependency advisory summary, and fails on high/critical advisories. Moderate/low advisories still require explicit triage; a passing CI run does not mean the dependency tree is vulnerability-free.
+Application and build dependencies are pinned in `package-lock.json` (lockfile version 3); CI uses `npm ci`. Review updates, transitive packages, install scripts, native modules, and network behavior. CI runs `npm audit --json`, prints a dependency advisory summary, fails on moderate-or-higher advisories in production dependencies (`npm audit --omit=dev --audit-level=moderate`), and separately fails on high/critical advisories in the full dependency tree. Moderate build-tool advisories still require explicit triage; a passing CI run does not mean the entire dependency tree is vulnerability-free.
 
 ## SBOM evidence
 
