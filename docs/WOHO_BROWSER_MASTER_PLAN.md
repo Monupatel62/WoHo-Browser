@@ -4,6 +4,18 @@
 > **Repository:** https://github.com/Monupatel62/WoHo-Browser
 > **Product owner:** WoHoTech
 > **Document rule:** Keep this file as the living source of truth. Add decisions, verified implementation status, risks, and roadmap changes here as the project evolves. Never mark a feature complete without code, tests, and evidence.
+## Cross-platform direction (current planning update)
+
+The product plan now covers three distinct surfaces. See [Cross-Platform Product Strategy](cross-platform-product-strategy.md) for the binding scope and phase gates.
+
+- **Windows desktop:** first full-browser target using the existing Electron/Chromium prototype. It is not production-ready; the packaged renderer startup issue must be fixed and runtime/install/security gates must pass.
+- **Android:** planned native browser. Engine selection (Android WebView vs GeckoView) is an open feasibility decision; no implementation is claimed.
+- **Web:** planned companion portal/PWA for documentation, verified releases, support information, and optional local-only bookmark import/export. It is not a full browser engine and must not be represented as one.
+- **AI exclusion:** no AI assistant, agent, model, API/service, AI DevKit, or AI browser feature on any platform.
+- **Local-first policy:** no browsing history, cookies, passwords, private-session state, or profile upload/sync by default. Cloud sync and remote browsing require a separate approved ADR and security/privacy review.
+
+Platform plans: [Windows](windows-application-plan.md) · [Android](android-application-plan.md) · [Web](web-application-plan.md) · [Cross-platform acceptance matrix](cross-platform-acceptance-matrix.md).
+
 ## 1. Product vision
 WoHo Browser is a privacy-conscious desktop web browser built under the WoHoTech brand. The first goal is a dependable Windows browser with reliable navigation, tabs, downloads, and user-controlled privacy. AI assistant, AI agent, AI API, and AI service integrations are outside the current product scope. Later releases may expand to Linux, Android, managed business deployments, and deeper browser-engine work.
 The product should make everyday browsing work reliably and keep users in control of saved data, site permissions, downloads, and privacy. The current build does not include AI features or AI service calls.
