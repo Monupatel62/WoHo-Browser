@@ -1,12 +1,12 @@
 # WoHo Browser Architecture
 
 **Status:** Proposed; validate against the first working prototype. This is an architecture proposal, not implemented behavior.  
-**Scope:** Initial Windows desktop browser with optional AI assistance.
+**Scope:** Conventional Windows desktop browser. AI assistant, agent, API/service, model runtime, and AI-related UI or dependencies are out of scope.
 
 ## 1. Architecture goals
-- Keep ordinary browsing functional when AI providers are unavailable.
+- Keep ordinary browsing functional without an account or cloud service.
 - Separate trusted desktop privileges from untrusted website content.
-- Make navigation, sessions, downloads, storage, and AI independently testable.
+- Make navigation, sessions, downloads, storage, and permissions independently testable.
 - Avoid building a custom Chromium fork until requirements justify its maintenance cost.
 
 ## 2. Technology decision status
