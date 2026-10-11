@@ -7,7 +7,7 @@
 ## A. App shell and lifecycle
 - First launch, first-run choices, main window, multiple-window policy, minimize/maximize/restore/resize, multi-monitor behavior, close confirmation, clean shutdown, startup failure, version/about page, release notes, help links, uninstall.
 - UI states: idle, loading, disabled, success, warning, blocked, error, offline, crashed, updating, restart required.
-- No mandatory account or AI setup to browse.
+- No mandatory account or cloud setup to browse.
 
 ## B. Navigation and address/search
 - Address bar, URL-versus-query parsing, normalization, origin display, safe internationalized-domain display, paste/copy, autocomplete, history/bookmark suggestions, optional remote suggestions, search provider settings, query encoding, invalid input, redirects, back/forward/reload/stop/home, new-tab navigation, progress, TLS/network error pages.
@@ -64,7 +64,7 @@ WoHo Browser has no AI assistant, agent, API/service, model runtime, AI DevKit i
 - CI lint/typecheck/unit/integration/e2e/security/dependency/license checks; fixtures; crash reproduction; redacted diagnostics; support guide; known issues; accessibility review; release checklist; ADRs; deprecation/migration policy.
 
 ## O. Gated future capabilities
-Extensions, account/sync, password manager, autofill, tracking/ad blocking, reader mode, translation, built-in VPN/proxy, mobile app, enterprise policy, advanced agent actions, cloud profile backup, custom Chromium fork. Each needs a separate specification, threat analysis, license/maintenance plan, cost model, and acceptance tests before inclusion.
+Extensions, account/sync, password manager, autofill, tracking/ad blocking, reader mode, translation, built-in VPN/proxy, mobile app, enterprise policy, cloud profile backup, custom Chromium fork. Each needs a separate specification, threat analysis, license/maintenance plan, cost model, and acceptance tests before inclusion.
 
 ## Tracking rule
 Use the [Product Specification Index](product-specification-index.md), [Feature Requirements](feature-requirements.md), and [Cross-Feature Acceptance Matrix](cross-feature-acceptance-matrix.md). Catalog presence alone does not mean a feature is approved or implemented.
