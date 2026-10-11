@@ -12,7 +12,7 @@ Never mark a feature verified based only on a successful compile.
 Required checks should include:
 - Formatting/lint and TypeScript checks.
 - Unit and integration tests.
-- Dependency installation and vulnerability scanning. A committed `package-lock.json` is still required before CI can use `npm ci` reproducibly.
+- Dependency installation and vulnerability scanning. `package-lock.json` is committed and CI uses `npm ci` for reproducible dependency installation.
 - Secret scanning and static analysis.
 - Build and package smoke tests; generate a SHA-256 manifest for the unsigned Windows installer.
 - Relevant Windows end-to-end tests.
