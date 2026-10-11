@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { BrowserSettings } from '../shared/browser-settings';
+import type { ZoomAction } from '../shared/zoom-policy';
 import type { BookmarkImportResult, BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
@@ -17,6 +18,7 @@ const api: WoHoBrowserApi = {
   goForward: () => ipcRenderer.invoke('browser:forward'),
   reload: () => ipcRenderer.invoke('browser:reload'),
   stop: () => ipcRenderer.invoke('browser:stop'),
+  setZoom: (action: ZoomAction) => ipcRenderer.invoke('browser:set-zoom', action) as Promise<number>,
   listBookmarks: () => ipcRenderer.invoke('browser:list-bookmarks') as Promise<BookmarkRecord[]>,
   addBookmark: (title, url) => ipcRenderer.invoke('browser:add-bookmark', title, url) as Promise<BookmarkRecord[]>,
   updateBookmark: (id, title, url) => ipcRenderer.invoke('browser:update-bookmark', id, title, url) as Promise<BookmarkRecord[]>,
