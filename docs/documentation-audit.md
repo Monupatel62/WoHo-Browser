@@ -17,14 +17,14 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository now includes a generated npm lockfile and CI uses `npm ci`; the lockfile branch's exact-head CI and CodeQL passed, and the fresh-main checks passed after merge.
 - `.github/workflows/codeql.yml` configures CodeQL analysis.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
-- PRs #70–#73 and #75–#78 were merged after exact-head CI and CodeQL passed. The latest verified implementation commit is `3eafef0ae763064323b158ae41d4b3834b4d4f06`; fresh-main CI run `38126943228` and CodeQL run `38126943212` both completed successfully. This is workflow evidence only, not Windows runtime or security certification.
+- PRs #70–#73 and #75–#80 were merged after exact-head CI and CodeQL passed. The latest verified implementation commit is `695dc8815eaea798d010a983b0c76501e8175c64`; fresh-main CI run `38127651625` and CodeQL run `38127651596` both completed successfully. The Windows CI run also passed the packaged-app startup smoke test. This is workflow evidence only, not Windows runtime or security certification.
 - The app does not integrate AI assistants, AI agents, AI APIs, or AI services. Do not add those integrations as part of the current browser build.
 - No project license has been selected. Do not add a license without the owner's decision.
 
 ## Implementation limits and unresolved release gates
 
 - This is a development prototype, not a production-ready browser or a Chrome-parity claim.
-- Windows runtime behavior and clean-machine install/uninstall still need manual end-to-end verification. A new CI smoke test launches the packaged executable with an isolated profile and waits for the chrome renderer to load and initial tab navigation to start; this is stronger than packaging-only evidence but is not a substitute for manual install, website compatibility, restart, and uninstall testing.
+- Windows runtime behavior and clean-machine install/uninstall still need manual end-to-end verification. CI launches the packaged executable with an isolated profile and waits for the chrome renderer to load and initial tab navigation to start; this is stronger than packaging-only evidence but is not a substitute for manual install, website compatibility, restart, and uninstall testing.
 - Frame-navigation policy has unit coverage, but website compatibility and native Electron event behavior require runtime verification.
 - Native site-permission prompt, revocation, and private-session cleanup require manual Windows/Electron testing.
 - No Safe Browsing or phishing/malware reputation integration is present.
@@ -57,7 +57,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 |---|---|---|
 | P0 | Continue whole-repository security/correctness review | Concrete issue, regression test, CI + CodeQL on exact PR head |
 | P0 | Verify current main CI and CodeQL after each merge | Completed successful workflow runs for the exact main SHA |
-| P0 | Manual Windows/Electron smoke test | Recorded OS/build, launch, navigation, tabs, permissions, downloads, restart, and uninstall results |
+| P0 | Manual Windows/Electron end-to-end test | Record OS/build, installer install/uninstall, navigation, tabs, permissions, downloads, restart, and data-recovery results; automated packaged startup smoke is not sufficient |
 | P1 | Triage moderate transitive dependency advisories | Advisory paths, reachability assessment, safe upgrade/override analysis; raw audit report and CycloneDX SBOM are now CI artifacts |
 | Done | Lockfile-based reproducible installation | `package-lock.json` v3 committed in PR #77; CI uses `npm ci`; exact-head and fresh-main CI/CodeQL passed on the lockfile and follow-up code commits |
 | P1 | Test storage corruption/recovery and profile concurrency on Windows | Reproducible tests and preserved user data |
