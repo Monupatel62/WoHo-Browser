@@ -14,7 +14,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 
 - The codebase contains an Electron/Chromium shell with React/TypeScript browser chrome and `WebContentsView` tabs.
 - Implemented prototype areas include navigation and tabs, HTTP(S) navigation policy, popup denial, frame navigation scheme policy, trusted-renderer and IPC sender checks, session-scoped site permissions, private tabs, bookmarks/history, URL-redacted history storage, find-in-page, downloads, persistent bounded download history, and a Windows installer build.
-- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, reproducible `npm ci` installation, and (since this change) a SHA-256 manifest for the installer.
+- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository currently has no committed npm lockfile, so reproducible lockfile installation remains open.
 - `.github/workflows/codeql.yml` configures CodeQL analysis.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
 - The latest reviewed feature PRs are CI/CodeQL checked. Always verify fresh-main workflow results after a merge; do not infer that a run passed just because the PR passed.
