@@ -497,17 +497,18 @@ function registerIpc(): void {
   handle('browser:get-settings', () => browserSettingsStore.get());
   handle('browser:update-settings', async (_event, candidate: unknown) => {
     browserSettings = await browserSettingsStore.update(candidate);
-    if (browserSettings.restoreSession) persistSessionTabs();
-    else if (browserSessionStore) {
-      void browserSessionStore.save([]).catch((error: unknown) => {
-        console.error('Could not clear saved tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
-      });
+    if (browserSettings.restoreSession) {
+      persistSessionTabs();
+    } else if (browserSessionStore) {
+      // Do not report that session restore is disabled until sensitive saved URLs
+      // have actually been removed from the local session file.
+      await browserSessionStore.save([]);
     }
     return { ...browserSettings };
   });
   handle('browser:reset-settings', async () => {
     browserSettings = await browserSettingsStore.reset();
-    if (browserSessionStore) void browserSessionStore.save([]).catch(() => undefined);
+    if (browserSessionStore) await browserSessionStore.save([]);
     return { ...browserSettings };
   });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
