@@ -123,18 +123,36 @@ function parseRecord<T extends BookmarkRecord | HistoryRecord>(
   return { id: value.id, title: safeTitle(value.title), url: sanitizeHistoryUrl(url), visitedAt: value.visitedAt } as T;
 }
 
-function parseData(raw: string): { data: PersistedBrowserData; historyRedacted: boolean } {
+function parseData(raw: string): { data: PersistedBrowserData; migrationRequired: boolean } {
   let value: unknown;
   try { value = JSON.parse(raw); } catch {
     throw new Error('Browser data file is unreadable JSON; original data was preserved.');
   }
-  if (!isRecord(value) || value.version !== DATA_VERSION || !Array.isArray(value.bookmarks) || !Array.isArray(value.history)) {
+  if (!isRecord(value) || (value.version !== 1 && value.version !== DATA_VERSION) ||
+      !Array.isArray(value.bookmarks) || !Array.isArray(value.history) ||
+      (value.version === DATA_VERSION && !Array.isArray(value.folders))) {
     throw new Error('Browser data version or structure is unsupported; original data was preserved.');
   }
-  if (value.bookmarks.length > MAX_BOOKMARKS || value.history.length > MAX_HISTORY) {
+  const rawFolders = value.version === 1 ? [] : value.folders as unknown[];
+  if (value.bookmarks.length > MAX_BOOKMARKS || value.history.length > MAX_HISTORY || rawFolders.length > MAX_BOOKMARK_FOLDERS) {
     throw new Error('Browser data exceeds supported record limits; original data was preserved.');
   }
-  const bookmarks = value.bookmarks.map((row) => parseRecord<BookmarkRecord>(row, 'bookmark'));
+  const folders = rawFolders.map(parseFolder);
+  const folderIds = new Set<string>();
+  const folderNames = new Set<string>();
+  for (const folder of folders) {
+    const normalizedName = folder.name.toLocaleLowerCase('en-US');
+    if (folderIds.has(folder.id)) throw new Error('Browser data contains duplicate bookmark folder IDs; original data was preserved.');
+    if (folderNames.has(normalizedName)) throw new Error('Browser data contains duplicate bookmark folder names; original data was preserved.');
+    folderIds.add(folder.id);
+    folderNames.add(normalizedName);
+  }
+  const bookmarks = value.bookmarks.map((row) => parseRecord<BookmarkRecord>(row, 'bookmark', value.version === 1));
+  for (const bookmark of bookmarks) {
+    if (bookmark.folderId !== null && !folderIds.has(bookmark.folderId)) {
+      throw new Error('Browser data contains a bookmark pointing to a missing folder; original data was preserved.');
+    }
+  }
   const history = value.history.map((row) => parseRecord<HistoryRecord>(row, 'history'));
   const ids = new Set<string>();
   for (const bookmark of bookmarks) {
@@ -147,7 +165,10 @@ function parseData(raw: string): { data: PersistedBrowserData; historyRedacted: 
     historyIds.add(entry.id);
   }
   const historyRedacted = value.history.some((row, index) => isRecord(row) && typeof row.url === 'string' && row.url !== history[index]?.url);
-  return { data: { version: DATA_VERSION, bookmarks, history }, historyRedacted };
+  return {
+    data: { version: DATA_VERSION, bookmarks, folders, history },
+    migrationRequired: value.version !== DATA_VERSION || historyRedacted,
+  };
 }
 
 export async function atomicWriteFile(filePath: string, contents: string): Promise<void> {
