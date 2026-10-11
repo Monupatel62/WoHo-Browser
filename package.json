@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "package:win": "npm run build && electron-builder --win nsis --publish never",
     "lint": "eslint .",
-    "test:web": "node --test web/tests/bookmarks.test.mjs",
+    "test:web": "node --test web/tests/bookmarks.node-test.mjs",
     "build:web": "node web/scripts/build.mjs"
   },
   "dependencies": {
