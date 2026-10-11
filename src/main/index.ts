@@ -16,7 +16,7 @@ import { isAllowedFrameNavigationTarget, isAllowedNavigationTarget, isSafeContex
 import { shouldPersistBrowsingHistory } from '../shared/privacy-policy';
 import { DEFAULT_BROWSER_SETTINGS, getSearchEnginePrefix, type BrowserSettings } from '../shared/browser-settings';
 import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/session-policy';
-import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
+import { isFinishedDownloadStatus, pruneDownloadRecordsDurably } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
 import { clearSiteDataForSession } from './site-data';
@@ -205,79 +205,96 @@ function setDownloadStatus(id: string, status: DownloadStatus): void {
   });
 }
 
-function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): void {
-  const idsToPrune = getDownloadIdsToPrune([...downloads.values()], maxRecords);
-  for (const id of idsToPrune) {
-    downloads.delete(id);
-    void downloadHistoryStore.remove(id).catch((error: unknown) => {
+let pendingDownloadPrune: Promise<void> = Promise.resolve();
+
+function pruneDownloadRecords(maxRecords = MAX_DOWNLOAD_RECORDS): Promise<void> {
+  const pending = pendingDownloadPrune.catch(() => undefined).then(async () => {
+    try {
+      await pruneDownloadRecordsDurably(
+        [...downloads.values()],
+        maxRecords,
+        (id) => downloadHistoryStore.remove(id),
+        (id) => {
+          downloads.delete(id);
+          downloadItems.delete(id);
+        },
+      );
+    } catch (error) {
+      // Keep the record visible when its durable deletion fails. A full list may
+      // temporarily block a new download rather than lose history on restart.
       console.error('Could not prune download history:', error instanceof Error ? error.message : 'Unknown storage error');
-    });
-  }
+    }
+    publishDownloads();
+  });
+  pendingDownloadPrune = pending;
+  return pending;
 }
 
 function registerDownloadHandling(): void {
   browserSession.on('will-download', (event, item) => {
     const safeUrl = safeDownloadUrl(item.getURL());
     if (!safeUrl) { event.preventDefault(); return; }
-    pruneDownloadRecords(MAX_DOWNLOAD_RECORDS - 1);
-    if (downloads.size >= MAX_DOWNLOAD_RECORDS) { event.preventDefault(); return; }
-    // Pause before any asynchronous UI so no bytes reach an implicit default path.
+    // Pause synchronously so no bytes reach an implicit default path while
+    // durable retention is checked before admitting another record.
     item.pause();
-    const id = randomUUID();
-    const record: DownloadRecord = {
-      id,
-      filename: safeDownloadFilename(item.getFilename()),
-      url: safeUrl,
-      status: 'waiting',
-      receivedBytes: 0,
-      totalBytes: item.getTotalBytes(),
-      canResume: item.canResume(),
-      startedAt: new Date().toISOString(),
-    };
-    downloads.set(id, record);
-    downloadItems.set(id, item);
-    void downloadHistoryStore.upsert(record).catch((error: unknown) => {
-      console.error('Could not persist download history:', error instanceof Error ? error.message : 'Unknown storage error');
-    });
-    pruneDownloadRecords();
-    publishDownloads();
-    item.on('updated', (_updateEvent, state) => {
-      if (state === 'interrupted') setDownloadStatus(id, 'interrupted');
-      else if (item.isPaused()) setDownloadStatus(id, 'paused');
-      else setDownloadStatus(id, 'progressing');
-    });
-    item.once('done', (_doneEvent, state) => {
-      if (state === 'completed') setDownloadStatus(id, 'completed');
-      else if (state === 'cancelled') setDownloadStatus(id, 'cancelled');
-      else setDownloadStatus(id, 'interrupted');
-      downloadItems.delete(id);
-      pruneDownloadRecords();
-      publishDownloads();
-    });
-    void (async () => {
-      if (!mainWindow || mainWindow.isDestroyed()) { item.cancel(); return; }
-      const choice = await dialog.showSaveDialog(mainWindow, {
-        title: 'Save download',
-        defaultPath: record.filename,
-        buttonLabel: 'Save',
-      });
-      if (choice.canceled || !choice.filePath) {
-        if (downloadItems.get(id) === item) item.cancel();
-        return;
-      }
-      if (downloadItems.get(id) !== item) return;
-      record.savePath = choice.filePath;
-      item.setSavePath(choice.filePath);
-      item.resume();
-      setDownloadStatus(id, item.isPaused() ? 'paused' : 'progressing');
-    })().catch((error: unknown) => {
+    void prepareDownload(item, safeUrl).catch((error: unknown) => {
       console.error('Could not prepare download:', error instanceof Error ? error.message : 'Unknown download error');
-      if (downloadItems.get(id) === item) {
-        item.cancel();
-        setDownloadStatus(id, 'interrupted');
-      }
+      try { item.cancel(); } catch { /* The item may already be finished. */ }
     });
   });
+}
+
+async function prepareDownload(item: DownloadItem, safeUrl: string): Promise<void> {
+  await pruneDownloadRecords(MAX_DOWNLOAD_RECORDS - 1);
+  if (downloads.size >= MAX_DOWNLOAD_RECORDS) {
+    item.cancel();
+    return;
+  }
+  const id = randomUUID();
+  const record: DownloadRecord = {
+    id,
+    filename: safeDownloadFilename(item.getFilename()),
+    url: safeUrl,
+    status: 'waiting',
+    receivedBytes: 0,
+    totalBytes: item.getTotalBytes(),
+    canResume: item.canResume(),
+    startedAt: new Date().toISOString(),
+  };
+  downloads.set(id, record);
+  downloadItems.set(id, item);
+  void downloadHistoryStore.upsert(record).catch((error: unknown) => {
+    console.error('Could not persist download history:', error instanceof Error ? error.message : 'Unknown storage error');
+  });
+  publishDownloads();
+  item.on('updated', (_updateEvent, state) => {
+    if (state === 'interrupted') setDownloadStatus(id, 'interrupted');
+    else if (item.isPaused()) setDownloadStatus(id, 'paused');
+    else setDownloadStatus(id, 'progressing');
+  });
+  item.once('done', (_doneEvent, state) => {
+    if (state === 'completed') setDownloadStatus(id, 'completed');
+    else if (state === 'cancelled') setDownloadStatus(id, 'cancelled');
+    else setDownloadStatus(id, 'interrupted');
+    downloadItems.delete(id);
+    void pruneDownloadRecords();
+    publishDownloads();
+  });
+  if (!mainWindow || mainWindow.isDestroyed()) { item.cancel(); return; }
+  const choice = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save download',
+    defaultPath: record.filename,
+    buttonLabel: 'Save',
+  });
+  if (choice.canceled || !choice.filePath) {
+    if (downloadItems.get(id) === item) item.cancel();
+    return;
+  }
+  if (downloadItems.get(id) !== item) return;
+  record.savePath = choice.filePath;
+  item.setSavePath(choice.filePath);
+  item.resume();
+  setDownloadStatus(id, item.isPaused() ? 'paused' : 'progressing');
 }
 
 function assertTrustedChrome(event: IpcMainInvokeEvent): void {
