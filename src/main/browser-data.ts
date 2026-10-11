@@ -74,9 +74,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function safeFolderName(value: string): string {
+  const name = value.trim().normalize('NFC');
+  if (!name || name.length > MAX_FOLDER_NAME_LENGTH || /[\\u0000-\\u001f\\u007f]/.test(name)) {
+    throw new Error('Folder names must contain 1 to 80 printable characters.');
+  }
+  return name;
+}
+
+function parseFolder(value: unknown): BookmarkFolderRecord {
+  if (!isRecord(value) || typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 100 ||
+      typeof value.name !== 'string' || typeof value.createdAt !== 'string' || typeof value.updatedAt !== 'string' ||
+      !Number.isFinite(Date.parse(value.createdAt)) || !Number.isFinite(Date.parse(value.updatedAt))) {
+    throw new Error('Browser data file contains an invalid bookmark folder; original data was preserved.');
+  }
+  return { id: value.id, name: safeFolderName(value.name), createdAt: value.createdAt, updatedAt: value.updatedAt };
+}
+
 function parseRecord<T extends BookmarkRecord | HistoryRecord>(
   value: unknown,
   kind: 'bookmark' | 'history',
+  legacyBookmark = false,
 ): T {
   if (!isRecord(value) || typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 100 ||
       typeof value.title !== 'string' || value.title.length > MAX_TITLE_LENGTH ||
@@ -93,7 +111,14 @@ function parseRecord<T extends BookmarkRecord | HistoryRecord>(
     if (typeof value.updatedAt !== 'string' || !Number.isFinite(Date.parse(value.updatedAt))) {
       throw new Error('Browser data file contains an invalid bookmark timestamp; original data was preserved.');
     }
-    return { id: value.id, title: safeTitle(value.title), url, createdAt: value.createdAt, updatedAt: value.updatedAt } as T;
+    let folderId: string | null;
+    if (legacyBookmark) folderId = null;
+    else if (value.folderId === null || (typeof value.folderId === 'string' && value.folderId.length > 0 && value.folderId.length <= 100)) {
+      folderId = value.folderId as string | null;
+    } else {
+      throw new Error('Browser data file contains an invalid bookmark folder reference; original data was preserved.');
+    }
+    return { id: value.id, title: safeTitle(value.title), url, folderId, createdAt: value.createdAt, updatedAt: value.updatedAt } as T;
   }
   return { id: value.id, title: safeTitle(value.title), url: sanitizeHistoryUrl(url), visitedAt: value.visitedAt } as T;
 }
