@@ -1,4 +1,4 @@
-package in.wohotech.browser.android
+package `in`.wohotech.browser.android
 
 import java.net.URI
 import java.net.URLEncoder
