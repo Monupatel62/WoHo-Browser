@@ -50,6 +50,13 @@ jobs:
         run: npm run test:web
       - name: Build and validate Web companion
         run: npm run build:web
+      - name: Upload Web companion artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: woho-browser-web-companion
+          path: dist/web/**
+          if-no-files-found: error
+          retention-days: 14
       - name: Lint
         run: npm run lint
       - name: Typecheck
