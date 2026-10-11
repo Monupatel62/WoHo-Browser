@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getOrCreatePermissionPrompt } from './permission-prompt';
+import { getOrCreatePermissionPrompt, PermissionPromptEpoch } from './permission-prompt';
 
 describe('getOrCreatePermissionPrompt', () => {
   it('shares one pending prompt and removes it after completion', async () => {
@@ -31,5 +31,27 @@ describe('getOrCreatePermissionPrompt', () => {
     await expect(getOrCreatePermissionPrompt(pending, 'key', async () => { throw new Error('dialog failed'); })).rejects.toThrow('dialog failed');
     await expect(getOrCreatePermissionPrompt(pending, 'key', async () => true)).resolves.toBe(true);
     expect(pending.size).toBe(0);
+  });
+});
+
+
+describe('PermissionPromptEpoch', () => {
+  it('invalidates decisions captured before site data is cleared', () => {
+    const epoch = new PermissionPromptEpoch();
+    const pendingGeneration = epoch.capture();
+    expect(epoch.isCurrent(pendingGeneration)).toBe(true);
+    epoch.invalidate();
+    expect(epoch.isCurrent(pendingGeneration)).toBe(false);
+    expect(epoch.isCurrent(epoch.capture())).toBe(true);
+  });
+
+  it('invalidates each earlier generation when cleared repeatedly', () => {
+    const epoch = new PermissionPromptEpoch();
+    const first = epoch.capture();
+    epoch.invalidate();
+    const second = epoch.capture();
+    epoch.invalidate();
+    expect(epoch.isCurrent(first)).toBe(false);
+    expect(epoch.isCurrent(second)).toBe(false);
   });
 });
