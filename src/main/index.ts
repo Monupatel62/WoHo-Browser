@@ -20,6 +20,7 @@ import { isFinishedDownloadStatus, pruneDownloadRecordsDurably } from '../shared
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
 import { clearSiteDataForSession } from './site-data';
+import { resolveActiveSession } from './session-scope';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
@@ -721,30 +722,35 @@ function registerIpc(): void {
   handle('browser:clear-site-data', async () => {
     // Clear the session for the selected tab. In private mode this must not leave
     // the active private session's cookies or permissions untouched.
-    const targetSession = activeView()?.webContents.session ?? browserSession;
+    const targetSession = resolveActiveSession(activeView()?.webContents.session, browserSession);
     await clearSiteDataForSession(
       targetSession,
       permissionDecisions(targetSession),
       permissionPromptEpoch(targetSession),
     );
   });
-  handle('browser:list-site-permissions', () => [...permissionDecisions(browserSession).entries()].map(([key, allowed]) => {
-    const separator = key.lastIndexOf('::');
-    return { origin: key.slice(0, separator), permission: key.slice(separator + 2), allowed };
-  }).sort((a, b) => a.origin.localeCompare(b.origin) || a.permission.localeCompare(b.permission)));
+  handle('browser:list-site-permissions', () => {
+    const targetSession = resolveActiveSession(activeView()?.webContents.session, browserSession);
+    return [...permissionDecisions(targetSession).entries()].map(([key, allowed]) => {
+      const separator = key.lastIndexOf('::');
+      return { origin: key.slice(0, separator), permission: key.slice(separator + 2), allowed };
+    }).sort((a, b) => a.origin.localeCompare(b.origin) || a.permission.localeCompare(b.permission));
+  });
   handle('browser:revoke-site-permission', (_event, rawOrigin: unknown, rawPermission: unknown) => {
     if (typeof rawOrigin !== 'string' || typeof rawPermission !== 'string') throw new Error('Invalid site permission request.');
     const origin = getPermissionOrigin(rawOrigin);
     const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
     if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
-    permissionDecisions(browserSession).set(key, false);
+    const targetSession = resolveActiveSession(activeView()?.webContents.session, browserSession);
+    permissionDecisions(targetSession).set(key, false);
   });
   handle('browser:forget-site-permission', (_event, rawOrigin: unknown, rawPermission: unknown) => {
     if (typeof rawOrigin !== 'string' || typeof rawPermission !== 'string') throw new Error('Invalid site permission request.');
     const origin = getPermissionOrigin(rawOrigin);
     const key = origin ? createPermissionGrantKey(origin, rawPermission) : null;
     if (!key || origin !== rawOrigin) throw new Error('Unsupported site permission.');
-    permissionDecisions(browserSession).delete(key);
+    const targetSession = resolveActiveSession(activeView()?.webContents.session, browserSession);
+    permissionDecisions(targetSession).delete(key);
   });
   handle('browser:list-downloads', () => [...downloads.values()].map((record) => ({ ...record })));
   handle('browser:clear-finished-downloads', async () => {
