@@ -6,6 +6,15 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 
 **Release 0 prototype in progress.** The Electron/Chromium shell, navigation and IPC security controls, bookmarks and redacted local history, isolated private tabs, session-scoped site permissions, bounded persistent download history, find-in-page, bounded per-tab zoom, recently-closed normal-tab recovery, clear-site-data controls, and Windows packaging CI are implemented in code. Main and feature-branch CI/CodeQL are run through GitHub Actions; Windows runtime and independent security review remain outstanding.
 
+## Cross-platform foundations
+
+- **Windows desktop:** existing Electron/Chromium prototype; packaged renderer runtime verification remains a release blocker.
+- **Android:** native Android WebView foundation under `android/`; this is a development build, not a production release.
+- **Web:** static companion portal and local-only bookmark JSON tools under `web/public/`; build output is staged to `dist/web`.
+- AI features and integrations are out of scope on every platform.
+
+Build and test the Web companion with `npm run test:web` and `npm run build:web`. Build/test Android with JDK 17, Android SDK 35, and Gradle 8.9 using `gradle -p android testDebugUnitTest assembleDebug`.
+
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
 - [Documentation audit and remaining gaps](docs/documentation-audit.md)
