@@ -47,6 +47,52 @@ describe('BrowserDataStore', () => {
     expect(result.find((item) => item.url === 'https://example.org/path')?.title).toBe('Second final');
   });
 
+  it('previews imports row by row and identifies new, update, duplicate, and invalid rows', async () => {
+    const { store } = await createStore();
+    await store.addBookmark('Existing old title', 'https://existing.example/');
+    const raw = JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [
+        { title: 'First duplicate', url: 'https://new.example/' },
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+        { title: 'Existing updated', url: 'https://existing.example' },
+        { title: 'Last duplicate wins', url: 'https://new.example' },
+      ],
+    });
+    const preview = await store.previewBookmarkImportJson(raw);
+    expect(preview).toMatchObject({
+      newCount: 1, updateCount: 1, duplicateCount: 1, invalidCount: 1, canImport: true,
+      rows: [
+        { row: 1, status: 'duplicate' },
+        { row: 2, status: 'invalid', reason: expect.stringContaining('HTTP(S)') },
+        { row: 3, status: 'update' },
+        { row: 4, status: 'new' },
+      ],
+      validBookmarks: [
+        { title: 'Existing updated', url: 'https://existing.example/' },
+        { title: 'Last duplicate wins', url: 'https://new.example/' },
+      ],
+    });
+    expect(await store.listBookmarks()).toMatchObject([{ title: 'Existing old title' }]);
+  });
+
+  it('blocks import previews that would exceed the bookmark limit', async () => {
+    const { store } = await createStore();
+    await store.importBookmarksJson(JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: Array.from({ length: 500 }, (_, index) => ({
+        title: 'Bookmark ' + index, url: 'https://example.com/' + index,
+      })),
+    }));
+    const preview = await store.previewBookmarkImportJson(JSON.stringify({
+      format: 'woho-bookmarks', version: 1,
+      bookmarks: [{ title: 'One too many', url: 'https://extra.example/' }],
+    }));
+    expect(preview.canImport).toBe(false);
+    expect(preview.limitError).toMatch(/500-bookmark limit/);
+    expect(await store.listBookmarks()).toHaveLength(500);
+  });
+
   it('rejects invalid imports atomically without changing existing bookmarks', async () => {
     const { store } = await createStore();
     await store.addBookmark('Keep me', 'https://keep.example/');
