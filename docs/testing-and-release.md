@@ -19,11 +19,11 @@ Required checks should include:
 - License inventory and third-party notices check.
 
 ## Test layers
-1. Unit: URL validation, settings migration, policy decisions, AI limits.
+1. Unit: URL validation, settings migration, navigation/permission policies, download retention, and storage validation.
 2. Integration: IPC boundaries, tabs, sessions, downloads, permissions, storage.
 3. Automated packaged-app smoke: launch the unpacked packaged executable in an isolated profile and verify the chrome renderer loads and initial tab navigation starts. This is not a substitute for manual end-to-end testing.
 4. End-to-end: install, launch, navigate, tab operations, errors, restart, uninstall.
-5. Security: malicious origins, forged IPC, prompt injection, unsafe protocols, download abuse, update integrity.
+5. Security: malicious origins, forged IPC, unsafe protocols, download abuse, renderer CSP, and update integrity.
 6. Compatibility: common sites, redirects, authentication, media, scaling, keyboard navigation.
 7. Release: clean-machine install, version display, update, failed-update recovery, uninstall.
 
