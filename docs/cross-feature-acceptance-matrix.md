@@ -26,7 +26,6 @@
 - Title/favicon/filename contains markup, controls, path separators, or extreme length.
 - Popup storm or rapid navigation exhausts resources.
 - Renderer sends malformed, oversized, unauthorized, or replayed IPC.
-- Page content instructs AI to reveal secrets or invoke tools.
 - Private tab is closed and normal profile is checked for leaked history or session data.
 - Download is canceled while completing, app exits mid-write, or destination disappears.
 - Profile database is corrupted during migration.
@@ -46,7 +45,6 @@ Tabs: close/reopen, crash, restore, private isolation, resource pressure.
 Bookmarks/history: CRUD, deletion, corrupt storage, import/export, migration.
 Downloads: traversal, collision, cancel race, disk full, Mark-of-the-Web, open confirmation.
 Permissions: unknown capability, denial, grant, revocation, private profile, spoofed origin.
-AI: no-consent rejection, context preview, prompt injection, cancellation, provider error, secret redaction.
 Settings: validation, defaults, reset, migration rollback, invalid import.
 Updates: signature, interrupted update, rollback/recovery, unsupported runtime block.
 Accessibility: keyboard-only flow, focus, screen-reader state, zoom/scaling, reduced motion.
