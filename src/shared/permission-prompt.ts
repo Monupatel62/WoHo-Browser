@@ -14,3 +14,21 @@ export function getOrCreatePermissionPrompt<T>(
   pending.set(key, prompt);
   return prompt;
 }
+
+
+/** Invalidates in-flight permission decisions when the user clears site data. */
+export class PermissionPromptEpoch {
+  private generation = 0;
+
+  capture(): number {
+    return this.generation;
+  }
+
+  invalidate(): void {
+    this.generation += 1;
+  }
+
+  isCurrent(capturedGeneration: number): boolean {
+    return capturedGeneration === this.generation;
+  }
+}
