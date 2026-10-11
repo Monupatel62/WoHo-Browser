@@ -166,7 +166,7 @@ export class BrowserDataStore {
         if (parsed.historyRedacted) {
           // Keep migration writes outside the missing-source-file catch: a failed
           // migration must reject loading instead of silently looking like no data.
-          await atomicWriteFile(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
+          await this.writeAtomically(this.filePath, JSON.stringify(this.data, null, 2) + '\n');
         }
         this.loaded = true;
       })();
