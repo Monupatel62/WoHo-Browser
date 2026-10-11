@@ -159,6 +159,7 @@ class MainActivity : Activity() {
         (tab.webView.parent as? android.view.ViewGroup)?.removeView(tab.webView)
         webHost.addView(tab.webView, FrameLayout.LayoutParams(-1, -1))
         addressBar.setText(tab.webView.url.orEmpty())
+        updateSecurityStatus(tab.webView.url.orEmpty())
         renderTabStrip()
         updateActiveBookmarkButton()
     }
