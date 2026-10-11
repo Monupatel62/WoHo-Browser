@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { BrowserSettings } from '../shared/browser-settings';
-import type { BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
+import type { BookmarkImportResult, BookmarkRecord, BrowserState, DownloadRecord, FindResult, HistoryRecord, SitePermissionDecision, WoHoBrowserApi } from '../shared/browser-types';
 
 const api: WoHoBrowserApi = {
   getState: () => ipcRenderer.invoke('browser:get-state') as Promise<BrowserState>,
