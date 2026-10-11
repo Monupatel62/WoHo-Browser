@@ -5,7 +5,7 @@
 ## Principles
 - Collect the least data needed for the feature.
 - Keep browsing data local by default.
-- Make remote processing clear before sending page content to an AI provider.
+- The browser does not perform remote AI processing; do not add such a data flow.
 - Provide understandable deletion and export controls.
 - Do not sell browsing history or page contents.
 - Do not describe private browsing as anonymous.
