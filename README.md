@@ -15,7 +15,7 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 
 ## Cross-platform foundations
 
-- **Windows desktop:** existing Electron/Chromium prototype; packaged renderer runtime verification remains a release blocker.
+- **Windows desktop:** existing Electron/Chromium prototype; packaged renderer startup smoke test passes in Windows CI; clean-machine install, update/signing, and manual release validation remain.
 - **Android:** native Android WebView foundation under `android/`; this is a development build, not a production release.
 - **Web:** static companion portal and local-only bookmark JSON tools under `web/public/`; build output is staged to `dist/web`.
 - AI features and integrations are out of scope on every platform.
