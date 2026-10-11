@@ -39,7 +39,10 @@
       "output": "release"
     },
     "files": [
-      "out/**/*",
+      "out/main/**/*",
+      "out/preload/**/*",
+      "out/renderer/index.html",
+      "out/renderer/assets/**/*",
       "package.json"
     ],
     "win": {

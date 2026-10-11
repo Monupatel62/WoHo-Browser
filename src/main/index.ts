@@ -1,5 +1,8 @@
-import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
-import { join } from 'node:path';
+import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, protocol, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
+import { extname, join, resolve } from 'node:path';
+import { resolveRendererAssetPath } from './renderer-asset-path';
+import { readFile } from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFileBounded } from './bounded-file-read';
 import { randomUUID } from 'node:crypto';
 import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './browser-data';
@@ -29,6 +32,10 @@ import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
 import { TabCrashRegistry } from './tab-crash-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'woho', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+]);
 
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
@@ -868,6 +875,41 @@ function registerIpc(): void {
   });
 }
 
+function registerTrustedRendererProtocol(): void {
+  protocol.handle('woho', async (request) => {
+    const url = new URL(request.url);
+    if (url.hostname !== 'browser' || (request.method !== 'GET' && request.method !== 'HEAD')) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    const rendererRoot = resolve(app.getAppPath(), 'out/renderer');
+    const target = resolveRendererAssetPath(rendererRoot, url.pathname);
+    if (!target) return new Response('Not found', { status: 404 });
+
+    try {
+      const body = await readFile(target);
+      const contentType = ({
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.svg': 'image/svg+xml',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+      } as Record<string, string>)[extname(target).toLowerCase()] ?? 'application/octet-stream';
+      return new Response(request.method === 'HEAD' ? null : body, {
+        status: 200,
+        headers: { 'content-type': contentType, 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' },
+      });
+    } catch {
+      return new Response('Not found', { status: 404 });
+    }
+  });
+}
+
 function createWindow(): void {
   isClosingWindow = false;
   allowWindowCloseAfterSessionSave = false;
@@ -879,7 +921,7 @@ function createWindow(): void {
     title: 'WoHo Browser',
     backgroundColor: '#0b1020',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(app.getAppPath(), 'out/preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -887,15 +929,26 @@ function createWindow(): void {
     },
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  if (packagedSmokeTest) {
+    mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      console.error(`Packaged renderer console [${level}]: ${message} (${sourceId}:${line})`);
+    });
+  }
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
-  const expectedRendererPath = join(__dirname, '../renderer/index.html');
+  const expectedRendererPath = join(app.getAppPath(), 'out/renderer/index.html');
   const isAllowedChromeNavigation = (value: string) =>
     isTrustedRendererUrl(value, rendererUrl, expectedRendererPath);
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isAllowedChromeNavigation(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) {
+      if (packagedSmokeTest) console.error('[smoke] Blocked trusted-window navigation:', JSON.stringify({ url, expectedRendererPath }));
+      event.preventDefault();
+    }
   });
   mainWindow.webContents.on('will-redirect', (event, url) => {
-    if (!isAllowedChromeNavigation(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) {
+      if (packagedSmokeTest) console.error('[smoke] Blocked trusted-window redirect:', JSON.stringify({ url, expectedRendererPath }));
+      event.preventDefault();
+    }
   });
   mainWindow.on('resize', layoutViews);
   mainWindow.on('close', (event) => {
@@ -929,12 +982,57 @@ function createWindow(): void {
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
-  if (rendererUrl) void mainWindow.loadURL(rendererUrl);
-  else void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+  if (rendererUrl) {
+    void mainWindow.loadURL(rendererUrl);
+  } else {
+    if (packagedSmokeTest) {
+      try {
+        const bytes = readFileSync(expectedRendererPath);
+        console.error('[smoke] Renderer file diagnostic:', JSON.stringify({
+          appPath: app.getAppPath(),
+          resourcesPath: process.resourcesPath,
+          expectedRendererPath,
+          exists: existsSync(expectedRendererPath),
+          bytes: bytes.byteLength,
+          startsWithDoctype: bytes.subarray(0, 15).toString('utf8').toLowerCase().includes('<!doctype html'),
+        }));
+      } catch (error) {
+        console.error('[smoke] Renderer file is not readable by the main process:', JSON.stringify({
+          appPath: app.getAppPath(),
+          resourcesPath: process.resourcesPath,
+          expectedRendererPath,
+          exists: existsSync(expectedRendererPath),
+          error: error instanceof Error ? error.message : 'Unknown file read error',
+        }));
+      }
+    }
+    void mainWindow.loadURL('woho://browser/index.html');
+  }
   mainWindow.webContents.on('did-finish-load', () => {
     layoutViews();
     publishState();
-    if (packagedSmokeTest) { smokeRendererLoaded = true; maybeFinishPackagedSmokeTest(); }
+    if (packagedSmokeTest) {
+      // A document load alone does not prove that the bundled renderer script ran.
+      // Verify React mounted the trusted chrome UI (including CSP compatibility)
+      // before reporting a successful packaged startup smoke test.
+      void mainWindow?.webContents.executeJavaScript(
+        "Boolean(document.querySelector('#root .browser-chrome'))",
+      ).then(async (rendered) => {
+        if (!rendered) {
+          const diagnostics = await mainWindow?.webContents.executeJavaScript(
+            "JSON.stringify({ readyState: document.readyState, href: location.href, root: document.querySelector('#root')?.innerHTML.slice(0, 500) ?? '', scripts: Array.from(document.scripts).map((script) => script.src) })",
+          ).catch(() => 'Unable to inspect renderer document.');
+          console.error('Packaged smoke test failed: trusted browser chrome did not render.', diagnostics ?? 'Browser window closed before diagnostics.');
+          app.exit(1);
+          return;
+        }
+        smokeRendererLoaded = true;
+        maybeFinishPackagedSmokeTest();
+      }).catch((error: unknown) => {
+        console.error('Packaged smoke test could not verify trusted browser chrome:', error instanceof Error ? error.message : 'Unknown renderer error.');
+        app.exit(1);
+      });
+    }
   });
 }
 
@@ -956,6 +1054,7 @@ if (!hasSingleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+  registerTrustedRendererProtocol();
   const userDataPath = app.getPath('userData');
   browserSettingsStore = await openRecoverableBrowserSettingsStore(
     join(userDataPath, 'settings.json'),
