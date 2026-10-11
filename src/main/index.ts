@@ -547,6 +547,27 @@ function registerIpc(): void {
   handle('browser:reload', () => activeView()?.webContents.reload());
   handle('browser:stop', () => activeView()?.webContents.stop());
   handle('browser:list-bookmarks', () => browserDataStore.listBookmarks());
+  handle('browser:list-bookmark-folders', () => browserDataStore.listBookmarkFolders());
+  handle('browser:create-bookmark-folder', (_event, name: unknown) => {
+    if (typeof name !== 'string' || name.length > 256) throw new Error('Invalid bookmark folder name.');
+    return browserDataStore.createBookmarkFolder(name);
+  });
+  handle('browser:rename-bookmark-folder', (_event, id: unknown, name: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100 ||
+        typeof name !== 'string' || name.length > 256) throw new Error('Invalid bookmark folder payload.');
+    return browserDataStore.renameBookmarkFolder(id, name);
+  });
+  handle('browser:delete-bookmark-folder', (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid bookmark folder ID.');
+    return browserDataStore.deleteBookmarkFolder(id);
+  });
+  handle('browser:move-bookmark-to-folder', (_event, bookmarkId: unknown, folderId: unknown) => {
+    if (typeof bookmarkId !== 'string' || bookmarkId.length === 0 || bookmarkId.length > 100 ||
+        !(folderId === null || (typeof folderId === 'string' && folderId.length > 0 && folderId.length <= 100))) {
+      throw new Error('Invalid bookmark folder assignment.');
+    }
+    return browserDataStore.moveBookmarkToFolder(bookmarkId, folderId);
+  });
   handle('browser:add-bookmark', (_event, title: unknown, url: unknown) => {
     if (typeof title !== 'string' || typeof url !== 'string' || title.length > 512 || url.length > 4096) {
       throw new Error('Invalid bookmark payload.');
