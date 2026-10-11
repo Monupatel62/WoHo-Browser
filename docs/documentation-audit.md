@@ -14,10 +14,10 @@ Evidence should always be tied to a commit and the actual check results. A succe
 
 - The codebase contains an Electron/Chromium shell with React/TypeScript browser chrome and `WebContentsView` tabs.
 - Implemented prototype areas include navigation and tabs, HTTP(S) navigation policy, popup denial, frame navigation scheme policy, trusted-renderer and IPC sender checks, session-scoped site permissions, private tabs, bookmarks/history, URL-redacted history storage, find-in-page, downloads, persistent bounded download history, and a Windows installer build.
-- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository now includes a generated npm lockfile and CI uses `npm ci`; the lockfile branch's exact-head CI/CodeQL results must pass before merge.
+- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository now includes a generated npm lockfile and CI uses `npm ci`; the lockfile branch's exact-head CI and CodeQL passed, and the fresh-main checks passed after merge.
 - `.github/workflows/codeql.yml` configures CodeQL analysis.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
-- PRs #70–#73 and #75 were merged after exact-head CI and CodeQL passed. The latest verified `main` commit is `7378df81be084debba8fc2d1a1d4ace01a5d1265`; fresh-main CI run `38126010114` and CodeQL run `38126010164` both completed successfully. This is workflow evidence only, not Windows runtime or security certification.
+- PRs #70–#73 and #75–#78 were merged after exact-head CI and CodeQL passed. The latest verified implementation commit is `3eafef0ae763064323b158ae41d4b3834b4d4f06`; fresh-main CI run `38126943228` and CodeQL run `38126943212` both completed successfully. This is workflow evidence only, not Windows runtime or security certification.
 - The app does not integrate AI assistants, AI agents, AI APIs, or AI services. Do not add those integrations as part of the current browser build.
 - No project license has been selected. Do not add a license without the owner's decision.
 
@@ -46,7 +46,9 @@ Evidence should always be tied to a commit and the actual check results. A succe
 4. Explicitly retained the no-AI-integration scope and the unchosen-license constraint.
 5. Recorded exact post-merge `main` CI and CodeQL evidence.
 6. Added regression fixes for active-session site-data clearing and retryable durable download/history deletion, including retention pruning.
-7. Listed known release gates and remaining work without claiming completion.
+7. Added a committed npm lockfile and switched CI to `npm ci`; exact-head and fresh-main checks passed.
+8. Scoped Site permissions controls to the active tab session, including isolated private-session decisions.
+9. Listed known release gates and remaining work without claiming completion.
 
 ## Next audit priorities
 
@@ -56,7 +58,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 | P0 | Verify current main CI and CodeQL after each merge | Completed successful workflow runs for the exact main SHA |
 | P0 | Manual Windows/Electron smoke test | Recorded OS/build, launch, navigation, tabs, permissions, downloads, restart, and uninstall results |
 | P1 | Triage moderate transitive dependency advisories | Advisory paths, reachability assessment, safe upgrade/override analysis; raw audit report and CycloneDX SBOM are now CI artifacts |
-| P1 | Verify lockfile-based reproducible installation | Exact-head CI must prove `npm ci`, lint, typecheck, tests, and Windows packaging pass with the committed lockfile |
+| Done | Lockfile-based reproducible installation | `package-lock.json` v3 committed in PR #77; CI uses `npm ci`; exact-head and fresh-main CI/CodeQL passed on the lockfile and follow-up code commits |
 | P1 | Test storage corruption/recovery and profile concurrency on Windows | Reproducible tests and preserved user data |
 | P1 | Resolve license and third-party notices before distribution | Owner-approved license, inventory, and included notices |
 | P1 | Keep roadmap and detailed specifications consistent with the no-AI current scope | Cross-document review and no accidental AI integration |
