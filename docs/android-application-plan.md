@@ -1,6 +1,6 @@
 # WoHo Browser — Android Application Plan
 
-**Status:** Planned; no Android implementation or release is claimed  
+**Status:** Initial native WebView foundation implemented in the development branch; device/runtime validation and release gates remain open  
 **AI scope:** No AI features, services, models, agents, or AI SDKs.
 
 ## 1. Goal
@@ -9,14 +9,20 @@ Build a native Android mobile browser, not a WebView wrapper around the Windows 
 
 ## 2. Engine feasibility decision
 
-Before committing to an engine, prototype and compare:
+The initial Android shell uses Android System WebView as a feasibility spike only. This is not a production engine decision. Before expanding the implementation or advertising support, compare:
 
 - **Android System WebView:** smaller integration surface and platform-managed updates; behavior follows the installed WebView provider and Android version.
 - **GeckoView:** browser-focused embeddable engine with its own integration and update/compatibility responsibilities.
 
 Evaluate supported Android API levels, security patch cadence, site compatibility, media playback, downloads, permission mediation, private-session isolation, licensing, binary size, performance, accessibility, and long-term maintenance. Record the result in a new ADR. Do not select based on convenience alone and do not claim Chromium parity without tests.
 
-## 3. Proposed MVP capabilities
+## 3. Initial implementation status
+
+The current development foundation includes HTTP/HTTPS address/search validation, multiple tabs, back/forward/reload, local bookmarks and bounded local history with a clear-history action, visible HTTP-versus-HTTPS status, and downloads through Android DownloadManager. WebView file/content access is disabled, mixed content is blocked, Safe Browsing is enabled, no native JavaScript bridge is exposed, and TLS errors are cancelled.
+
+Not yet implemented or release-verified: private browsing with proven cookie/cache isolation, custom site-permission UI/revocation, settings UI, bookmark import/export, full error/recovery UX, complete TalkBack/accessibility review, supported-device matrix, signing, and production release. The build and unit-test results must be taken from the exact implementation PR, not inferred from this document.
+
+## 4. Proposed MVP capabilities
 
 - First-run explanation and safe default home/new-tab page.
 - URL/search field with validated HTTP/HTTPS navigation and clear loading state.
@@ -32,7 +38,7 @@ Evaluate supported Android API levels, security patch cadence, site compatibilit
 - Predictable behavior on rotation, background/foreground, process death, low memory, and OS recreation.
 - TalkBack support, large text, touch targets, dark/light theme, and keyboard/external input where relevant.
 
-## 4. Security and privacy requirements
+## 5. Security and privacy requirements
 
 - No JavaScript bridge that exposes filesystem, intents, account tokens, or privileged native methods to arbitrary web pages.
 - If any native bridge is necessary, expose a tiny origin-restricted API with strict schema validation and regression tests.
@@ -44,7 +50,7 @@ Evaluate supported Android API levels, security patch cadence, site compatibilit
 - Do not collect browsing history or page content remotely by default; no forced account or cloud sync.
 - Protect local profile data with platform-appropriate storage permissions; do not store passwords/cookies in application logs or exports.
 
-## 5. Implementation sequence
+## 6. Implementation sequence
 
 ### A0 — Engine and platform spike
 - Create a minimal Android project and build on a pinned JDK/Gradle/Android Gradle Plugin toolchain.
@@ -69,14 +75,14 @@ Evaluate supported Android API levels, security patch cadence, site compatibilit
 - Produce signed APK/AAB through protected release credentials; verify artifact hashes and install/upgrade/uninstall behavior.
 - Publish privacy policy, support contact, release notes, minimum OS, permissions rationale, and known limitations.
 
-## 6. Required test matrix
+## 7. Required test matrix
 
 Test minimum supported and current Android versions on both emulator and physical devices. Include low-memory devices, different screen sizes, dark/light mode, rotation, offline/DNS/TLS failures, renderer crash, background/foreground, process kill, interrupted download, permission denial/revocation, private-session closure, corrupt storage, and app upgrade.
 
-## 7. Explicitly deferred
+## 8. Explicitly deferred
 
 Cloud sync, accounts, password manager, extensions, ad/tracker blocking, remote browsing, desktop profile import, and enterprise policy management are not part of the first Android MVP. Each requires separate feasibility, privacy, threat, and acceptance specifications.
 
-## 8. Definition of done
+## 9. Definition of done
 
 Before public release, complete automated tests, physical-device checks, privacy review, distribution-policy review, release notes, and verify that the security-reporting contact is monitored.
