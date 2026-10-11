@@ -1,6 +1,6 @@
 # WoHo Browser — Web Application Plan
 
-**Status:** Planned; no deployed web companion is claimed  
+**Status:** Static companion foundation implemented in the development branch; deployment and production validation are not claimed  
 **Product type:** Responsive website/PWA companion, not a full browser engine  
 **AI scope:** No AI features or integrations.
 
@@ -8,7 +8,13 @@
 
 The Web surface provides useful WoHo Browser information and safe data-portability tools from any modern browser. It does not claim to browse arbitrary sites inside its own UI as if it were a native browser. A website cannot control the host browser's tabs/address bar or receive native browser privileges. Do not implement an iframe/proxy and call it a full browser.
 
-## 2. MVP pages
+## 2. Current implementation status
+
+The repository now contains a responsive static portal and a client-side WoHo bookmark JSON import/export tool. The tool enforces a 1 MiB file limit, a 5,000-record limit, title/URL bounds, HTTP/HTTPS-only URLs, duplicate URL removal, and text-only rendering. Node tests cover schema validation, dangerous schemes, size limits, CSP presence, no-network-upload behavior, and reduced-motion styles. The static build stages assets to `dist/web`.
+
+This is not yet a deployed site or a full browser engine. Production CSP/security headers, real hosting, browser compatibility, accessibility review, release-artifact links, and deployment verification remain open.
+
+## 3. MVP pages
 
 - **Home:** clear product purpose, supported platforms, current release status, and prominent download links.
 - **Downloads:** Windows installer and Android release links only when published; show supported OS/architecture, version, file size, SHA-256 checksum, signature/provenance status, and known limitations.
@@ -17,7 +23,7 @@ The Web surface provides useful WoHo Browser information and safe data-portabili
 - **Data tools (optional MVP):** local-only bookmark import/export helper with a strict schema/size limit and explicit download action. Never send imported data to a server.
 - **PWA:** installability only if it provides real offline value; cache only static public assets and never cache private data or downloaded browser profiles.
 
-## 3. Functional requirements
+## 4. Functional requirements
 
 - Responsive mobile, tablet, and desktop layout.
 - Accessible semantic HTML, keyboard navigation, visible focus, reduced-motion support, sufficient contrast, and screen-reader labels.
@@ -28,7 +34,7 @@ The Web surface provides useful WoHo Browser information and safe data-portabili
 - The UI clearly distinguishes verified release artifacts from planned or unavailable builds.
 - Show product status truthfully; no unsupported security, speed, privacy, or platform-parity claims.
 
-## 4. Security requirements
+## 5. Security requirements
 
 - HTTPS-only production deployment with a reviewed CSP and appropriate security headers.
 - Strict input validation and output encoding; imported bookmark titles/URLs are untrusted text, never HTML.
@@ -38,11 +44,11 @@ The Web surface provides useful WoHo Browser information and safe data-portabili
 - If a backend is ever proposed, document data flows, authentication, authorization, rate limiting, abuse handling, retention/deletion, incident response, and costs before implementation.
 - No secrets in client bundles or repository. Deployment secrets must use the hosting provider's protected configuration.
 
-## 5. Architecture direction
+## 6. Architecture direction
 
 Use a conventional static or mostly static web app with a minimal attack surface. The specific framework and hosting provider remain open until deployment, accessibility, security-header, and maintenance requirements are compared. The web companion must not share privileged desktop IPC code or assume access to local desktop profile paths.
 
-## 6. Release plan
+## 7. Release plan
 
 ### Web 0 — Static portal
 - Publish accurate product status and supported-platform matrix.
@@ -58,7 +64,7 @@ Use a conventional static or mostly static web app with a minimal attack surface
 - Add a service worker only with a documented cache allowlist, update strategy, stale-content behavior, and clear-cache controls.
 - Cache static documentation/assets only; never cache profiles or private data.
 
-## 7. Acceptance checks
+## 8. Acceptance checks
 
 - Build, lint, typecheck, unit tests, and dependency/secret scans pass.
 - Accessibility checks and manual keyboard/screen-reader review pass.
@@ -69,6 +75,6 @@ Use a conventional static or mostly static web app with a minimal attack surface
 - Broken/outdated releases are not silently presented as supported.
 - No full-browser, cloud-sync, or privacy claim is made without implementation and evidence.
 
-## 8. Deferred
+## 9. Deferred
 
 Remote browser sessions, web-based proxying, accounts, cloud sync, remote profile management, password storage, and browsing-history analytics are deferred and require a separate product decision plus security/privacy review.
