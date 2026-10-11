@@ -12,9 +12,9 @@ Never mark a feature verified based only on a successful compile.
 Required checks should include:
 - Formatting/lint and TypeScript checks.
 - Unit and integration tests.
-- Dependency lockfile validation and vulnerability scanning.
+- Reproducible lockfile install (`npm ci`) and dependency vulnerability scanning.
 - Secret scanning and static analysis.
-- Build and package smoke tests.
+- Build and package smoke tests; generate a SHA-256 manifest for the unsigned Windows installer.
 - Relevant Windows end-to-end tests.
 - License inventory and third-party notices check.
 
@@ -37,7 +37,7 @@ Required checks should include:
 - [ ] License notices included.
 - [ ] Download size and minimum system requirements documented.
 - [ ] Known limitations published.
-- [ ] Release artifact checksum and provenance recorded.
+- [ ] Release artifact checksum and provenance recorded. CI generates `release/SHA256SUMS.txt` for the unsigned Windows installer; retain it with the matching workflow run and artifact.
 
 ## Incident and rollback
 Document how to stop a release, disable a broken update channel, publish a fixed build, communicate an incident, and preserve relevant evidence. Do not store signing keys in the repository or CI logs.
