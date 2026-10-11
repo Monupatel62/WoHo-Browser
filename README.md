@@ -70,7 +70,7 @@ The app enforces a single running instance to prevent concurrent processes from 
 Requirements: Node.js 24 and npm.
 
 ```bash
-npm install
+npm ci
 npm run lint
 npm run typecheck
 npm test

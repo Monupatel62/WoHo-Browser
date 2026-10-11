@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Inspect dependency advisories
         shell: pwsh
         run: |
