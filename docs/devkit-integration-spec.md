@@ -1,3 +1,5 @@
+> **Current scope notice (2026-10-11): OUT OF SCOPE / DESIGN REFERENCE ONLY.** The current WoHo Browser release does not implement or authorize AI assistant, AI broker, agent, model, or AI service integration. Do not add dependencies, UI controls, or runtime code from this document as part of the current audit. Any future scope change requires an explicit product decision and a separate security/dependency review.
+
 # WoHo AI DevKit Integration Specification
 
 Status: Discovery/design only; no dependency review has been completed in this repository.
