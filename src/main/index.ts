@@ -733,11 +733,13 @@ function registerIpc(): void {
   handle('browser:clear-finished-downloads', async () => {
     const finished = [...downloads.values()].filter((record) => isFinishedDownloadStatus(record.status));
     for (const record of finished) {
+      // Remove the durable row first. If storage fails, keep the item visible so
+      // the user can retry rather than losing it until the next restart.
+      await downloadHistoryStore.remove(record.id);
       downloads.delete(record.id);
       downloadItems.delete(record.id);
+      publishDownloads();
     }
-    await Promise.all(finished.map((record) => downloadHistoryStore.remove(record.id)));
-    publishDownloads();
     return [...downloads.values()].map((record) => ({ ...record }));
   });
   handle('browser:remove-download-record', async (_event, id: unknown) => {
@@ -747,9 +749,9 @@ function registerIpc(): void {
     if (!isFinishedDownloadStatus(record.status)) {
       throw new Error('Active downloads cannot be removed from the list.');
     }
+    await downloadHistoryStore.remove(id);
     downloads.delete(id);
     downloadItems.delete(id);
-    await downloadHistoryStore.remove(id);
     publishDownloads();
     return [...downloads.values()].map((item) => ({ ...item }));
   });

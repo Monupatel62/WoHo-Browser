@@ -97,4 +97,22 @@ describe('DownloadHistoryStore', () => {
     await store.remove('download-1');
     expect(await new DownloadHistoryStore(file).list()).toEqual([]);
   });
+
+  it('retries persistence after a failed removal write', async () => {
+    const { file } = await createStore();
+    let failWrites = false;
+    const store = new DownloadHistoryStore(file, async (path, contents) => {
+      if (failWrites) throw new Error('simulated disk failure');
+      await writeFile(path, contents, 'utf8');
+    });
+    await store.upsert(record());
+
+    failWrites = true;
+    await expect(store.remove('download-1')).rejects.toThrow('simulated disk failure');
+    failWrites = false;
+    await store.remove('download-1');
+
+    expect(JSON.parse(await readFile(file, 'utf8')).downloads).toEqual([]);
+    expect(await new DownloadHistoryStore(file).list()).toEqual([]);
+  });
 });
