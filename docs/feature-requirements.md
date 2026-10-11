@@ -9,7 +9,7 @@ This document defines observable acceptance criteria. It does not mean features 
 - **HTTPS:** certificate errors are visible; there is no silent certificate bypass.
 - **Tabs:** open, select, and close tabs; closing the last tab follows a documented behavior.
 - **Popup handling:** unexpected windows are denied or shown through an explicit safe policy.
-- **Crash recovery:** implemented partially: renderer crashes are surfaced in the affected tab and the user can explicitly reload it. Automatic safe-URL session restore and app-crash restore remain unimplemented.
+- **Crash recovery:** renderer crashes are surfaced in the affected tab and the user can explicitly reload it. Opt-in safe HTTP(S) URL session restore is implemented when enabled in Settings (off by default), including best-effort restore after an app crash from the last successfully saved snapshot. It restores URLs only, not form contents or guaranteed authentication state; storage failures and Windows runtime recovery still require manual verification.
 - **Settings:** user can select a default search provider and manage basic startup behavior.
 
 ## P1 — Everyday productivity
