@@ -17,3 +17,23 @@ export function getDownloadIdsToPrune(records: readonly DownloadRecord[], maxRec
     .slice(0, excess)
     .map((record) => record.id);
 }
+
+/**
+ * Delete terminal records from persistent storage before removing them from the
+ * in-memory list. If persistence fails, the failing and later records remain visible.
+ */
+export async function pruneDownloadRecordsDurably(
+  records: readonly DownloadRecord[],
+  maxRecords: number,
+  removePersisted: (id: string) => Promise<void>,
+  removeFromMemory: (id: string) => void,
+): Promise<string[]> {
+  const ids = getDownloadIdsToPrune(records, maxRecords);
+  const removed: string[] = [];
+  for (const id of ids) {
+    await removePersisted(id);
+    removeFromMemory(id);
+    removed.push(id);
+  }
+  return removed;
+}
