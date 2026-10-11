@@ -9,8 +9,6 @@ Status: Proposed inventory; retention durations require owner approval before re
 | History | URL without query string or fragment, title, visit time | Local JSON store | Bounded to 500 records; user-configurable retention remains planned |
 | Download record | Redacted HTTP(S) source URL, filename, destination path, state, byte counts, timestamps | Local JSON store | Bounded to 100 normal-profile records; private downloads excluded; downloaded file is separate |
 | Tab/session | Safe URL, order, workspace | Local database | User-configurable; no secrets |
-| AI note | User-selected content and sources | Local unless exported | Until deleted |
-| Provider credential | Provider and secure-store reference | OS secure storage where supported | Until removed |
 | Diagnostics | Minimal event/version/error fields | Off by default pending policy | TBD if enabled |
 | Sync | Not in initial scope | None | Not applicable |
 
