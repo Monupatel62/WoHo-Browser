@@ -362,6 +362,22 @@ export class BrowserDataStore {
     return this.listBookmarks();
   }
 
+  async reorderBookmarks(ids: string[]): Promise<BookmarkRecord[]> {
+    await this.ensureLoaded();
+    if (!Array.isArray(ids) || ids.length !== this.data.bookmarks.length ||
+        ids.some((id) => typeof id !== 'string' || id.length === 0 || id.length > 100) ||
+        new Set(ids).size !== ids.length) {
+      throw new Error('Invalid bookmark order; no bookmarks were changed.');
+    }
+    const byId = new Map(this.data.bookmarks.map((bookmark) => [bookmark.id, bookmark]));
+    if (ids.some((id) => !byId.has(id))) {
+      throw new Error('Bookmark order must include every existing bookmark exactly once.');
+    }
+    this.data.bookmarks = ids.map((id) => byId.get(id)!);
+    await this.persist();
+    return this.listBookmarks();
+  }
+
   async listHistory(): Promise<HistoryRecord[]> {
     await this.ensureLoaded();
     return this.data.history.map((item) => ({ ...item }));
