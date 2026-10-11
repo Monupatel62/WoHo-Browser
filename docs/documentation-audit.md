@@ -15,11 +15,12 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - The codebase contains an Electron/Chromium shell with React/TypeScript browser chrome and `WebContentsView` tabs.
 - Implemented prototype areas include navigation and tabs, HTTP(S) navigation policy, popup denial, frame navigation scheme policy, trusted-renderer and IPC sender checks, session-scoped site permissions, private tabs, bookmarks/history, URL-redacted history storage, find-in-page, bounded per-tab zoom, recently closed normal-tab recovery, downloads, persistent bounded download history, and a Windows installer build.
 - `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository now includes a generated npm lockfile and CI uses `npm ci`; the lockfile branch's exact-head CI and CodeQL passed, and the fresh-main checks passed after merge.
-- `.github/workflows/codeql.yml` configures CodeQL analysis.
+- `.github/workflows/codeql.yml` configures CodeQL analysis. The repository has no dedicated secret-scanning workflow or checked-in Dependabot configuration; GitHub-hosted account-level scanning, if enabled, is not inferable from repository files.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
-- PRs #70–#73 and #75–#85 were merged after exact-head CI and CodeQL passed. The latest main commit checked in this audit is `404cb95340b2250cb5fa8f78385963be9baa6d3b`; fresh-main CI run `38131240554` and CodeQL run `38131240572` both completed successfully. The browser-data migration writer fix in PR #85 has exact-head CI and CodeQL success. The Windows CI run passed lint, typecheck, tests, packaging, packaged-app startup smoke test, Electron fuse verification, and installer checksum generation. This is workflow evidence only, not full Windows runtime or security certification.
+- PRs #70–#73 and #75–#87 were merged after exact-head CI and CodeQL passed. The latest main commit checked in this audit is `8dd35fa6105eee747a9bbaaaeb23d6c2a3215529`; fresh-main CI run `38131687857` and CodeQL run `38131687846` both completed successfully. PR #85 fixed browser-data migration writer injection, and PR #87 made session-restore disabling clear saved URLs before persisting the disabled setting. The Windows CI run passed lint, typecheck, tests, packaging, packaged-app startup smoke test, Electron fuse verification, and installer checksum generation. This is workflow evidence only, not full Windows runtime or security certification.
 - The app does not integrate AI assistants, AI agents, AI APIs, or AI services. Do not add those integrations as part of the current browser build.
-- No project license has been selected. Do not add a license without the owner's decision.
+- No project license has been selected and no `LICENSE`/third-party `NOTICE` release bundle is present. Do not add a project license without the owner's decision.
+- `SECURITY.md` exists, but private vulnerability reporting and a monitored inbox still need owner verification before public release.
 
 ## Implementation limits and unresolved release gates
 
@@ -35,7 +36,9 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - History supports local-date filtering, inclusive date-range deletion, and checkbox-based multi-select deletion of visible entries.
 - Per-item removal of finished download records is implemented and does not delete files. Storage-write failures now keep records visible until durable removal succeeds; retention pruning also removes records from memory only after the stored row is deleted. Multi-select and date-range history deletion retry persistence after failed writes. Retry of downloads, automatic partial-download cleanup, and reputation scanning remain unimplemented.
 - General settings import/export, bookmark folders, retry and partial-download cleanup, and other broader roadmap items remain unimplemented.
-- Dependency audit on `3fcf13e3da4310f666c86671c7432829be74efee` reports eight moderate findings in the `electron-builder` build-tool dependency tree, including CVE-2026-97058 (`sprintf-js` 1.1.3 via `roarr`/`global-agent`/`@electron/get`). The advisory says affected versions are `<=1.1.3` and lists no patched version. The dependency is marked dev-only in `package-lock.json` and is not a production dependency shipped by the app, but it still runs in the build pipeline. CI now separately enforces zero moderate-or-higher advisories in production dependencies and continues to fail on high/critical findings across the full dependency tree. The moderate build-tool advisory remains unresolved; do not describe it as fixed or risk-free, and avoid an untested `electron-builder` downgrade or unreviewed fork while no upstream patch is available.
+- The repository's CI has CodeQL and npm dependency auditing, but no repository-defined secret-scanning workflow or Dependabot update schedule. Enable/configure suitable secret and dependency scanning before public distribution.
+- `SECURITY.md` is present, but the repository explicitly says GitHub Private Vulnerability Reporting and a monitored inbox are not yet confirmed. This is an operational release gate, not a missing document.
+- Dependency audit on `8dd35fa6105eee747a9bbaaaeb23d6c2a3215529` reports eight moderate findings in the `electron-builder` build-tool dependency tree, including CVE-2026-97058 (`sprintf-js` 1.1.3 via `roarr`/`global-agent`/`@electron/get`). The advisory says affected versions are `<=1.1.3` and lists no patched version. The dependency is marked dev-only in `package-lock.json` and is not a production dependency shipped by the app, but it still runs in the build pipeline. CI now separately enforces zero moderate-or-higher advisories in production dependencies and continues to fail on high/critical findings across the full dependency tree. The moderate build-tool advisory remains unresolved; do not describe it as fixed or risk-free, and avoid an untested `electron-builder` downgrade or unreviewed fork while no upstream patch is available.
 - Some legacy AI-related specification files remain in the repository. Treat them as out-of-scope reference material, not authorization to add AI integrations; keep the README and master plan as the current product-scope references.
 
 ## Corrections in this audit
@@ -47,13 +50,14 @@ Evidence should always be tied to a commit and the actual check results. A succe
 5. Recorded exact post-merge `main` CI and CodeQL evidence.
 6. Added regression fixes for active-session site-data clearing and retryable durable download/history deletion, including retention pruning.
 7. Added an automated packaged-app startup smoke test while retaining manual Windows end-to-end verification as an open release gate.
-7. Added a committed npm lockfile and switched CI to `npm ci`; exact-head and fresh-main checks passed.
-8. Scoped Site permissions controls to the active tab session, including isolated private-session decisions.
-9. Listed known release gates and remaining work without claiming completion.
-10. Recorded page zoom and recently closed normal-tab recovery after PRs #82–#83.
-11. Added a separate production-dependency audit gate while retaining the full development/build dependency audit report.
-12. Updated dependency policy and audit evidence after PR #84 merged; the remaining build-tool advisory is explicitly still open.
-13. Fixed the injected-writer bypass during history URL-redaction migration in PR #85 and added failure/retry regression coverage.
+8. Added a committed npm lockfile and switched CI to `npm ci`; exact-head and fresh-main checks passed.
+9. Scoped Site permissions controls to the active tab session, including isolated private-session decisions.
+10. Listed known release gates and remaining work without claiming completion.
+11. Recorded page zoom and recently closed normal-tab recovery after PRs #82–#83.
+12. Added a separate production-dependency audit gate while retaining the full development/build dependency audit report.
+13. Updated dependency policy and audit evidence after PR #84 merged; the remaining build-tool advisory is explicitly still open.
+14. Fixed the injected-writer bypass during history URL-redaction migration in PR #85 and added failure/retry regression coverage.
+15. Made disabling session restore clear persisted URLs before writing the disabled setting in PR #87.
 
 ## Next audit priorities
 
@@ -62,6 +66,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 | P0 | Continue whole-repository security/correctness review | Concrete issue, regression test, CI + CodeQL on exact PR head |
 | P0 | Verify current main CI and CodeQL after each merge | Completed successful workflow runs for the exact main SHA |
 | P0 | Manual Windows/Electron end-to-end test | Record OS/build, installer install/uninstall, navigation, tabs, permissions, downloads, restart, and data-recovery results; automated packaged startup smoke is not sufficient |
+| P1 | Configure secret scanning, dependency update automation, and monitored private vulnerability reporting | Repository currently has no dedicated secret-scanning workflow or checked-in Dependabot schedule; verify GitHub Private Vulnerability Reporting and inbox monitoring before release |
 | P1 | Triage moderate transitive dependency advisories | Advisory paths, reachability assessment, safe upgrade/override analysis; raw audit report and CycloneDX SBOM are CI artifacts; CVE-2026-97058 has no upstream patched release at audit time and remains a build-tool risk |
 | Done | Lockfile-based reproducible installation | `package-lock.json` v3 committed in PR #77; CI uses `npm ci`; exact-head and fresh-main CI/CodeQL passed on the lockfile and follow-up code commits |
 | P1 | Test storage corruption/recovery and profile concurrency on Windows | Reproducible tests and preserved user data |
