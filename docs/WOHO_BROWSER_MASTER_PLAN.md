@@ -1,6 +1,7 @@
 # WoHo Browser — Master Product Plan
 
 > **Status:** Release 0 implementation in progress  
+> **Binding scope decision (2026-10-11):** WoHo Browser is a conventional browser. AI assistant, AI agent, AI API/service, AI DevKit, model runtime, and all AI features are out of scope and are not planned. Older AI sections below are superseded by this notice and must not be used as implementation requirements.
 > **Repository:** https://github.com/Monupatel62/WoHo-Browser  
 > **Product owner:** WoHoTech  
 > **Document rule:** Keep this file as the living source of truth. Add decisions, verified implementation status, risks, and roadmap changes here as the project evolves. Never mark a feature complete without code, tests, and evidence.
@@ -154,29 +155,10 @@ Security is a release gate, not a later polish task.
 
 Security controls must be verified against the chosen framework version and official documentation; this list is a baseline, not a security certification.
 
-## 6. AI assistant design
+## 6. AI features — out of scope
 
-### Safe initial capabilities
-- Summarize a page after the user clicks the action.
-- Explain selected text.
-- Answer questions grounded in the current page.
-- Compare user-selected pages.
-- Draft notes that the user reviews and saves.
-- Help developers understand documentation and errors.
+WoHo Browser will not ship an AI assistant, AI agent, AI API/service integration, AI DevKit integration, model runtime, AI panel, or AI-related data flow. No AI-related dependency or UI should be added. Older AI design documents are archived references only; they are not requirements or roadmap commitments.
 
-### Data flow
-1. User invokes an AI action.
-2. UI displays the context to be used.
-3. User confirms when content will be sent to a remote provider.
-4. AI broker strips unnecessary data and enforces size/time limits.
-5. Provider response is treated as untrusted text.
-6. UI shows the answer and source context; no privileged action is executed from the answer alone.
-
-### AI provider interface
-Use a provider-neutral interface so providers can be added or removed without rewriting the UI. Possible future options include hosted APIs and compatible local inference runtimes. Each integration needs license, privacy, cost, rate-limit, and reliability review.
-
-### WoHo AI DevKit integration
-Consider integrating WoHo AI DevKit behind the AI broker, not directly into untrusted webpage contexts. Reuse only packages and capabilities that are compatible with the browser's security model. Browser-specific permission enforcement remains authoritative and cannot be overridden by an agent.
 
 ## 7. Privacy and user data
 
@@ -185,8 +167,6 @@ Document each data category, storage location, purpose, retention period, export
 - Bookmarks.
 - History.
 - Download metadata.
-- AI prompts and page context.
-- Provider credentials.
 - Crash diagnostics, if any.
 - Sync data, if added later.
 
@@ -197,7 +177,6 @@ Private browsing must not promise invisibility to websites, networks, employers,
 - Clean, modern interface with light and dark themes.
 - Address bar combines URL entry and search without confusing the two.
 - Tabs show loading, audio, and crash states where supported.
-- AI side panel is optional and can be closed without affecting normal browsing.
 - Show the active domain clearly before sensitive operations.
 - Give browser-controlled, accessible permission prompts with deny by default and clearly documented allow/remember semantics. Do not promise allow-once or allow-for-session until the selected engine supports the exact behavior and tests verify it.
 - Use clear empty, loading, offline, error, and retry states.
@@ -223,7 +202,6 @@ Do not depend on advertising or selling browsing history. Do not imply revenue i
 - IPC schema and authorization tests.
 - Navigation and origin-policy tests.
 - Download and permission tests.
-- AI broker timeout, size-limit, cancellation, and prompt-injection regression tests.
 - Integration tests for tab lifecycle, session restore, and storage migration.
 - End-to-end tests on supported Windows versions.
 - Dependency and secret scanning; CodeQL or an equivalent static-analysis tool.
@@ -234,7 +212,6 @@ Do not depend on advertising or selling browsing history. Do not imply revenue i
 - Open common websites and handle redirects, downloads, media, and authentication.
 - Confirm renderer compromise cannot call privileged APIs.
 - Confirm denied permissions stay denied.
-- Confirm AI features show context and provider disclosures.
 - Check keyboard navigation, scaling, screen size, and error recovery.
 
 ### Definition of done
@@ -256,17 +233,13 @@ A feature is done only when:
 6. Prototype multiple tabs with the selected view model and test crash/cleanup behavior.
 7. Evaluate storage, packaging, licensing, and update integrity through working prototypes; update the relevant ADRs with evidence.
 8. Package a clearly labeled development build for the R0 spike. It is not a production release.
-9. Review security and privacy controls before exposing AI features.
-10. Add user-triggered AI page Q&A only after the broker, consent, context minimization, and safe-rendering boundaries are tested.
-11. Validate the product with target users before committing to monetization or advanced features.
-12. Publish only after all release gates pass.
+9. Validate the product with target users before committing to monetization or advanced features.
+10. Publish only after all release gates pass.
 
 ## 12. Risks and open decisions
 
 - Engine maintenance: a custom Chromium fork has high ongoing rebase and security-patching cost.
 - Security exposure: a browser processes hostile web content; incorrect privilege boundaries can compromise the device.
-- AI costs: page context and model usage can become expensive.
-- Provider dependence: APIs can change, fail, or change prices.
 - Compatibility: some websites depend on browser-specific behavior, DRM, extensions, or platform APIs.
 - Update trust: compromised updates can compromise every installed copy.
 - Scope creep: building every feature at once risks producing an unstable browser.
@@ -279,7 +252,6 @@ Open decisions to document before implementation:
 - Project license and third-party notices.
 - Product icon and visual design.
 - Default search provider.
-- AI provider and local model support.
 - Telemetry policy.
 - Update channel and signing method.
 - Whether browser sync is in scope.
@@ -297,7 +269,7 @@ Update this table only with verified repository evidence.
 | Architecture | Partially implemented, not production-verified | `docs/architecture.md`, `docs/security-model.md`, IPC sender checks, isolated WebContentsView tabs, bounded storage and navigation-policy tests |
 | Security model | Partially implemented; automated checks verified on the audited commit | Navigation/popup restrictions, secure-origin permission policy, private-session isolation, bounded profile reads, download URL/name hardening; full threat-model and Windows runtime review remain |
 | Windows MVP | In-progress prototype | Navigation, home button, tabs, bookmarks/history, downloads, permissions, private tabs, settings, opt-in session restore and failure feedback exist; clean Windows runtime, signed installer and release gates remain |
-| AI assistant | Out of scope for the current browser build | No AI integration or AI service calls; revisit only through a separate approved roadmap decision |
+| AI features | Out of scope; not planned | No AI integration, model runtime, AI dependency, or AI service calls |
 | CI and release | CI and CodeQL passed on fresh `main` at implementation commit `695dc8815eaea798d010a983b0c76501e8175c64` | Windows lint/typecheck/tests/build, `npm ci`, packaged-app startup smoke, unsigned installer packaging, Electron fuse verification, SBOM and audit artifacts run in CI; code signing, updater, clean-machine install/uninstall and manual runtime evidence remain |
 | Monetization | Hypotheses only | Interview target users and validate willingness to pay |
 
@@ -325,15 +297,15 @@ This section records the controlling interpretation for earlier roadmap wording.
 - **Engine:** Electron + TypeScript + React is selected for the Release 0 prototype only. See ADR-0001. A production commitment depends on the feasibility spike.
 - **Permission policy:** permission request/check handlers, navigation policy, popup policy, and trusted/untrusted view separation are Release 0 foundation work. Permission controls are not deferred to Release 3.
 - **Private browsing:** a non-persistent private session is a Windows MVP (Release 1) requirement, subject to tests proving no private visit is written to normal history.
-- **Release mapping:** use R0 (feasibility/security foundation), R1 (Windows MVP), R2 (user-controlled AI), R3 (validated productivity/privacy), and R4 (controlled AI actions). Requirements and acceptance criteria live in docs/feature-requirements.md.
+- **Release mapping:** use R0 (feasibility/security foundation), R1 (Windows MVP), and later non-AI browser improvements only after explicit approval. Requirements and acceptance criteria live in docs/feature-requirements.md.
 - **Telemetry:** off by default. Use CI/release tests and voluntary tester feedback for early metrics. No remote user telemetry until the policy, consent, fields, retention, and opt-out are separately approved.
-- **AI DevKit:** no integration until its actual package/tool inventory, license, dependencies, process boundary, and tool manifest are reviewed. See docs/devkit-integration-spec.md.
+- **AI features:** out of scope; do not integrate AI DevKit, model runtimes, AI services, or AI UI. Related documents are archived references only.
 - **Release 5 is split:** Linux, Android, sync, enterprise management, and a custom Chromium fork are separate future tracks, not one release. Android is a separate product direction because Electron desktop architecture is not portable.
 - **Custom Chromium:** not planned. Reopen only through an ADR after a validated requirement and a realistic security-maintenance plan.
-- **Estimates:** at 15–20 hours/week, Release 0 spike is estimated at 4–6 weeks; Windows MVP at 4–6 months; user-controlled AI at 2–3 months; productivity/privacy at 3–4 months. These are rough planning estimates, not commitments. Controlled AI actions may require 4–6+ months and remain blocked pending a separate security review.
+- **Estimates:** any timeline is a planning estimate, not a commitment; prioritize the Windows MVP and release gates.
 - **First-tab behavior:** closing the last tab returns to a documented new-tab page; closing the application window exits the window normally. Confirm this behavior in UX tests.
 - **Privacy and metrics:** never collect browsing content merely to measure active users. See docs/telemetry-policy.md.
 - **Roadmap work:** do not spend time on passwords, passkeys, sync, DRM, full extension compatibility, Linux, Android, or enterprise controls until target-user validation and separate feasibility decisions justify them.
 
 ## 16. Documentation index
-Start with docs/product-specification-index.md and docs/feature-catalog.md. The README.md links the detailed feature specifications, architecture, security/privacy documents, AI specifications, release policies, and ADRs. Keep it updated whenever a planning document is added.
+Start with docs/product-specification-index.md and docs/feature-catalog.md. The README.md links the detailed feature specifications, architecture, security/privacy documents, release policies, and ADRs. AI-related design files are archived scope-exclusion references only. Keep it updated whenever a planning document is added.
