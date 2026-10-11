@@ -6,7 +6,7 @@
 | Dimension | Questions |
 |---|---|
 | Normal flow | Does the user complete the task with correct visible state? |
-| Invalid input | Are malformed URLs, files, settings, IDs, and provider responses rejected safely? |
+| Invalid input | Are malformed URLs, files, settings, and IDs rejected safely? |
 | Denial | Does permission denial fail closed without error loops? |
 | Network | What happens offline, on timeout, TLS failure, and reconnect? |
 | Concurrency | What if the user closes, switches, retries, or repeats during a pending action? |
@@ -15,8 +15,8 @@
 | Private session | Is private data isolated and non-persistent as promised? |
 | Crash/recovery | Can failure happen without privilege escalation or silent data loss? |
 | Accessibility | Do keyboard, focus, accessible names/state, scaling, and screen readers work? |
-| Privacy | Are URLs, page contents, prompts, credentials, and filenames excluded from telemetry by default? |
-| Security | Can page/renderer/AI output reach privileged functions without validation? |
+| Privacy | Are URLs, page contents, credentials, and filenames excluded from telemetry by default? |
+| Security | Can untrusted page or renderer content reach privileged functions without validation? |
 | Platform | Does behavior match the declared OS/version matrix? |
 | Upgrade | Does user data survive supported upgrades and failed migrations? |
 
@@ -27,11 +27,11 @@
 - Popup storm or rapid navigation exhausts resources.
 - Renderer sends malformed, oversized, unauthorized, or replayed IPC.
 - Page content instructs AI to reveal secrets or invoke tools.
-- Private tab is closed and normal profile is checked for leaked history/session/prompt data.
+- Private tab is closed and normal profile is checked for leaked history or session data.
 - Download is canceled while completing, app exits mid-write, or destination disappears.
 - Profile database is corrupted during migration.
 - Update has invalid signature, interrupted transfer, or downgrade attempt.
-- History is cleared while suggestions, tabs, or AI context still reference prior data.
+- History is cleared while tabs or other local UI state still reference prior data.
 - Accessibility focus becomes trapped in a permission/recovery dialog.
 
 ## Traceability fields
