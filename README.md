@@ -6,6 +6,13 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 
 **Release 0 prototype in progress.** The Electron/Chromium shell, navigation and IPC security controls, bookmarks and redacted local history, isolated private tabs, session-scoped site permissions, bounded persistent download history, find-in-page, bounded per-tab zoom, recently-closed normal-tab recovery, clear-site-data controls, and Windows packaging CI are implemented in code. Main and feature-branch CI/CodeQL are run through GitHub Actions; Windows runtime and independent security review remain outstanding.
 
+## Cross-platform application plans
+- [Cross-platform product strategy](docs/cross-platform-product-strategy.md) — defines Windows, Android, and Web companion boundaries.
+- [Windows application plan](docs/windows-application-plan.md) — current prototype validation and release gates.
+- [Android application plan](docs/android-application-plan.md) — engine decision, mobile features, security, and device tests.
+- [Web application plan](docs/web-application-plan.md) — companion portal/PWA scope and safe local data tools.
+- [Cross-platform acceptance matrix](docs/cross-platform-acceptance-matrix.md) — evidence-based readiness by platform.
+
 ## Cross-platform foundations
 
 - **Windows desktop:** existing Electron/Chromium prototype; packaged renderer runtime verification remains a release blocker.
