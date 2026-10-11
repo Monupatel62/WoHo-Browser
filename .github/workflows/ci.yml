@@ -52,6 +52,29 @@ jobs:
         run: npm test
       - name: Package unsigned Windows installer
         run: npm run package:win
+      - name: Verify packaged Electron fuses
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem release/win-unpacked -Filter *.exe -File | Where-Object { $_.Name -notmatch 'uninstaller' } | Select-Object -First 1
+          if (-not $app) { throw 'Could not find the packaged WoHo Browser executable.' }
+          $output = npx --yes @electron/fuses read --app $app.FullName 2>&1
+          $output | Set-Content -Path release/electron-fuses.txt -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read Electron fuses from the packaged executable.' }
+          $report = $output -join "`n"
+          $checks = @(
+            @{ Name = 'RunAsNode'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableCookieEncryption'; State = '(true|enabled|on)' },
+            @{ Name = 'EnableNodeOptionsEnvironmentVariable'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableNodeCliInspectArguments'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableEmbeddedAsarIntegrityValidation'; State = '(true|enabled|on)' },
+            @{ Name = 'OnlyLoadAppFromAsar'; State = '(true|enabled|on)' },
+            @{ Name = 'GrantFileProtocolExtraPrivileges'; State = '(false|disabled|off)' }
+          )
+          foreach ($check in $checks) {
+            if ($report -notmatch ("(?i)" + [regex]::Escape($check.Name) + ".{0,50}" + $check.State)) {
+              throw "Expected Electron fuse $($check.Name) to be $($check.State), but the packaged binary did not report that state."
+            }
+          }
       - name: Generate installer SHA-256 manifest
         shell: pwsh
         run: |
@@ -69,5 +92,6 @@ jobs:
           path: |
             release/*.exe
             release/SHA256SUMS.txt
+            release/electron-fuses.txt
           if-no-files-found: error
           retention-days: 14
