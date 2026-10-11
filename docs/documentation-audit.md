@@ -14,7 +14,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 
 - The codebase contains an Electron/Chromium shell with React/TypeScript browser chrome and `WebContentsView` tabs.
 - Implemented prototype areas include navigation and tabs, HTTP(S) navigation policy, popup denial, frame navigation scheme policy, trusted-renderer and IPC sender checks, session-scoped site permissions, private tabs, bookmarks/history, URL-redacted history storage, find-in-page, downloads, persistent bounded download history, and a Windows installer build.
-- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, and unsigned NSIS installer artifact upload.
+- `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer artifact upload, and (since this change) CycloneDX SBOM plus raw npm audit report artifacts.
 - `.github/workflows/codeql.yml` configures CodeQL analysis.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
 - The latest reviewed feature PRs are CI/CodeQL checked. Always verify fresh-main workflow results after a merge; do not infer that a run passed just because the PR passed.
@@ -31,11 +31,11 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - No signed installer or auto-updater is implemented.
 - No extension system, sync, password manager, or credential storage is implemented.
 - Browser profile and download-history startup recovery now preserve corrupt originals and fall back to separate files; Windows runtime recovery behavior still needs manual verification.
-- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation; preview and per-row import reporting remain unimplemented.
-- History supports local-date filtering and inclusive date-range deletion; multi-select deletion remains unimplemented.
-- Per-item download-record removal, retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
-- General settings import/export, bookmark folders/edit/reorder, history multi-select deletion and other broader roadmap items remain unimplemented.
-- Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. The configured CI gate rejects high/critical advisories, so moderate advisories require explicit triage rather than being described as absent.
+- Bookmark JSON import/export is implemented with size, row-count, format, and URL validation; preview and per-row import reporting remain unimplemented. Bookmark edit is implemented; folders and reordering remain unimplemented.
+- History supports local-date filtering, inclusive date-range deletion, and checkbox-based multi-select deletion of visible entries.
+- Per-item removal of finished download records is implemented and does not delete files. Retry, automatic partial-download cleanup, and reputation scanning remain unimplemented.
+- General settings import/export, bookmark folders/reordering, import preview/per-row reporting, retry and partial-download cleanup, and other broader roadmap items remain unimplemented.
+- Dependency audit output has reported moderate transitive `sprintf-js`-related advisories in the `electron-builder` dependency tree. CI fails on high/critical advisories; this change adds a CycloneDX SBOM and raw npm audit report as workflow artifacts. The moderate advisory remains open for triage and is not claimed fixed.
 - Some legacy AI-related specification files remain in the repository. Treat them as out-of-scope reference material, not authorization to add AI integrations; keep the README and master plan as the current product-scope references.
 
 ## Corrections in this audit
@@ -53,7 +53,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 | P0 | Continue whole-repository security/correctness review | Concrete issue, regression test, CI + CodeQL on exact PR head |
 | P0 | Verify current main CI and CodeQL after each merge | Completed successful workflow runs for the exact main SHA |
 | P0 | Manual Windows/Electron smoke test | Recorded OS/build, launch, navigation, tabs, permissions, downloads, restart, and uninstall results |
-| P1 | Triage moderate transitive dependency advisories | Advisory paths, reachability assessment, safe upgrade/override analysis |
+| P1 | Triage moderate transitive dependency advisories | Advisory paths, reachability assessment, safe upgrade/override analysis; raw audit report and CycloneDX SBOM are now CI artifacts |
 | P1 | Test storage corruption/recovery and profile concurrency on Windows | Reproducible tests and preserved user data |
 | P1 | Resolve license and third-party notices before distribution | Owner-approved license, inventory, and included notices |
 | P1 | Keep roadmap and detailed specifications consistent with the no-AI current scope | Cross-document review and no accidental AI integration |
