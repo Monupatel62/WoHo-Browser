@@ -123,7 +123,6 @@ Electron + TypeScript + React is selected for the Release 0 feasibility prototyp
     packages/
       browser-ui/
       shared/
-      ai-broker/
     tests/
       unit/
       integration/
@@ -145,7 +144,6 @@ Security is a release gate, not a later polish task.
 - Never execute code or shell commands taken from a webpage or downloaded file.
 - Treat all web content as untrusted. It must not override browser security policy or gain privileged desktop access.
 - Keep secrets out of renderer storage, logs, crash reports, and repository history.
-- Protect AI provider keys; explain that a key entered by the user may be stored locally and define how.
 - Apply request timeouts, response-size limits, concurrency limits, and cancellation.
 - Use HTTPS by default and never silently bypass certificate errors.
 - Handle downloads as untrusted files. Show source, destination, file type, and warnings where appropriate.
@@ -188,7 +186,6 @@ Private browsing must not promise invisibility to websites, networks, employers,
 Monetization should follow user trust and product usefulness. Validate willingness to pay before building payment infrastructure.
 
 1. Free core browser: basic browsing at no charge.
-2. Optional AI usage plans: limits and prices based on real provider costs, with clear disclosure.
 3. Business edition: centrally managed settings, deployment help, and support.
 4. Custom deployments: paid integration or configuration for organizations.
 5. Support contracts: response-time commitments and maintenance for business customers.
