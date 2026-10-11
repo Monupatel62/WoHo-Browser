@@ -1,3 +1,5 @@
+> **Scope notice (2026-10-11):** This is a planning inventory, not proof of implementation. AI features are excluded from WoHo Browser and are not part of its roadmap. The AI-related headings below are retained only as explicit exclusions for historical traceability.
+
 # WoHo Browser — Exhaustive Feature Catalog
 
 **Status:** Proposed inventory, not a claim of implementation. Each item must be assigned a requirement ID, release, and test before it becomes committed scope.
@@ -32,17 +34,17 @@
 - Unknown permissions default to deny; browser-controlled prompts cannot be spoofed by page content.
 
 ## G. Privacy and profile data
-- Private browsing, cookies/site storage, cache, history, downloads metadata, AI retention, diagnostics, suggestions cache, import/export, reset, profile recovery/deletion.
-- Explain private browsing is not anonymity and local deletion cannot erase remote-provider records.
+- Private browsing, cookies/site storage, cache, history, downloads metadata, diagnostics, suggestions cache, import/export, reset, profile recovery/deletion.
+- Explain private browsing is not anonymity and document what local deletion does and does not remove.
 - No hidden telemetry, browsing-history upload, or search-provider substitution.
 
-## H. AI assistant
-- Open/close side panel; summarize/explain page or selection; key points; page Q&A; compare selected sources if supported; copy/regenerate/stop/retry/clear; optional note/export.
-- Context preview/minimization, local-versus-remote indicator, provider/model selection, secret handling, cost/quota/retention disclosure, source references where feasible.
-- Bounded inputs/outputs, prompt-injection defenses, safe rendering, no autonomous privileged actions.
+## H. AI features — excluded
+
+WoHo Browser has no AI assistant, agent, API/service, model runtime, AI DevKit integration, AI UI, or AI data flow. Do not implement the capabilities in old AI design documents or add dependencies for them. This section is a scope exclusion, not a feature proposal.
+
 
 ## I. Settings and customization
-- Startup/home, search/suggestions, theme, zoom, downloads, site permissions, privacy/data clearing, AI provider/context, accessibility, diagnostics consent, version/update channel, reset, import/export.
+- Startup/home, search/suggestions, theme, zoom, downloads, site permissions, privacy/data clearing, accessibility, diagnostics consent, version/update channel, reset, import/export.
 - Each setting needs default, type/range, storage scope, restart requirement, migration, and reset semantics.
 
 ## J. Accessibility and localization
