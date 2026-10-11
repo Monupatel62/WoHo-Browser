@@ -30,6 +30,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             node -e "const a = require('./npm-audit.json'); for (const [name, v] of Object.entries(a.vulnerabilities || {})) console.log(name + ': ' + v.severity + ' fix=' + JSON.stringify(v.fixAvailable) + ' via=' + v.via.map(x => typeof x === 'string' ? x : x.name + ' ' + x.range).join(', '));"
           }
+      - name: Enforce production dependency audit
+        run: npm audit --omit=dev --audit-level=moderate
       - name: Enforce high and critical dependency audit
         run: npm audit --audit-level=high
       - name: Generate CycloneDX dependency SBOM
