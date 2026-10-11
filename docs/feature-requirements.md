@@ -61,7 +61,7 @@ These IDs are the source of truth for acceptance tracking. A requirement is not 
 - **R1-005:** Private browsing uses a non-persistent session and does not write private visits to normal history.
 - **R1-006:** Settings include default search provider and basic startup behavior.
 - **R1-007:** Installer, uninstall, version display, and documented update behavior work on the declared Windows matrix.
-- **R1-008:** Find-in-page, zoom, print/PDF, context menus, fullscreen behavior, and default-browser registration are evaluated and either implemented or explicitly deferred with reasons.
+- **R1-008:** Find-in-page and bounded per-tab zoom are implemented (Ctrl+Plus/Equals, Ctrl+Minus, Ctrl+0; zoom controls are available in Settings). Context menus currently support safe HTTP(S) link open/copy actions. Print/PDF export, fullscreen behavior, and default-browser registration are deferred: they require separate platform-specific UX, security, and Windows end-to-end validation before being exposed.
 
 ### R2 — User-controlled AI
 - **R2-001:** AI requests require explicit user action.

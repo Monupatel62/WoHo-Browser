@@ -20,6 +20,7 @@ import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/ses
 import { isFinishedDownloadStatus, pruneDownloadRecordsDurably } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
+import { getNextZoomLevel, type ZoomAction } from '../shared/zoom-policy';
 import { clearSiteDataForSession } from './site-data';
 import { resolveActiveSession } from './session-scope';
 import { isTrustedIpcSender } from './ipc-security';
@@ -325,6 +326,13 @@ function activeView(): WebContentsView | undefined {
   return activeTabId ? views.get(activeTabId) : undefined;
 }
 
+function applyZoomAction(view: WebContentsView | undefined, action: ZoomAction): number {
+  if (!view || view.webContents.isDestroyed()) throw new Error('No active tab is available for zoom.');
+  const next = getNextZoomLevel(view.webContents.getZoomLevel(), action);
+  view.webContents.setZoomLevel(next);
+  return next;
+}
+
 function getState(): BrowserState {
   const tabs: BrowserTabState[] = tabOrder.flatMap((id) => {
     const view = views.get(id);
@@ -444,10 +452,23 @@ function wireTabEvents(id: string, view: WebContentsView): void {
   });
   wc.on('render-process-gone', () => { tabCrashRegistry.markCrashed(id); changed(); });
   wc.on('before-input-event', (event, input) => {
-    if (input.type !== 'keyDown' || !(input.control || input.meta) || !input.shift || input.key.toLowerCase() !== 't') return;
-    event.preventDefault();
-    if (privateTabRegistry.has(id)) return;
-    void reopenRecentlyClosedTab();
+    if (input.type !== 'keyDown' || !(input.control || input.meta)) return;
+    const key = input.key.toLowerCase();
+    if (input.shift && key === 't') {
+      event.preventDefault();
+      if (!privateTabRegistry.has(id)) void reopenRecentlyClosedTab();
+      return;
+    }
+    if (key === '+' || key === '=') {
+      event.preventDefault();
+      try { applyZoomAction(view, 'in'); } catch { /* A tab may be closing. */ }
+    } else if (key === '-') {
+      event.preventDefault();
+      try { applyZoomAction(view, 'out'); } catch { /* A tab may be closing. */ }
+    } else if (key === '0') {
+      event.preventDefault();
+      try { applyZoomAction(view, 'reset'); } catch { /* A tab may be closing. */ }
+    }
   });
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
@@ -623,6 +644,10 @@ function registerIpc(): void {
   handle('browser:forward', () => { const view = activeView(); if (view?.webContents.navigationHistory.canGoForward()) view.webContents.navigationHistory.goForward(); });
   handle('browser:reload', () => activeView()?.webContents.reload());
   handle('browser:stop', () => activeView()?.webContents.stop());
+  handle('browser:set-zoom', (_event, action: unknown) => {
+    if (action !== 'in' && action !== 'out' && action !== 'reset') throw new Error('Invalid zoom action.');
+    return applyZoomAction(activeView(), action as ZoomAction);
+  });
   handle('browser:list-bookmarks', () => browserDataStore.listBookmarks());
   handle('browser:add-bookmark', (_event, title: unknown, url: unknown) => {
     if (typeof title !== 'string' || typeof url !== 'string' || title.length > 512 || url.length > 4096) {

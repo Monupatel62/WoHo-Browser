@@ -3,6 +3,7 @@ import type { BookmarkRecord, BrowserState, DownloadRecord, HistoryRecord, SiteP
 import { DEFAULT_BROWSER_SETTINGS, SEARCH_PROVIDERS, type BrowserSettings, type SearchProviderId } from '../../shared/browser-settings';
 import { shouldOpenNewTabPrivately } from '../../shared/privacy-policy';
 import { filterSavedEntries } from '../../shared/saved-entry-search';
+import type { ZoomAction } from '../../shared/zoom-policy';
 
 const emptyState: BrowserState = { tabs: [], activeTabId: null };
 type DataPanel = 'bookmarks' | 'history' | 'downloads' | 'permissions' | 'settings' | 'find' | null;
@@ -118,6 +119,12 @@ export default function App() {
         event.preventDefault();
         if (shouldOpenNewTabPrivately(Boolean(active?.isPrivate))) void window.wohoBrowser.openPrivateTab();
         else void window.wohoBrowser.openTab();
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === '+' || event.key === '=')) {
+        event.preventDefault(); void window.wohoBrowser.setZoom('in').catch(() => setError('Could not change page zoom.'));
+      } else if ((event.ctrlKey || event.metaKey) && event.key === '-') {
+        event.preventDefault(); void window.wohoBrowser.setZoom('out').catch(() => setError('Could not change page zoom.'));
+      } else if ((event.ctrlKey || event.metaKey) && event.key === '0') {
+        event.preventDefault(); void window.wohoBrowser.setZoom('reset').catch(() => setError('Could not reset page zoom.'));
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'w') {
         event.preventDefault(); if (active) void window.wohoBrowser.closeTab(active.id);
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
@@ -145,6 +152,16 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [active, panel]);
+
+  async function changeZoom(action: ZoomAction) {
+    setError('');
+    try {
+      const level = await window.wohoBrowser.setZoom(action);
+      setNotice('Page zoom: ' + Math.round(100 * Math.pow(1.2, level)) + '%');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not change page zoom.');
+    }
+  }
 
   async function showPanel(next: Exclude<DataPanel, null>) {
     setError('');
@@ -509,6 +526,13 @@ export default function App() {
         <button type="submit" className="panel-action" disabled={!findQuery.trim()} aria-label="Next match">↓</button>
       </form>}
       {panel === 'settings' && <div className="settings-form">
+        <label>Page zoom for active tab</label>
+        <div className="settings-actions" role="group" aria-label="Page zoom controls">
+          <button type="button" className="panel-action" onClick={() => void changeZoom('out')} aria-label="Zoom out (Ctrl+-)" title="Zoom out (Ctrl+-)">−</button>
+          <button type="button" className="panel-action" onClick={() => void changeZoom('reset')} title="Reset zoom (Ctrl+0)">Reset (Ctrl+0)</button>
+          <button type="button" className="panel-action" onClick={() => void changeZoom('in')} aria-label="Zoom in (Ctrl++)" title="Zoom in (Ctrl++)">+</button>
+        </div>
+        <p>Zoom is applied to the active tab and is not saved after the tab closes. Keyboard shortcuts: Ctrl+Plus, Ctrl+Minus, and Ctrl+0.</p>
         <label htmlFor="settings-search-provider">Default search provider</label>
         <select id="settings-search-provider" value={settingsDraft.searchProvider} onChange={(event) => setSettingsDraft((current) => ({ ...current, searchProvider: event.target.value as SearchProviderId }))}>
           {Object.entries(SEARCH_PROVIDERS).map(([id, provider]) => <option key={id} value={id}>{provider.label}</option>)}
