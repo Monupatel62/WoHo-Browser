@@ -15,7 +15,9 @@ try {
   # Isolate the packaged app from any profile data on the runner.
   $env:APPDATA = $profileRoot
   $env:WOHO_BROWSER_SMOKE_TEST = '1'
-  $process = Start-Process -FilePath $app.FullName -PassThru
+  $stdoutPath = Join-Path $profileRoot 'stdout.log'
+  $stderrPath = Join-Path $profileRoot 'stderr.log'
+  $process = Start-Process -FilePath $app.FullName -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
 
   $deadline = (Get-Date).AddSeconds(30)
   while (-not $process.HasExited -and (Get-Date) -lt $deadline) {
@@ -27,6 +29,12 @@ try {
     throw 'Packaged app did not complete its startup smoke test within 30 seconds.'
   }
   if ($process.ExitCode -ne 0) {
+    foreach ($logPath in @($stdoutPath, $stderrPath)) {
+      if (Test-Path -LiteralPath $logPath) {
+        $logContents = Get-Content -LiteralPath $logPath -Raw
+        if ($logContents) { Write-Host "Packaged app diagnostic ($([IO.Path]::GetFileName($logPath))):"; Write-Host $logContents }
+      }
+    }
     throw "Packaged app startup smoke test exited with code $($process.ExitCode)."
   }
   Write-Host 'Packaged app startup smoke test passed: main renderer loaded and initial tab navigation started.'
