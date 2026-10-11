@@ -17,7 +17,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 - `.github/workflows/ci.yml` runs on Windows and includes dependency audit, lint, typecheck, unit tests, build/package, unsigned NSIS installer upload, CycloneDX SBOM plus raw npm audit report artifacts, and (since this change) a SHA-256 manifest for the installer. The repository now includes a generated npm lockfile and CI uses `npm ci`; the lockfile branch's exact-head CI and CodeQL passed, and the fresh-main checks passed after merge.
 - `.github/workflows/codeql.yml` configures CodeQL analysis.
 - Unit tests cover URL/navigation policy, IPC sender trust, browser-data validation/migration, download history retention/removal races, permission policy/prompt deduplication, private history exclusion, and renderer trust.
-- PRs #70–#73 and #75–#84 were merged after exact-head CI and CodeQL passed. The latest main commit checked in this audit is `3fcf13e3da4310f666c86671c7432829be74efee`; fresh-main CI run `38130986797` and CodeQL run `38130986781` both completed successfully. The Windows CI run passed lint, typecheck, tests, packaging, packaged-app startup smoke test, Electron fuse verification, and installer checksum generation. This is workflow evidence only, not full Windows runtime or security certification.
+- PRs #70–#73 and #75–#85 were merged after exact-head CI and CodeQL passed. The latest main commit checked in this audit is `404cb95340b2250cb5fa8f78385963be9baa6d3b`; fresh-main CI run `38131240554` and CodeQL run `38131240572` both completed successfully. The browser-data migration writer fix in PR #85 has exact-head CI and CodeQL success. The Windows CI run passed lint, typecheck, tests, packaging, packaged-app startup smoke test, Electron fuse verification, and installer checksum generation. This is workflow evidence only, not full Windows runtime or security certification.
 - The app does not integrate AI assistants, AI agents, AI APIs, or AI services. Do not add those integrations as part of the current browser build.
 - No project license has been selected. Do not add a license without the owner's decision.
 
@@ -53,6 +53,7 @@ Evidence should always be tied to a commit and the actual check results. A succe
 10. Recorded page zoom and recently closed normal-tab recovery after PRs #82–#83.
 11. Added a separate production-dependency audit gate while retaining the full development/build dependency audit report.
 12. Updated dependency policy and audit evidence after PR #84 merged; the remaining build-tool advisory is explicitly still open.
+13. Fixed the injected-writer bypass during history URL-redaction migration in PR #85 and added failure/retry regression coverage.
 
 ## Next audit priorities
 
