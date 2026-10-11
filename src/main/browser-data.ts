@@ -379,6 +379,67 @@ export class BrowserDataStore {
     return this.data.bookmarks.map((item) => ({ ...item }));
   }
 
+  async listBookmarkFolders(): Promise<BookmarkFolderRecord[]> {
+    await this.ensureLoaded();
+    return this.data.folders.map((folder) => ({ ...folder }));
+  }
+
+  async createBookmarkFolder(rawName: string): Promise<BookmarkFolderRecord[]> {
+    await this.ensureLoaded();
+    const name = safeFolderName(rawName);
+    if (this.data.folders.length >= MAX_BOOKMARK_FOLDERS) throw new Error('Bookmark folder limit reached.');
+    if (this.data.folders.some((folder) => folder.name.toLocaleLowerCase('en-US') === name.toLocaleLowerCase('en-US'))) {
+      throw new Error('A bookmark folder with this name already exists.');
+    }
+    const now = new Date().toISOString();
+    this.data.folders.push({ id: randomUUID(), name, createdAt: now, updatedAt: now });
+    await this.persist();
+    return this.listBookmarkFolders();
+  }
+
+  async renameBookmarkFolder(id: string, rawName: string): Promise<BookmarkFolderRecord[]> {
+    await this.ensureLoaded();
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid bookmark folder ID.');
+    const folder = this.data.folders.find((item) => item.id === id);
+    if (!folder) throw new Error('Bookmark folder no longer exists.');
+    const name = safeFolderName(rawName);
+    if (this.data.folders.some((item) => item.id !== id && item.name.toLocaleLowerCase('en-US') === name.toLocaleLowerCase('en-US'))) {
+      throw new Error('A bookmark folder with this name already exists.');
+    }
+    folder.name = name;
+    folder.updatedAt = new Date().toISOString();
+    await this.persist();
+    return this.listBookmarkFolders();
+  }
+
+  async deleteBookmarkFolder(id: string): Promise<{ folders: BookmarkFolderRecord[]; bookmarks: BookmarkRecord[] }> {
+    await this.ensureLoaded();
+    if (typeof id !== 'string' || id.length === 0 || id.length > 100) throw new Error('Invalid bookmark folder ID.');
+    if (!this.data.folders.some((folder) => folder.id === id)) throw new Error('Bookmark folder no longer exists.');
+    this.data.bookmarks = this.data.bookmarks.map((bookmark) =>
+      bookmark.folderId === id ? { ...bookmark, folderId: null, updatedAt: new Date().toISOString() } : bookmark);
+    this.data.folders = this.data.folders.filter((folder) => folder.id !== id);
+    await this.persist();
+    return { folders: await this.listBookmarkFolders(), bookmarks: await this.listBookmarks() };
+  }
+
+  async moveBookmarkToFolder(bookmarkId: string, folderId: string | null): Promise<BookmarkRecord[]> {
+    await this.ensureLoaded();
+    if (typeof bookmarkId !== 'string' || bookmarkId.length === 0 || bookmarkId.length > 100 ||
+        !(folderId === null || (typeof folderId === 'string' && folderId.length > 0 && folderId.length <= 100))) {
+      throw new Error('Invalid bookmark folder assignment.');
+    }
+    const bookmark = this.data.bookmarks.find((item) => item.id === bookmarkId);
+    if (!bookmark) throw new Error('Bookmark no longer exists.');
+    if (folderId !== null && !this.data.folders.some((folder) => folder.id === folderId)) {
+      throw new Error('Bookmark folder no longer exists.');
+    }
+    bookmark.folderId = folderId;
+    bookmark.updatedAt = new Date().toISOString();
+    await this.persist();
+    return this.listBookmarks();
+  }
+
   async addBookmark(title: string, rawUrl: string): Promise<BookmarkRecord[]> {
     await this.ensureLoaded();
     const url = validateUrl(rawUrl);
