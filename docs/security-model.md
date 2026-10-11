@@ -42,7 +42,7 @@ Use platform-secure credential storage where practical. If users provide API key
 - Review of the current framework's official security guidance.
 
 ## Vulnerability reporting
-Before public release, add a SECURITY.md with a monitored reporting channel, supported release policy, expected response process, and instructions not to publish exploitable details before coordination. Do not invent a security email address; configure a real contact first.
+`SECURITY.md` exists, but its reporting path is not yet production-ready: enable GitHub Private Vulnerability Reporting, verify that reports reach a monitored inbox, and define a triage owner and response targets before public release. No security email is configured; do not invent one.
 
 
 ## Electron-specific hardening requirements
