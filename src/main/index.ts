@@ -443,6 +443,12 @@ function wireTabEvents(id: string, view: WebContentsView): void {
     changed();
   });
   wc.on('render-process-gone', () => { tabCrashRegistry.markCrashed(id); changed(); });
+  wc.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta) || !input.shift || input.key.toLowerCase() !== 't') return;
+    event.preventDefault();
+    if (privateTabRegistry.has(id)) return;
+    void reopenRecentlyClosedTab();
+  });
   wc.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigationTarget(targetUrl)) event.preventDefault();
   });
@@ -527,6 +533,13 @@ async function createTab(target?: string, isPrivate = false): Promise<void> {
   }
 }
 
+async function reopenRecentlyClosedTab(): Promise<void> {
+  const result = takeRecentlyClosedTab(recentlyClosedTabUrls);
+  if (!result.url) return;
+  recentlyClosedTabUrls.splice(0, recentlyClosedTabUrls.length, ...result.remaining);
+  await createTab(result.url, false);
+}
+
 function registerIpc(): void {
   const handle = (channel: string, fn: (event: IpcMainInvokeEvent, ...args: any[]) => unknown) => {
     ipcMain.handle(channel, (event, ...args) => {
@@ -578,12 +591,7 @@ function registerIpc(): void {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
     activeTabId = id; layoutViews(); publishState();
   });
-  handle('browser:reopen-closed-tab', async () => {
-    const result = takeRecentlyClosedTab(recentlyClosedTabUrls);
-    if (!result.url) return;
-    recentlyClosedTabUrls.splice(0, recentlyClosedTabUrls.length, ...result.remaining);
-    await createTab(result.url, false);
-  });
+  handle('browser:reopen-closed-tab', () => reopenRecentlyClosedTab());
   handle('browser:close-tab', (_event, id: unknown) => {
     if (typeof id !== 'string' || !views.has(id)) throw new Error('Unknown tab.');
     const view = views.get(id)!;
