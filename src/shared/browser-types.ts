@@ -1,7 +1,8 @@
 import type { BrowserSettings } from './browser-settings';
 export interface BrowserTabState { id: string; title: string; url: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; isActive: boolean; isPrivate: boolean; isCrashed: boolean; navigationError?: string; }
 export interface BrowserState { tabs: BrowserTabState[]; activeTabId: string | null; }
-export interface BookmarkRecord { id: string; title: string; url: string; createdAt: string; updatedAt: string; }
+export interface BookmarkRecord { id: string; title: string; url: string; folderId: string | null; createdAt: string; updatedAt: string; }
+export interface BookmarkFolderRecord { id: string; name: string; createdAt: string; updatedAt: string; }
 export interface BookmarkImportResult { bookmarks: BookmarkRecord[]; added: number; updated: number; duplicatesSkipped: number; invalidSkipped: number; }
 export interface HistoryRecord { id: string; title: string; url: string; visitedAt: string; }
 export interface SitePermissionDecision { origin: string; permission: string; allowed: boolean; }
@@ -23,6 +24,11 @@ export interface WoHoBrowserApi {
   reload(): Promise<void>;
   stop(): Promise<void>;
   listBookmarks(): Promise<BookmarkRecord[]>;
+  listBookmarkFolders(): Promise<BookmarkFolderRecord[]>;
+  createBookmarkFolder(name: string): Promise<BookmarkFolderRecord[]>;
+  renameBookmarkFolder(id: string, name: string): Promise<BookmarkFolderRecord[]>;
+  deleteBookmarkFolder(id: string): Promise<{ folders: BookmarkFolderRecord[]; bookmarks: BookmarkRecord[] }>;
+  moveBookmarkToFolder(bookmarkId: string, folderId: string | null): Promise<BookmarkRecord[]>;
   addBookmark(title: string, url: string): Promise<BookmarkRecord[]>;
   updateBookmark(id: string, title: string, url: string): Promise<BookmarkRecord[]>;
   removeBookmark(id: string): Promise<BookmarkRecord[]>;
