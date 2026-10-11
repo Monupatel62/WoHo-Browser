@@ -31,6 +31,7 @@ let overlayPanelHeight = 0;
 let browserSettingsStore: BrowserSettingsStore;
 let browserSettings: BrowserSettings = { ...DEFAULT_BROWSER_SETTINGS };
 let browserSessionStore: BrowserSessionStore | null = null;
+let pendingSessionStoreWrite: Promise<unknown> = Promise.resolve();
 let isRestoringSession = false;
 let isClosingWindow = false;
 let allowWindowCloseAfterSessionSave = false;
@@ -54,6 +55,13 @@ const navigationErrorsByTab = new Map<string, string>();
 const privateSessionsByTab = new Map<string, Electron.Session>();
 const privateDownloadItemsBySession = new WeakMap<Electron.Session, Set<DownloadItem>>();
 const disposedPrivateSessions = new WeakSet<Electron.Session>();
+
+function queueSessionStoreWrite(urls: string[]): Promise<string[]> {
+  if (!browserSessionStore) return Promise.reject(new Error('Browser session store is unavailable.'));
+  const pending = browserSessionStore.save(urls);
+  pendingSessionStoreWrite = pending;
+  return pending;
+}
 
 async function disposePrivateSession(tabId: string): Promise<void> {
   const privateSession = privateSessionsByTab.get(tabId);
@@ -322,7 +330,7 @@ function currentSessionTabUrls(): string[] {
 
 function persistSessionTabs(): void {
   if (!browserSessionStore || !shouldPersistSessionTabs(browserSettings.restoreSession, isRestoringSession, isClosingWindow)) return;
-  void browserSessionStore.save(currentSessionTabUrls()).catch((error: unknown) => {
+  void queueSessionStoreWrite(currentSessionTabUrls()).catch((error: unknown) => {
     console.error('Could not persist normal-tab session:', error instanceof Error ? error.message : 'Unknown session storage error');
   });
 }
@@ -502,13 +510,13 @@ function registerIpc(): void {
     } else if (browserSessionStore) {
       // Do not report that session restore is disabled until sensitive saved URLs
       // have actually been removed from the local session file.
-      await browserSessionStore.save([]);
+      await queueSessionStoreWrite([]);
     }
     return { ...browserSettings };
   });
   handle('browser:reset-settings', async () => {
     browserSettings = await browserSettingsStore.reset();
-    if (browserSessionStore) await browserSessionStore.save([]);
+    if (browserSessionStore) await queueSessionStoreWrite([]);
     return { ...browserSettings };
   });
   handle('browser:find-in-page', (_event, rawQuery: unknown, forward: unknown, findNext: unknown) => {
@@ -805,20 +813,20 @@ function createWindow(): void {
       isClosingWindow = true;
       return;
     }
-    if (!browserSessionStore || !shouldPersistSessionTabs(browserSettings.restoreSession, isRestoringSession, isClosingWindow)) {
-      isClosingWindow = true;
-      return;
-    }
 
-    // Snapshot the live tabs and hold the close until the queued atomic write
-    // completes. WebContents destruction would otherwise persist an empty list.
+    // Always wait for an in-flight session write, including the clear operation
+    // triggered when the user disables restore or resets settings.
     event.preventDefault();
     const closingWindow = mainWindow;
-    const urls = currentSessionTabUrls();
+    const shouldSaveSnapshot = Boolean(browserSessionStore) &&
+      shouldPersistSessionTabs(browserSettings.restoreSession, isRestoringSession, isClosingWindow);
+    const pending = shouldSaveSnapshot
+      ? queueSessionStoreWrite(currentSessionTabUrls())
+      : pendingSessionStoreWrite;
     isClosingWindow = true;
-    void browserSessionStore.save(urls)
+    void pending
       .catch((error: unknown) => {
-        console.error('Could not persist normal-tab session during close:', error instanceof Error ? error.message : 'Unknown session storage error');
+        console.error('Could not finish session persistence during close:', error instanceof Error ? error.message : 'Unknown session storage error');
       })
       .finally(() => {
         allowWindowCloseAfterSessionSave = true;
@@ -877,7 +885,7 @@ if (!hasSingleInstanceLock) {
     },
   );
   if (!browserSettings.restoreSession) {
-    await browserSessionStore.save([]);
+    await queueSessionStoreWrite([]);
   }
   browserDataStore = await openRecoverableBrowserDataStore(
     join(userDataPath, 'browser-data.json'),
