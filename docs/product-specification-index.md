@@ -35,5 +35,9 @@
 ## Definition of done for every feature
 Document its user value, entry points, default behavior, all visible states, input validation, persistence, deletion, privacy implications, permission boundary, keyboard/screen-reader behavior, failure/recovery behavior, platform differences, acceptance tests, and requirement IDs. Completion requires implementation plus passing test/security evidence and an updated status; a document alone never proves implementation.
 
+## Archived planning references
+
+AI assistant, AI broker, agent, and DevKit documents are historical design references only. AI features are out of scope and must not be implemented.
+
 ## Current repository status
 The repository is currently a documentation/specification project. The listed browser features are not represented as implemented or production-ready.
