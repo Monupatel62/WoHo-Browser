@@ -14,6 +14,13 @@ describe('isTrustedRendererUrl', () => {
     expect(isTrustedRendererUrl('https://example.com/out/renderer/index.html', undefined, expectedPath)).toBe(false);
   });
 
+  it('accepts only the bundled custom-protocol entry point', () => {
+    expect(isTrustedRendererUrl('woho://browser/index.html', undefined, expectedPath)).toBe(true);
+    expect(isTrustedRendererUrl('woho://browser/other.html', undefined, expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('woho://attacker/index.html', undefined, expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('woho://browser/index.html?x=1', undefined, expectedPath)).toBe(false);
+  });
+
   it('requires the configured dev origin and path', () => {
     expect(isTrustedRendererUrl('http://localhost:5173/', 'http://localhost:5173/', expectedPath)).toBe(true);
     expect(isTrustedRendererUrl('http://evil.test/', 'http://localhost:5173/', expectedPath)).toBe(false);
