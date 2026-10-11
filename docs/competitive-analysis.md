@@ -1,20 +1,20 @@
-# Competitive Analysis and Product Positioning
+# WoHo Browser Competitive Analysis
 
-Status: Hypotheses only. Verify current features, pricing, and availability before launch decisions.
+**Status:** Hypotheses only. Verify current features, pricing, and availability before launch decisions. WoHo Browser is a conventional desktop browser; AI features are out of scope.
 
 ## Research set
-Compare Chrome with Gemini, Microsoft Edge with Copilot, Brave with Leo, and AI-first browsers such as Comet, Dia, and ChatGPT Atlas where available. This list does not imply equivalent availability or features.
+Compare mainstream browsers such as Chrome, Microsoft Edge, Firefox, and Brave. Verify current OS availability, supported features, privacy claims, extension compatibility, import options, update process, and pricing where relevant before making claims.
 
 ## Compare on tasks
 - Reliable navigation and sign-in.
-- Page summaries with traceable source context.
-- Comparing sources without cross-page instruction contamination.
-- Optional local AI or user-selected providers.
-- Explicit control over sending page content remotely.
-- Developer documentation research.
-- Clear permissions, costs, and offline behavior.
+- Tab and session management.
+- Bookmark/history import and deletion.
+- Download reliability and user control.
+- Site permissions and private-session behavior.
+- Accessibility, performance, compatibility, and update cadence.
+- Clear privacy disclosures and recovery behavior.
 
 ## Differentiation hypothesis
-WoHo Browser may focus on developer research, optional WoHo AI DevKit integration, and user control over AI context/actions. This must be validated, not treated as a proven advantage.
+WoHo Browser may focus on dependable Windows-first browsing, transparent local-data controls, and a maintainable security posture. This is a hypothesis, not a proven advantage. Validate it with user interviews and a working prototype.
 
-For each competitor, record date, market/OS availability, AI features, privacy claims, extensions, import, pricing, limitations, and source links. Interview target users and test a prototype before committing to a broad AI side-panel strategy.
+For each competitor, record the research date, OS availability, tested task results, privacy claims, extensions, import, pricing, limitations, and source links. Do not claim superiority without measured evidence.
