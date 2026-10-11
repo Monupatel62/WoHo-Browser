@@ -1,5 +1,6 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFileBounded } from './bounded-file-read';
 import { randomUUID } from 'node:crypto';
 import { atomicWriteFile, BrowserDataStore, MAX_BOOKMARK_IMPORT_BYTES } from './browser-data';
@@ -897,10 +898,16 @@ function createWindow(): void {
   const isAllowedChromeNavigation = (value: string) =>
     isTrustedRendererUrl(value, rendererUrl, expectedRendererPath);
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isAllowedChromeNavigation(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) {
+      if (packagedSmokeTest) console.error('[smoke] Blocked trusted-window navigation:', JSON.stringify({ url, expectedRendererPath }));
+      event.preventDefault();
+    }
   });
   mainWindow.webContents.on('will-redirect', (event, url) => {
-    if (!isAllowedChromeNavigation(url)) event.preventDefault();
+    if (!isAllowedChromeNavigation(url)) {
+      if (packagedSmokeTest) console.error('[smoke] Blocked trusted-window redirect:', JSON.stringify({ url, expectedRendererPath }));
+      event.preventDefault();
+    }
   });
   mainWindow.on('resize', layoutViews);
   mainWindow.on('close', (event) => {
@@ -934,8 +941,32 @@ function createWindow(): void {
     for (const view of views.values()) if (!view.webContents.isDestroyed()) view.webContents.close();
     views.clear(); tabOrder.length = 0; activeTabId = null;
   });
-  if (rendererUrl) void mainWindow.loadURL(rendererUrl);
-  else void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+  if (rendererUrl) {
+    void mainWindow.loadURL(rendererUrl);
+  } else {
+    if (packagedSmokeTest) {
+      try {
+        const bytes = readFileSync(expectedRendererPath);
+        console.error('[smoke] Renderer file diagnostic:', JSON.stringify({
+          appPath: app.getAppPath(),
+          resourcesPath: process.resourcesPath,
+          expectedRendererPath,
+          exists: existsSync(expectedRendererPath),
+          bytes: bytes.byteLength,
+          startsWithDoctype: bytes.subarray(0, 15).toString('utf8').toLowerCase().includes('<!doctype html'),
+        }));
+      } catch (error) {
+        console.error('[smoke] Renderer file is not readable by the main process:', JSON.stringify({
+          appPath: app.getAppPath(),
+          resourcesPath: process.resourcesPath,
+          expectedRendererPath,
+          exists: existsSync(expectedRendererPath),
+          error: error instanceof Error ? error.message : 'Unknown file read error',
+        }));
+      }
+    }
+    void mainWindow.loadFile(expectedRendererPath);
+  }
   mainWindow.webContents.on('did-finish-load', () => {
     layoutViews();
     publishState();
