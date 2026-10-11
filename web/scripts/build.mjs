@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const source = path.join(root, 'public');
-const output = path.resolve(root, '../../dist/web');
+const output = path.resolve(root, '../dist/web');
 const required = ['index.html', 'styles.css', 'app.js', 'bookmarks.mjs'];
 for (const file of required) {
   const content = await readFile(path.join(source, file), 'utf8');
