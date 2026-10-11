@@ -79,4 +79,4 @@ Cloud sync, accounts, password manager, extensions, ad/tracker blocking, remote 
 
 ## 8. Definition of done
 
-A successful Gradle build alone is not an Android release. Require automated tests, engine-specific integration tests, manual device coverage, a signed artifact with protected key custody, permission/privacy review, store-policy review, release notes, and an owner-maintained vulnerability-reporting path.
+A successful Gradle build alone is not an Android release. Require automated tests, engine-specific integration tests, manual device coverage, a signed artifact with signing credentials stored securely, permission/privacy review, Android distribution-policy review, release notes, and a maintained vulnerability-reporting path.
