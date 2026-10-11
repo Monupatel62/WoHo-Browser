@@ -18,11 +18,13 @@ foreach ($requiredEntry in @('out/main/index.js', 'out/preload/index.js', 'out/r
   }
 }
 Write-Host ("Verified renderer-related ASAR entries: " + (($normalizedEntries | Where-Object { $_ -like 'out/renderer/*' }) -join ', '))
-$rendererEntry = 'out/renderer/index.html' -replace '/', [IO.Path]::DirectorySeparatorChar
-$rendererHtml = (& node $asarCli extract-file $asarPath $rendererEntry) -join "`n"
-if ($LASTEXITCODE -ne 0 -or -not $rendererHtml.Contains('<!doctype html>')) {
-  throw 'The renderer entry exists in the ASAR index but could not be extracted as HTML.'
-}
+$extractRoot = Join-Path $env:RUNNER_TEMP ('woho-browser-asar-' + [guid]::NewGuid().ToString('N'))
+& node $asarCli extract $asarPath $extractRoot
+if ($LASTEXITCODE -ne 0) { throw 'Could not extract the packaged ASAR archive for validation.' }
+$rendererPath = Join-Path $extractRoot 'out/renderer/index.html'
+if (-not (Test-Path -LiteralPath $rendererPath)) { throw 'Extracted ASAR does not contain the renderer HTML at the expected path.' }
+$rendererHtml = Get-Content -LiteralPath $rendererPath -Raw
+if (-not $rendererHtml.Contains('<!doctype html>')) { throw 'Extracted renderer entry is not valid HTML.' }
 Write-Host ("Extracted packaged renderer HTML: " + $rendererHtml.Length + " characters.")
 
 $profileRoot = Join-Path $env:RUNNER_TEMP ('woho-browser-smoke-' + [guid]::NewGuid().ToString('N'))
