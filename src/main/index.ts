@@ -888,8 +888,8 @@ function createWindow(): void {
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   if (packagedSmokeTest) {
-    mainWindow.webContents.on('console-message', (_event, details) => {
-      console.error(`Packaged renderer console [${details.level}]: ${details.message} (${details.sourceId}:${details.lineNumber})`);
+    mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      console.error(`Packaged renderer console [${level}]: ${message} (${sourceId}:${line})`);
     });
   }
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
