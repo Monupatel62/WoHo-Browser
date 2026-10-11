@@ -19,6 +19,7 @@ import { selectRestorableTabUrls, shouldPersistSessionTabs } from '../shared/ses
 import { getDownloadIdsToPrune, isFinishedDownloadStatus } from '../shared/download-retention';
 import { getOrCreatePermissionPrompt, PermissionPromptEpoch, runPermissionPromptForEpoch } from '../shared/permission-prompt';
 import { getNavigationFailureMessage } from '../shared/navigation-error';
+import { clearSiteDataForSession } from './site-data';
 import { isTrustedIpcSender } from './ipc-security';
 import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
@@ -701,11 +702,14 @@ function registerIpc(): void {
     return browserDataStore.removeHistoryRange(startAt, endAt);
   });
   handle('browser:clear-site-data', async () => {
-    // Invalidate open native permission prompts before awaiting storage cleanup so
-    // a late click on “Allow” cannot recreate a grant after the user clears data.
-    permissionPromptEpoch(browserSession).invalidate();
-    permissionDecisions(browserSession).clear();
-    await Promise.all([browserSession.clearStorageData(), browserSession.clearCache(), browserSession.clearAuthCache()]);
+    // Clear the session for the selected tab. In private mode this must not leave
+    // the active private session's cookies or permissions untouched.
+    const targetSession = activeView()?.webContents.session ?? browserSession;
+    await clearSiteDataForSession(
+      targetSession,
+      permissionDecisions(targetSession),
+      permissionPromptEpoch(targetSession),
+    );
   });
   handle('browser:list-site-permissions', () => [...permissionDecisions(browserSession).entries()].map(([key, allowed]) => {
     const separator = key.lastIndexOf('::');
