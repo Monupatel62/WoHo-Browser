@@ -234,7 +234,8 @@ class MainActivity : Activity() {
     private fun updateActiveBookmarkButton() {
         if (!::bookmarkButton.isInitialized) return
         val url = activeWebView()?.url
-        bookmarkButton.text = if (url != null && (0 until readRecords("bookmarks").length()).any { readRecords("bookmarks").optJSONObject(it)?.optString("url") == url }) "★" else "☆"
+        val bookmarks = readRecords("bookmarks")
+        bookmarkButton.text = if (url != null && (0 until bookmarks.length()).any { bookmarks.optJSONObject(it)?.optString("url") == url }) "★" else "☆"
     }
 
     private fun showBookmarks() {
