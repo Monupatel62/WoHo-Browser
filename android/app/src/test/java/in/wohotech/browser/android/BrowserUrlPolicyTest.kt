@@ -1,4 +1,4 @@
-package in.wohotech.browser.android
+package `in`.wohotech.browser.android
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
