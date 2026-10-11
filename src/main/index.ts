@@ -1,5 +1,6 @@
-import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
-import { join } from 'node:path';
+import { app, BrowserWindow, WebContentsView, ipcMain, session, shell, dialog, Menu, clipboard, protocol, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
+import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { readFileBounded } from './bounded-file-read';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +31,10 @@ import { isTrustedRendererUrl } from './trusted-renderer';
 import { PrivateTabRegistry } from './private-tab-registry';
 import { TabCrashRegistry } from './tab-crash-registry';
 import type { BrowserState, BrowserTabState, DownloadRecord, DownloadStatus, FindResult } from '../shared/browser-types';
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'woho', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+]);
 
 const CHROME_HEIGHT = 108;
 const DATA_PANEL_HEIGHT = 360;
@@ -869,6 +874,52 @@ function registerIpc(): void {
   });
 }
 
+function registerTrustedRendererProtocol(): void {
+  protocol.handle('woho', async (request) => {
+    const url = new URL(request.url);
+    if (url.hostname !== 'browser' || (request.method !== 'GET' && request.method !== 'HEAD')) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    let pathname: string;
+    try {
+      pathname = decodeURIComponent(url.pathname);
+    } catch {
+      return new Response('Bad request', { status: 400 });
+    }
+    if (pathname === '/') pathname = '/index.html';
+
+    const rendererRoot = resolve(app.getAppPath(), 'out/renderer');
+    const target = resolve(rendererRoot, '.' + pathname);
+    const relativePath = relative(rendererRoot, target);
+    if (relativePath === '..' || relativePath.startsWith('..' + sep) || isAbsolute(relativePath)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    try {
+      const body = await readFile(target);
+      const contentType = ({
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.svg': 'image/svg+xml',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+      } as Record<string, string>)[extname(target).toLowerCase()] ?? 'application/octet-stream';
+      return new Response(request.method === 'HEAD' ? null : body, {
+        status: 200,
+        headers: { 'content-type': contentType, 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' },
+      });
+    } catch {
+      return new Response('Not found', { status: 404 });
+    }
+  });
+}
+
 function createWindow(): void {
   isClosingWindow = false;
   allowWindowCloseAfterSessionSave = false;
@@ -880,7 +931,7 @@ function createWindow(): void {
     title: 'WoHo Browser',
     backgroundColor: '#0b1020',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(app.getAppPath(), 'out/preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -894,7 +945,7 @@ function createWindow(): void {
     });
   }
   const rendererUrl = process.env.ELECTRON_RENDERER_URL;
-  const expectedRendererPath = join(__dirname, '../renderer/index.html');
+  const expectedRendererPath = join(app.getAppPath(), 'out/renderer/index.html');
   const isAllowedChromeNavigation = (value: string) =>
     isTrustedRendererUrl(value, rendererUrl, expectedRendererPath);
   mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -965,7 +1016,7 @@ function createWindow(): void {
         }));
       }
     }
-    void mainWindow.loadFile(expectedRendererPath);
+    void mainWindow.loadURL('woho://browser/index.html');
   }
   mainWindow.webContents.on('did-finish-load', () => {
     layoutViews();
@@ -1013,6 +1064,7 @@ if (!hasSingleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+  registerTrustedRendererProtocol();
   const userDataPath = app.getPath('userData');
   browserSettingsStore = await openRecoverableBrowserSettingsStore(
     join(userDataPath, 'settings.json'),
