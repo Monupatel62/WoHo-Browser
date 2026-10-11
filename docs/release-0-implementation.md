@@ -14,7 +14,7 @@
 - Versioned local JSON store for bookmarks and history, using temporary-file replacement for writes.
 - Session-only Site permissions panel to review decisions, block previously allowed capabilities, and forget decisions; unsupported capabilities remain denied.
 - Private tabs with unique non-persistent Electron sessions, isolated cookies/storage/cache/permission decisions, a private-mode indicator and Ctrl+Shift+N shortcut; private visits are excluded from normal history and private downloads are not listed in normal download history.
-- Bookmark add/edit/remove/list UI, duplicate-URL handling, opening saved bookmarks/history in current or new tabs (new tabs inherit private mode), and versioned JSON bookmark import/export with bounded input, URL validation, transactional merge, a trusted native import preview with row-level skipped-entry reporting, and a warning before exporting potentially sensitive URLs.
+- Bookmark add/edit/remove/list UI, up/down bookmark reordering, duplicate-URL handling, opening saved bookmarks/history in current or new tabs (new tabs inherit private mode), and versioned JSON bookmark import/export with bounded input, URL validation, transactional merge, a trusted native import preview with row-level skipped-entry reporting, and a warning before exporting potentially sensitive URLs.
 - User-confirmed clear-site-data action for cookies, website storage, and cache; history and bookmarks remain separate.
 - Initial download manager: each download is paused until the Save dialog returns a destination; progress/status, pause/resume/cancel where supported, and reveal completed file in folder.
 - Bounded persistent normal-profile download history (up to 100 records), with query/fragment redaction, interrupted-state recovery after restart, a “Clear finished” action, and per-item removal of finished records without deleting saved files. Private downloads are excluded from the normal store.
@@ -32,7 +32,7 @@
 - No AI assistant, AI agent, AI API, model download, or AI service calls are integrated.
 - No password manager or credential storage.
 - No sync, extension system, Safe Browsing integration, updater, or signed installer. Main-frame navigation failures have browser-chrome feedback, but custom full-page network/certificate error screens and end-to-end network transition testing remain incomplete.
-- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark editing, history multi-select deletion, and bookmark import preview/row reporting are implemented. Bookmark folders/reordering, general settings import/export, and additional retention controls are not implemented yet.
+- Bookmark and history title/URL search plus individual history deletion are implemented. Bookmark editing and reordering, history multi-select deletion, and bookmark import preview/row reporting are implemented. Bookmark folders, general settings import/export, and additional retention controls are not implemented yet.
 - Download history is persisted locally and bounded; retry, open-after-completion, reputation scanning, and automatic partial-file cleanup are not implemented yet.
 - History stores committed HTTP(S) navigation metadata only; this is not private browsing and should be treated as sensitive profile data.
 
