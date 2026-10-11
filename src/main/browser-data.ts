@@ -194,6 +194,83 @@ export class BrowserDataStore {
     return JSON.stringify(payload, null, 2) + '\n';
   }
 
+  async previewBookmarkImportJson(raw: string): Promise<{
+    rows: { row: number; status: 'new' | 'update' | 'duplicate' | 'invalid'; reason?: string }[];
+    validBookmarks: { title: string; url: string }[];
+    newCount: number;
+    updateCount: number;
+    duplicateCount: number;
+    invalidCount: number;
+    canImport: boolean;
+    limitError?: string;
+  }> {
+    await this.ensureLoaded();
+    if (Buffer.byteLength(raw, 'utf8') > MAX_BOOKMARK_IMPORT_BYTES) {
+      throw new Error('Bookmark import file exceeds the 1 MiB limit.');
+    }
+    let value: unknown;
+    try { value = JSON.parse(raw); } catch {
+      throw new Error('Bookmark import file is unreadable JSON; no bookmarks were changed.');
+    }
+    if (!isRecord(value) || value.format !== 'woho-bookmarks' || value.version !== 1 || !Array.isArray(value.bookmarks)) {
+      throw new Error('Bookmark import format or version is unsupported; no bookmarks were changed.');
+    }
+    if (value.bookmarks.length > MAX_BOOKMARKS) {
+      throw new Error('Bookmark import exceeds the 500-entry limit; no bookmarks were changed.');
+    }
+
+    type Candidate = { row: number; title: string; url: string };
+    const candidates: Candidate[] = [];
+    const rows: { row: number; status: 'new' | 'update' | 'duplicate' | 'invalid'; reason?: string }[] = [];
+    for (let index = 0; index < value.bookmarks.length; index++) {
+      const item = value.bookmarks[index];
+      if (!isRecord(item) || typeof item.title !== 'string' || item.title.length > MAX_TITLE_LENGTH ||
+          typeof item.url !== 'string' || item.url.length > MAX_URL_LENGTH) {
+        rows.push({ row: index + 1, status: 'invalid', reason: 'Invalid title or URL field.' });
+        continue;
+      }
+      let url: string;
+      try { url = validateUrl(item.url); } catch {
+        rows.push({ row: index + 1, status: 'invalid', reason: 'URL is not a valid credential-free HTTP(S) address.' });
+        continue;
+      }
+      candidates.push({ row: index + 1, title: safeTitle(item.title), url });
+    }
+
+    const lastRowByUrl = new Map<string, number>();
+    for (const candidate of candidates) lastRowByUrl.set(candidate.url, candidate.row);
+    const existingUrls = new Set(this.data.bookmarks.map((item) => item.url));
+    const validBookmarks: { title: string; url: string }[] = [];
+    let newCount = 0;
+    let updateCount = 0;
+    let duplicateCount = 0;
+    for (const candidate of candidates) {
+      if (lastRowByUrl.get(candidate.url) !== candidate.row) {
+        rows.push({ row: candidate.row, status: 'duplicate', reason: 'Duplicate URL; the last valid occurrence will be used.' });
+        duplicateCount++;
+        continue;
+      }
+      if (existingUrls.has(candidate.url)) updateCount++;
+      else newCount++;
+      validBookmarks.push({ title: candidate.title, url: candidate.url });
+      rows.push({ row: candidate.row, status: existingUrls.has(candidate.url) ? 'update' : 'new' });
+    }
+    rows.sort((a, b) => a.row - b.row);
+    const limitError = this.data.bookmarks.length + newCount > MAX_BOOKMARKS
+      ? 'Import would exceed the 500-bookmark limit; no bookmarks will be changed.'
+      : undefined;
+    return {
+      rows,
+      validBookmarks,
+      newCount,
+      updateCount,
+      duplicateCount,
+      invalidCount: rows.filter((row) => row.status === 'invalid').length,
+      canImport: validBookmarks.length > 0 && !limitError,
+      ...(limitError ? { limitError } : {}),
+    };
+  }
+
   async importBookmarksJson(raw: string): Promise<BookmarkRecord[]> {
     await this.ensureLoaded();
     if (Buffer.byteLength(raw, 'utf8') > MAX_BOOKMARK_IMPORT_BYTES) {
