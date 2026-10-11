@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectRestorableTabUrls } from './session-policy';
+import { selectRestorableTabUrls, shouldPersistSessionTabs } from './session-policy';
 
 describe('selectRestorableTabUrls', () => {
   it('excludes private tabs, unsupported schemes, credentials, and empty URLs', () => {
@@ -20,5 +20,20 @@ describe('selectRestorableTabUrls', () => {
     expect(urls).toHaveLength(50);
     expect(urls[0]).toBe('https://example5.com/');
     expect(urls[49]).toBe('https://example54.com/');
+  });
+});
+
+
+describe('shouldPersistSessionTabs', () => {
+  it('persists a snapshot when session restore is enabled and shutdown has not begun', () => {
+    expect(shouldPersistSessionTabs(true, false, false)).toBe(true);
+  });
+
+  it.each([
+    [false, false, false],
+    [true, true, false],
+    [true, false, true],
+  ])('skips snapshots when disabled, restoring, or closing: %s %s %s', (enabled, restoring, closing) => {
+    expect(shouldPersistSessionTabs(enabled, restoring, closing)).toBe(false);
   });
 });
