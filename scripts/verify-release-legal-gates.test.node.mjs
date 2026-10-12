@@ -39,6 +39,7 @@ test('release legal gate blocks missing bundled Chromium license notices', () =>
     licenseExists: true,
     noticesExists: true,
     inventory: { ...inventory, requiredBundledNotices: { electronChromiumHtmlIncluded: false } },
+    requireChromiumNotice: true,
   });
   assert.ok(errors.some((error) => error.includes('LICENSES.chromium.html')));
 });
@@ -47,4 +48,12 @@ test('release legal gate blocks missing notices and invalid inventory', () => {
   const errors = evaluateReleaseLegalGates({ licenseExists: true, noticesExists: false, inventory: null });
   assert.ok(errors.some((error) => error.includes('THIRD-PARTY-NOTICES.txt is missing')));
   assert.ok(errors.some((error) => error.includes('inventory is missing')));
+});
+
+test('platform-neutral legal preflight does not require the Electron-only Chromium file', () => {
+  assert.deepEqual(evaluateReleaseLegalGates({
+    licenseExists: true,
+    noticesExists: true,
+    inventory: { ...inventory, requiredBundledNotices: { electronChromiumHtmlIncluded: false } },
+  }), []);
 });
