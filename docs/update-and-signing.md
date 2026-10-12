@@ -42,7 +42,7 @@ Convert the keystore/certificate files to base64 locally and add the resulting s
 
 ## Remaining non-automation decisions
 
-- The owner must select the project license and add the corresponding `LICENSE` file. The repository is currently public but unlicensed; public visibility alone grants no reuse license.
+- MIT is selected for original project code in ADR-0005 and a root `LICENSE` file is present. Before publication, verify copyright/contributor rights and finish all flagged third-party license reviews; this does not alter upstream component licenses.
 - Any dependency packages flagged by the generated license inventory must be reviewed, and the shipped Electron/Chromium license HTML must be located and included before release.
 - An authenticated updater, anti-downgrade policy, key rotation and rollback/failed-update behavior are not implemented. Do not claim automatic updates or a production-ready update channel until these tests and design decisions are complete.
 
