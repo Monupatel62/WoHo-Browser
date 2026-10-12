@@ -93,10 +93,10 @@ npm test
 npm run dev
 ```
 
-Build bundles with `npm run build`. On Windows, `npm run package:win` creates an unsigned CI/development installer and embeds third-party notices. A tag-triggered signed draft-release workflow is configured, but requires an owner-selected project license, reviewed runtime notices, and owner-managed Windows/Android signing secrets. Automatic updates are not implemented.
+Build bundles with `npm run build`. On Windows, `npm run package:win` creates an unsigned CI/development installer and embeds third-party notices. A tag-triggered signed draft-release workflow is configured, but requires the MIT license/copyright scope to be confirmed, reviewed runtime notices, and owner-managed Windows/Android signing secrets. Automatic updates are not implemented.
 
 ## Initial stack
 Electron + TypeScript + React is selected for the Release 0 prototype only. The final production decision depends on the feasibility spike. This does not promise full Chrome extension compatibility, DRM, sync, or Chrome feature parity.
 
 ## Important
-This project intentionally excludes AI assistant features and AI service integrations. The browser prototype has CI-based build/package verification, but a clean Windows install and runtime behavior must still be tested before calling the product verified. Do not treat the product as production-ready until security review, tests, packaging, update verification, and release checks are complete. A project license has not yet been selected; see ADR-0005.
+This project intentionally excludes AI assistant features and AI service integrations. The browser prototype has CI-based build/package verification, but a clean Windows install and runtime behavior must still be tested before calling the product verified. Do not treat the product as production-ready until security review, tests, packaging, update verification, and release checks are complete. Original WoHo Browser code is licensed under MIT; bundled third-party materials retain their own licenses. See ADR-0005 and the dependency license policy.
