@@ -32,8 +32,8 @@ jobs:
           }
       - name: Enforce production dependency audit
         run: npm audit --omit=dev --audit-level=moderate
-      - name: Enforce high and critical dependency audit
-        run: npm audit --audit-level=high
+      - name: Enforce full dependency audit (moderate and above)
+        run: npm audit --audit-level=moderate
       - name: Generate CycloneDX dependency SBOM
         shell: pwsh
         run: npm sbom --sbom-format=cyclonedx > woho-browser-sbom.cdx.json
