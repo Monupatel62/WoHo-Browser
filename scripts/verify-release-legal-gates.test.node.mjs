@@ -59,6 +59,8 @@ test('platform-neutral legal preflight does not require the Electron-only Chromi
     noticesExists: true,
     inventory: { ...inventory, requiredBundledNotices: { electronChromiumHtmlIncluded: false } },
   }), []);
+});
+
 test('release legal preflight verifies the exact Chromium notice digest and staged app resource', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'woho-release-legal-gates-'));
   try {
