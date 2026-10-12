@@ -93,7 +93,7 @@ npm test
 npm run dev
 ```
 
-Build bundles with `npm run build`. On Windows, `npm run package:win` creates an unsigned development installer. Signing and auto-updates are not configured.
+Build bundles with `npm run build`. On Windows, `npm run package:win` creates an unsigned CI/development installer and embeds third-party notices. A tag-triggered signed draft-release workflow is configured, but requires an owner-selected project license, reviewed runtime notices, and owner-managed Windows/Android signing secrets. Automatic updates are not implemented.
 
 ## Initial stack
 Electron + TypeScript + React is selected for the Release 0 prototype only. The final production decision depends on the feasibility spike. This does not promise full Chrome extension compatibility, DRM, sync, or Chrome feature parity.
