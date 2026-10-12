@@ -50,6 +50,8 @@ jobs:
         run: npm run notices
       - name: Test third-party license notice generation
         run: npm run test:notices
+      - name: Test release legal preflight gates
+        run: npm run test:release-gates
       - name: Test Web companion bookmark validation
         run: npm run test:web
       - name: Build and validate Web companion
