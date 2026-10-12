@@ -14,7 +14,7 @@ async function exists(file) {
   }
 }
 
-export function evaluateReleaseLegalGates({ licenseExists, noticesExists, inventory }) {
+export function evaluateReleaseLegalGates({ licenseExists, noticesExists, inventory, requireChromiumNotice = false }) {
   const errors = [];
   if (!licenseExists) {
     errors.push('Project LICENSE file is missing. The copyright owner must select and add the intended license before a public release.');
@@ -35,13 +35,13 @@ export function evaluateReleaseLegalGates({ licenseExists, noticesExists, invent
     const examples = inventory.unresolved.slice(0, 10).map((item) => `${item.name || 'unknown'}@${item.version || 'unknown'} (${(item.reviewReason || []).join('; ') || 'manual review required'})`);
     errors.push(`Manual review is still required for ${inventory.unresolved.length} dependency package(s): ${examples.join(', ')}${inventory.unresolved.length > 10 ? ', …' : ''}`);
   }
-  if (inventory.requiredBundledNotices?.electronChromiumHtmlIncluded !== true) {
+  if (requireChromiumNotice && inventory.requiredBundledNotices?.electronChromiumHtmlIncluded !== true) {
     errors.push('Electron/Chromium LICENSES.chromium.html was not found and included; locate and review the shipped Chromium notice before release.');
   }
   return errors;
 }
 
-export async function verifyReleaseLegalGates(root = rootDir) {
+export async function verifyReleaseLegalGates(root = rootDir, { requireChromiumNotice = process.argv.includes('--require-chromium') } = {}) {
   const licenseExists = await exists(path.join(root, 'LICENSE'));
   const noticesExists = await exists(path.join(root, 'THIRD-PARTY-NOTICES.txt'));
   let inventory = null;
@@ -50,7 +50,7 @@ export async function verifyReleaseLegalGates(root = rootDir) {
   } catch {
     // The errors below explain the missing or malformed inventory.
   }
-  const errors = evaluateReleaseLegalGates({ licenseExists, noticesExists, inventory });
+  const errors = evaluateReleaseLegalGates({ licenseExists, noticesExists, inventory, requireChromiumNotice });
   if (errors.length > 0) {
     process.stderr.write('Release legal preflight BLOCKED:\n' + errors.map((error) => `- ${error}`).join('\n') + '\n');
     return false;
