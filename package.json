@@ -26,7 +26,7 @@
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
     "electron": "44.7.0",
-    "electron-builder": "26.5.0",
+    "electron-builder": "26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.12.0",
     "typescript": "^5.9.2",
@@ -68,5 +68,8 @@
       "onlyLoadAppFromAsar": true,
       "grantFileProtocolExtraPrivileges": false
     }
+  },
+  "overrides": {
+    "@electron/get": "5.1.0"
   }
 }
