@@ -1,6 +1,6 @@
 # Dependency, License, and SBOM Policy
 
-**Status:** Partially implemented; license-notice release gates remain open.
+**Status:** Runtime license notices, machine-readable inventory, and fail-closed release checks are implemented. The project LICENSE choice and outstanding runtime license review are still release blockers.
 
 ## Dependency hygiene
 
@@ -26,7 +26,7 @@ The project owner has not selected a project license; do not add a LICENSE file 
 
 ## Release gate
 
-No public production release until vulnerability triage, owner-approved project licensing, third-party notices, and retained release provenance are complete. The current Windows installer is unsigned, and signing/updater verification is not implemented.
+No public production release until vulnerability triage, owner-approved project licensing, runtime third-party notices, and retained release provenance are complete. A tag-triggered signed draft-release workflow is configured, but the CI artifact is still unsigned until owner-managed signing secrets are present. A production auto-updater is not implemented.
 
 
 ## Latest captured npm audit evidence — post-merge main, 2026-10-12
