@@ -2,6 +2,7 @@ package `in`.wohotech.browser.android
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.json.JSONObject
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 
@@ -51,6 +52,27 @@ class LocalRecordsPolicyTest {
         val output = ByteArrayOutputStream()
         LocalRecordsPolicy.writeRawBackup(raw, output)
         assertEquals(raw, String(output.toByteArray(), Charsets.UTF_8))
+    }
+
+    @Test fun rawStringRecoveryBackupIsByteExact() {
+        val raw = "[{\\\"url\\\":\\\"https://example.com/?q=sample\\\"}] trailing-corruption\\n"
+        assertEquals(raw, String(LocalRecordsPolicy.recoveryBackupContent("history", raw)!!, Charsets.UTF_8))
+    }
+
+    @Test fun wrongTypeStringSetExportsExplicitTypedRecoveryEnvelope() {
+        val content = LocalRecordsPolicy.recoveryBackupContent("bookmarks", setOf("second", "first"))!!
+        val envelope = JSONObject(String(content, Charsets.UTF_8))
+        assertEquals("woho-browser-preference-recovery", envelope.getString("format"))
+        assertEquals("bookmarks", envelope.getString("key"))
+        assertEquals("StringSet", envelope.getString("valueType"))
+        assertEquals("first", envelope.getJSONArray("value").getString(0))
+        assertEquals("second", envelope.getJSONArray("value").getString(1))
+    }
+
+    @Test fun unsupportedWrongTypeValuesAreNotMisrepresentedAsRecoverable() {
+        assertNull(LocalRecordsPolicy.recoveryBackupContent("history", Any()))
+        assertNull(LocalRecordsPolicy.recoveryBackupContent("unexpected", "data"))
+        assertNull(LocalRecordsPolicy.recoveryBackupContent("history", null))
     }
 
 }
