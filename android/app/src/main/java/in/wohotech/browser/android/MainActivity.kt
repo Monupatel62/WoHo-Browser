@@ -434,7 +434,8 @@ class MainActivity : Activity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(shareIntent, "Save recovery backup"))
-        (if (rawText) "Raw backup" else "Typed recovery backup").also { kind -> Toast.makeText(this, "$kind may contain browsing data. Choose a trusted app to save or share it.", Toast.LENGTH_LONG).show() }
+        val backupKind = if (rawText) "Raw backup" else "Typed recovery backup"
+        Toast.makeText(this, "$backupKind may contain browsing data. Choose a trusted app to save or share it.", Toast.LENGTH_LONG).show()
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
