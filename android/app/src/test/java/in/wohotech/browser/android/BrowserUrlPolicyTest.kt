@@ -15,6 +15,13 @@ class BrowserUrlPolicyTest {
         assertFalse(BrowserUrlPolicy.isAllowedUrl("https://user:pass@example.com"))
         assertFalse(BrowserUrlPolicy.isAllowedUrl("https:///missing-host"))
     }
+    @Test fun sanitizesDownloadFilenamesAsSafeLeafNames() {
+        assertEquals("report.pdf", BrowserUrlPolicy.sanitizeDownloadFilename("../../report.pdf"))
+        assertEquals("download", BrowserUrlPolicy.sanitizeDownloadFilename(".."))
+        assertEquals("download", BrowserUrlPolicy.sanitizeDownloadFilename("   "))
+        assertEquals("safe_name.txt", BrowserUrlPolicy.sanitizeDownloadFilename("C:\\fakepath\\safe:name.txt"))
+        assertEquals(120, BrowserUrlPolicy.sanitizeDownloadFilename("a".repeat(200)).length)
+    }
     @Test fun historySanitizationRemovesQueryAndFragmentSecrets() {
         assertEquals("https://example.com/path", BrowserUrlPolicy.sanitizeHistoryUrl("https://example.com/path?access_token=secret#section"))
         assertEquals("http://localhost:8080/path", BrowserUrlPolicy.sanitizeHistoryUrl("http://localhost:8080/path?debug=1#top"))
