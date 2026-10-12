@@ -138,7 +138,7 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Run Android unit tests and debug build
-        run: gradle -p android testDebugUnitTest assembleDebug
+        run: gradle -p android :app:clean testDebugUnitTest assembleDebug --rerun-tasks
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v7
         with:
