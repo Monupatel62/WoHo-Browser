@@ -13,6 +13,15 @@ WoHo Browser is a WoHoTech desktop browser focused on dependable browsing and pr
 - [Web application plan](docs/web-application-plan.md) — companion portal/PWA scope and safe local data tools.
 - [Cross-platform acceptance matrix](docs/cross-platform-acceptance-matrix.md) — evidence-based readiness by platform.
 
+## Cross-platform foundations
+
+- **Windows desktop:** existing Electron/Chromium prototype; packaged renderer startup smoke test passes in Windows CI; clean-machine install, update/signing, and manual release validation remain.
+- **Android:** native Android WebView foundation under `android/`; this is a development build, not a production release.
+- **Web:** static companion portal and local-only bookmark JSON tools under `web/public/`; build output is staged to `dist/web`.
+- AI features and integrations are out of scope on every platform.
+
+Build and test the Web companion with `npm run test:web` and `npm run build:web`. Build/test Android with JDK 17, Android SDK 35, and Gradle 8.9 using `gradle -p android testDebugUnitTest assembleDebug`.
+
 ## Start here
 - [Product specification index](docs/product-specification-index.md)
 - [Documentation audit and remaining gaps](docs/documentation-audit.md)

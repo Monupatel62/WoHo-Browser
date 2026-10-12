@@ -19,8 +19,8 @@ The three surfaces share product principles and documented behavior, not necessa
 | Surface | Product contract | Technology direction | Release status |
 |---|---|---|---|
 | Windows | Full desktop browser | Existing Electron + Chromium prototype, React/TypeScript | In progress; not production-ready |
-| Android | Native mobile browser | Native Android app; evaluate Android WebView versus GeckoView in a feasibility spike | Planned; no implementation claim |
-| Web | Companion portal/PWA | Standard web app; separate deployment and threat model | Planned; not a full browser engine |
+| Android | Native mobile browser | Kotlin/WebView feasibility prototype exists; compare WebView and GeckoView before production commitment | Initial foundation; not production-ready |
+| Web | Companion portal/PWA | Static HTML/CSS/JS companion with local bookmark tools; deployment remains open | Initial foundation; not a full browser engine |
 | macOS/Linux | Not currently committed | Separate feasibility and maintenance review | Deferred |
 
 ## 3. Why the Web surface is different
@@ -74,12 +74,15 @@ Initial behavior is **local-first with explicit user export/import**. Do not imp
 - Resolve licensing, dependency vulnerabilities, signing/update decisions, and security-reporting ownership before public production release.
 
 ### Phase C — Android feasibility then MVP
-- Prototype navigation, tabs, downloads, permission prompts, private-session isolation, and app lifecycle.
+- Initial Kotlin/WebView navigation, tabs, bookmarks/history, and download foundation now exists in code; automated build and unit-test evidence must be checked on the exact PR head.
+- Compare Android WebView with GeckoView before treating the engine choice as final.
+- Implement and test permission prompts, private-session isolation, and app lifecycle.
 - Compare Android WebView and GeckoView against security, compatibility, licensing, update cadence, and maintenance needs.
 - Decide engine in an ADR before feature implementation expands.
 
 ### Phase D — Web companion MVP
-- Responsive product portal, documentation, release artifacts, checksums, status/support links, and locally processed bookmark import/export only if it can be implemented safely.
+- A static responsive portal and local-only bookmark import/export foundation now exists in code; Node tests and static build evidence must be checked on the exact PR head.
+- Add deployment, production response security headers, verified release artifact links, and accessibility/browser-matrix evidence before publishing.
 - No remote browsing, cloud profile, or sync in this phase.
 
 ### Phase E — Cross-platform quality

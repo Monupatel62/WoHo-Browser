@@ -17,15 +17,15 @@
 | Area | Windows desktop | Android | Web companion |
 |---|---|---|---|
 | Product type | Full browser | Native mobile browser | Portal/PWA, not a full browser |
-| Codebase | Electron/Chromium + React/TypeScript prototype | Not yet implemented | Not yet implemented |
-| Core browsing | Prototype code exists; packaged runtime validation currently unresolved | Planned | Arbitrary-site browsing is out of scope |
-| Tabs | Prototype implementation exists; runtime validation required | Planned | Host browser owns tabs |
-| Bookmarks/history | Prototype implementation exists; release validation required | Planned | Optional local import/export only |
-| Downloads | Prototype implementation exists; release validation required | Planned | Release artifact downloads only |
-| Permissions/private mode | Prototype implementation exists; runtime/security validation required | Planned; engine spike required | No site-permission or private browser engine controls |
-| CI/build | Windows CI configured; do not treat failed smoke test as success | Not configured | Not configured |
+| Codebase | Electron/Chromium + React/TypeScript prototype | Native Kotlin/WebView foundation | Static HTML/CSS/JS companion |
+| Core browsing | Prototype code exists; packaged renderer smoke passed in Windows CI; manual release checks remain | Basic HTTP(S) navigation prototype; device validation pending | Arbitrary-site browsing is out of scope |
+| Tabs | Prototype implementation exists; manual runtime validation required | Basic tab switching/closing implemented; device validation pending | Host browser owns tabs |
+| Bookmarks/history | Prototype implementation exists; release validation required | Local bookmarks/history and clear-history action implemented; recovery/privacy validation pending | Local bookmark JSON import/export implemented |
+| Downloads | Prototype implementation exists; release validation required | DownloadManager integration implemented; device validation pending | User-triggered sample JSON export; release artifacts not yet published |
+| Permissions/private mode | Prototype implementation exists; runtime/security validation required | Private-session isolation and custom permission UI are not implemented | No site-permission or private browser engine controls |
+| CI/build | Windows CI includes actual trusted-chrome smoke test | Android Gradle test/build job added; exact-head result must be checked | Node tests and static asset build job added |
 | Signing/update | Signing and authenticated updater unresolved | Signing/release-key plan unresolved | Deployment/update/cache policy unresolved |
-| Production status | Not production-ready | Planned | Planned |
+| Production status | Not production-ready; signing/update/manual test gates remain | Not production-ready; private mode/device tests/signing remain | Not deployed; security headers/accessibility/browser matrix remain |
 
 Update this table only with evidence from the current branch/commit and the relevant platform tests.
 
