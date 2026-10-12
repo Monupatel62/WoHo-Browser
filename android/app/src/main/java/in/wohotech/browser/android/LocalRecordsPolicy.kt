@@ -13,8 +13,8 @@ internal object LocalRecordsPolicy {
         if (input.isEmpty() || input.first() != '[') return null
 
         return try {
-            val validator = StrictJsonValidator(input)
-            if (!validator.validateTopLevelArray()) null else JSONArray(input)
+            if (!StrictJsonValidator(input).validateTopLevelArray()) null
+            else JSONArray(input.substring(1, input.length - 1).let { "[$it]" })
         } catch (_: Exception) {
             null
         }
