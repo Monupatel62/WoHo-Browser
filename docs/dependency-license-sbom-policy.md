@@ -1,6 +1,6 @@
 # Dependency, License, and SBOM Policy
 
-**Status:** Runtime license notices, machine-readable inventory, and fail-closed release checks are implemented. The project LICENSE choice and outstanding runtime license review are still release blockers.
+**Status:** MIT selected for original project code; runtime notice generation and fail-closed release checks are implemented. Outstanding runtime license review, signing credentials, and release provenance remain gates.
 
 ## Dependency hygiene
 
@@ -22,11 +22,11 @@ CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY
 
 The inventory intentionally records runtime packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Build-only tooling review is recorded separately under `toolingPackagesRequiringManualReview` and `toolingUnresolved`. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
 
-The project owner has not selected a project license; do not add a LICENSE file without owner approval. Required third-party notices and the owner-selected project license remain production-release gates.
+The root LICENSE applies MIT to original project code the copyright holder is entitled to license. It does not change third-party component licenses. Confirm contribution/copyright ownership and resolve every outstanding runtime notice review before distributing a public release.
 
 ## Release gate
 
-No public production release until vulnerability triage, owner-approved project licensing, runtime third-party notices, and retained release provenance are complete. A tag-triggered signed draft-release workflow is configured, but the CI artifact is still unsigned until owner-managed signing secrets are present. A production auto-updater is not implemented.
+No public production release until vulnerability triage, runtime third-party license review, exact Electron/Chromium notices, signing and retained release provenance are complete. A tag-triggered signed draft-release workflow is configured, but the CI artifact is still unsigned until owner-managed signing secrets are present. A production auto-updater is not implemented.
 
 
 ## Latest captured npm audit evidence — post-merge main, 2026-10-12
@@ -37,4 +37,4 @@ Post-merge [CI run 38242801756](https://github.com/Monupatel62/WoHo-Browser/acti
 
 The post-merge SBOM resolves `electron-builder@26.15.3`, `app-builder-lib@26.15.3`, `dmg-builder@26.15.3`, `@electron/get@5.1.0`, and `tar@7.5.22`. It no longer includes `sprintf-js`, `roarr`, or `global-agent`, which removes the affected dependency chain from the current build toolchain. The stricter CI audit now fails on any moderate-or-higher finding so this risk cannot silently recur on future lockfile changes.
 
-The upstream `sprintf-js` advisory itself remains unpatched; it is not present in the project's current resolved dependency tree. Re-review on each dependency update. License inventory, required third-party notices, owner-approved project license, installer signing, and retained release provenance remain separate release gates.
+The upstream `sprintf-js` advisory itself remains unpatched; it is not present in the project's current resolved dependency tree. Re-review on each dependency update. Third-party license inventory review, exact bundled notices, installer signing, and retained release provenance remain separate release gates; the project-owned-code license selection is recorded in ADR-0005.
