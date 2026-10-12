@@ -14,7 +14,10 @@
     "package:win": "npm run build && electron-builder --win nsis --publish never",
     "lint": "eslint .",
     "test:web": "node --test web/tests/bookmarks.node-test.mjs web/tests/security.node-test.mjs",
-    "build:web": "node web/scripts/build.mjs"
+    "build:web": "node web/scripts/build.mjs",
+    "notices": "node scripts/generate-third-party-notices.mjs",
+    "test:notices": "node --test scripts/third-party-notices.test.node.mjs",
+    "prepackage:win": "npm run notices"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -67,7 +70,13 @@
       "enableEmbeddedAsarIntegrityValidation": true,
       "onlyLoadAppFromAsar": true,
       "grantFileProtocolExtraPrivileges": false
-    }
+    },
+    "extraResources": [
+      {
+        "from": "THIRD-PARTY-NOTICES.txt",
+        "to": "THIRD-PARTY-NOTICES.txt"
+      }
+    ]
   },
   "overrides": {
     "@electron/get": "5.1.0"

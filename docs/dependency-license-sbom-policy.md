@@ -4,7 +4,7 @@
 
 ## Dependency hygiene
 
-Application and build dependencies are pinned in `package-lock.json` (lockfile version 3); CI uses `npm ci`. Review updates, transitive packages, install scripts, native modules, and network behavior. CI runs `npm audit --json`, prints a dependency advisory summary, fails on moderate-or-higher advisories in production dependencies (`npm audit --omit=dev --audit-level=moderate`), and separately fails on high/critical advisories in the full dependency tree. Moderate build-tool advisories still require explicit triage; a passing CI run does not mean the entire dependency tree is vulnerability-free.
+Application and build dependencies are pinned in `package-lock.json` (lockfile version 3); CI uses `npm ci`. Review updates, transitive packages, install scripts, native modules, and network behavior. CI runs `npm audit --json`, prints a dependency advisory summary, fails on moderate-or-higher advisories in production dependencies (`npm audit --omit=dev --audit-level=moderate`), and separately fails on moderate-or-higher advisories in the full dependency tree. A passing CI run is evidence for the resolved lockfile on that commit; re-run the checks after every dependency change.
 
 ## SBOM evidence
 
@@ -18,7 +18,11 @@ Previously known item: the old dependency graph included `sprintf-js@1.1.3` thro
 
 ## Licenses and third-party notices
 
-The SBOM is not a substitute for a legal license inventory. Review direct/transitive npm licenses and Electron/Chromium, fonts, icons, codecs, and other bundled assets. Include required third-party notices in distributable packages. The project owner has not selected a project license; do not add one without approval.
+CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY-LICENSE-INVENTORY.json` from the installed npm tree. The notices file is copied into the Windows application's resources and both generated files are retained with the Windows installer artifact. Electron's distribution license files, including Chromium's bundled HTML notices when present, are incorporated in the generated report.
+
+The inventory intentionally records packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
+
+The project owner has not selected a project license; do not add a LICENSE file without owner approval. Required third-party notices and the owner-selected project license remain production-release gates.
 
 ## Release gate
 

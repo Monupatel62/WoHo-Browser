@@ -46,6 +46,10 @@ jobs:
             npm-audit.json
           if-no-files-found: error
           retention-days: 30
+      - name: Generate third-party license notices
+        run: npm run notices
+      - name: Test third-party license notice generation
+        run: npm run test:notices
       - name: Test Web companion bookmark validation
         run: npm run test:web
       - name: Build and validate Web companion
@@ -109,6 +113,8 @@ jobs:
             release/*.exe
             release/SHA256SUMS.txt
             release/electron-fuses.txt
+            THIRD-PARTY-NOTICES.txt
+            THIRD-PARTY-LICENSE-INVENTORY.json
           if-no-files-found: error
           retention-days: 14
 
