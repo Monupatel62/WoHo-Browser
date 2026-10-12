@@ -18,9 +18,9 @@ Previously known item: the old dependency graph included `sprintf-js@1.1.3` thro
 
 ## Licenses and third-party notices
 
-CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY-LICENSE-INVENTORY.json` from the installed npm tree. The notices file is copied into the Windows application's resources and both generated files are retained with the Windows installer artifact. Electron's distribution license files, including Chromium's bundled HTML notices when present, are incorporated in the generated report.
+CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY-LICENSE-INVENTORY.json`. The notice text is scoped to the production dependency closure plus the packaged Electron binary; build-only dependencies are inventoried separately so missing build-tool license texts do not falsely block an app that does not ship them. The Windows packaging flow stages Electron's exact distributable, extracts its `LICENSES.chromium.html`, includes that full text with a SHA-256 digest in the notices, and repackages the installer so the same notices file is in the installed app resources. Android builds embed the npm notice text and inventory as app assets.
 
-The inventory intentionally records packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
+The inventory intentionally records runtime packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Build-only tooling review is recorded separately under `toolingPackagesRequiringManualReview` and `toolingUnresolved`. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
 
 The project owner has not selected a project license; do not add a LICENSE file without owner approval. Required third-party notices and the owner-selected project license remain production-release gates.
 
