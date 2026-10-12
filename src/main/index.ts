@@ -878,7 +878,7 @@ function registerIpc(): void {
 function registerTrustedRendererProtocol(): void {
   protocol.handle('woho', async (request) => {
     const url = new URL(request.url);
-    if (url.hostname !== 'browser' || (request.method !== 'GET' && request.method !== 'HEAD')) {
+    if (url.hostname !== 'browser' || url.username || url.password || (request.method !== 'GET' && request.method !== 'HEAD')) {
       return new Response('Not found', { status: 404 });
     }
 
