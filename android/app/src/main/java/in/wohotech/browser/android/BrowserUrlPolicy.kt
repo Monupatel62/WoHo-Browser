@@ -12,6 +12,16 @@ object BrowserUrlPolicy {
         (scheme == "http" || scheme == "https") && !uri.host.isNullOrBlank() && uri.rawUserInfo == null
     } catch (_: Exception) { false }
 
+    /** Return a leaf filename safe to pass to DownloadManager as a relative path. */
+    fun sanitizeDownloadFilename(value: String): String {
+        val leaf = value.substringAfterLast('/').substringAfterLast('\\\\')
+        val safe = leaf.replace(Regex("[^A-Za-z0-9._ -]"), "_")
+            .trim()
+            .trim('.')
+            .take(120)
+        return safe.takeIf { it.isNotBlank() && it != "." && it != ".." } ?: "download"
+    }
+
     /** Remove query and fragment data from history without altering the live navigation URL. */
     fun sanitizeHistoryUrl(value: String): String? {
         if (!isAllowedUrl(value)) return null
