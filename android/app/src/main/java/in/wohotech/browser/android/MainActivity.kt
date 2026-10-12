@@ -432,7 +432,7 @@ class MainActivity : Activity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(shareIntent, "Save recovery backup"))
-        Toast.makeText(this, "Choose an app to save the backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Choose a trusted app to save or share the backup; it may contain browsing URLs.", Toast.LENGTH_LONG).show()
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
