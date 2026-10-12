@@ -187,3 +187,9 @@ Automated checks above are tied to the named main commit. They do not replace th
 4. Refresh `npm audit` / SBOM after dependency changes; review the full nested graph, not just `sprintf-js`.
 5. Keep Windows clean-install/uninstall/upgrade, Android physical-device / signing / private-mode tests, security-reporting contact, license/notice, and updater integrity as release blockers until evidence is recorded.
 
+### Follow-up: Android parser test remains a blocker (2026-10-12)
+
+- PR #123 is the current focused repair for the Android saved-record parser. Earlier exact-head CI runs failed `LocalRecordsPolicyTest.parsesValidArray`; a failed run also reported that the parser's valid-array result was null. The parser implementation has since been simplified to enforce size / outer array boundaries before constructing an Android `JSONArray`, but its fresh checks are still running. Do not treat as fixed until the new exact head passes and PR review is complete.
+- PR #122 is still open and has stale/failed checks from the preceding parser iterations. Do not merge #119, #120, #122, or #123 unless the chosen final PR passes its own exact-head checks. Prefer one final PR after the parsing correction is validated, then close/reconcile superseded attempts.
+- PR #121 cleartext hardening has failed Android build/CodeQL while affected parser work is unmerged. Keep the HTTP policy PR open until Android regression CI is green, and validate ordinary HTTP + HTTPS on physical Android/WebView devices before deciding policy.
+
