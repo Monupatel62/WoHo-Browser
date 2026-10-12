@@ -1,9 +1,17 @@
 # ADR-0005: Project License and Third-Party Notices
 
-Status: Open; no license selected. Date: 2026-10-10.
+**Status:** Selected — MIT License for original WoHo Browser code.  
+**Decision date:** 2026-10-12.
 
-Choose a license based on intended distribution and contribution model, after reviewing compatibility with bundled dependencies and the commercial plan. A public GitHub repository is not automatically licensed for reuse.
+## Decision
 
-Before public code release, select the license, add the corresponding LICENSE file, inventory direct/transitive dependencies and notices, review Chromium/Electron components, fonts, icons, codecs, models and assets, and define contributor terms.
+Use the MIT License for original project code that the copyright holder is entitled to license. It is a permissive license suitable for a public project and permits commercial reuse subject to retaining the required copyright and permission notice.
 
-This ADR deliberately does not create a LICENSE file. The owner must choose after reviewing the product model and obtaining legal advice if needed.
+The root `LICENSE` file records the project copyright notice. This selection does **not** relicense Electron/Chromium, npm packages, Android libraries, fonts, icons, codecs, or other third-party material; their own license terms and notices continue to apply.
+
+## Release conditions
+
+- Audit the generated runtime dependency inventory, resolve every unresolved license/notice item, and include the exact packaged Electron/Chromium notice.
+- Keep third-party license text and the SBOM with release evidence.
+- Confirm that the copyright holder has the rights needed for original code and that any outside contributions can be distributed under MIT before publishing a public release.
+- This ADR is a project decision record, not legal advice for third-party materials.

@@ -16,3 +16,9 @@ android/local.properties
 # Generated dependency license outputs
 THIRD-PARTY-NOTICES.txt
 THIRD-PARTY-LICENSE-INVENTORY.json
+
+# Signing credentials and private key containers must never be committed
+*.jks
+*.keystore
+*.p12
+*.pfx

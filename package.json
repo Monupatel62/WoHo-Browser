@@ -11,13 +11,15 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package:win": "npm run build && electron-builder --win nsis --publish never",
+    "package:win": "npm run build && electron-builder --win --dir --publish never && node scripts/merge-electron-chromium-notices.mjs && electron-builder --win nsis --prepackaged release/win-unpacked --publish never",
     "lint": "eslint .",
     "test:web": "node --test web/tests/bookmarks.node-test.mjs web/tests/security.node-test.mjs",
     "build:web": "node web/scripts/build.mjs",
     "notices": "node scripts/generate-third-party-notices.mjs",
     "test:notices": "node --test scripts/third-party-notices.test.node.mjs",
-    "prepackage:win": "npm run notices"
+    "prepackage:win": "npm run notices",
+    "verify:release-legal": "node scripts/verify-release-legal-gates.mjs",
+    "test:release-gates": "node --test scripts/verify-release-legal-gates.test.node.mjs scripts/merge-electron-chromium-notices.test.node.mjs scripts/signed-release-workflow.test.node.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",

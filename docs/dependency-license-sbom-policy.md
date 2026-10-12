@@ -1,6 +1,6 @@
 # Dependency, License, and SBOM Policy
 
-**Status:** Partially implemented; license-notice release gates remain open.
+**Status:** MIT selected for original project code; runtime notice generation and fail-closed release checks are implemented. Outstanding runtime license review, signing credentials, and release provenance remain gates.
 
 ## Dependency hygiene
 
@@ -18,15 +18,15 @@ Previously known item: the old dependency graph included `sprintf-js@1.1.3` thro
 
 ## Licenses and third-party notices
 
-CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY-LICENSE-INVENTORY.json` from the installed npm tree. The notices file is copied into the Windows application's resources and both generated files are retained with the Windows installer artifact. Electron's distribution license files, including Chromium's bundled HTML notices when present, are incorporated in the generated report.
+CI runs `npm run notices` to generate `THIRD-PARTY-NOTICES.txt` and `THIRD-PARTY-LICENSE-INVENTORY.json`. The notice text is scoped to the production dependency closure plus the packaged Electron binary; build-only dependencies are inventoried separately so missing build-tool license texts do not falsely block an app that does not ship them. The Windows packaging flow stages Electron's exact distributable, extracts its `LICENSES.chromium.html`, includes that full text with a SHA-256 digest in the notices, and repackages the installer so the same notices file is in the installed app resources. Android builds embed the npm notice text and inventory as app assets.
 
-The inventory intentionally records packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
+The inventory intentionally records runtime packages whose license expression or text is missing/unclear instead of pretending the report is legally complete. Review `packagesRequiringManualReview` and every `unresolved` entry before production distribution. Build-only tooling review is recorded separately under `toolingPackagesRequiringManualReview` and `toolingUnresolved`. Also check notices/assets outside npm package roots. The generator is a technical inventory, not legal advice or a license approval.
 
-The project owner has not selected a project license; do not add a LICENSE file without owner approval. Required third-party notices and the owner-selected project license remain production-release gates.
+The root LICENSE applies MIT to original project code the copyright holder is entitled to license. It does not change third-party component licenses. Confirm contribution/copyright ownership and resolve every outstanding runtime notice review before distributing a public release.
 
 ## Release gate
 
-No public production release until vulnerability triage, owner-approved project licensing, third-party notices, and retained release provenance are complete. The current Windows installer is unsigned, and signing/updater verification is not implemented.
+No public production release until vulnerability triage, runtime third-party license review, exact Electron/Chromium notices, signing and retained release provenance are complete. A tag-triggered signed draft-release workflow is configured, but the CI artifact is still unsigned until owner-managed signing secrets are present. A production auto-updater is not implemented.
 
 
 ## Latest captured npm audit evidence — post-merge main, 2026-10-12
@@ -37,4 +37,4 @@ Post-merge [CI run 38242801756](https://github.com/Monupatel62/WoHo-Browser/acti
 
 The post-merge SBOM resolves `electron-builder@26.15.3`, `app-builder-lib@26.15.3`, `dmg-builder@26.15.3`, `@electron/get@5.1.0`, and `tar@7.5.22`. It no longer includes `sprintf-js`, `roarr`, or `global-agent`, which removes the affected dependency chain from the current build toolchain. The stricter CI audit now fails on any moderate-or-higher finding so this risk cannot silently recur on future lockfile changes.
 
-The upstream `sprintf-js` advisory itself remains unpatched; it is not present in the project's current resolved dependency tree. Re-review on each dependency update. License inventory, required third-party notices, owner-approved project license, installer signing, and retained release provenance remain separate release gates.
+The upstream `sprintf-js` advisory itself remains unpatched; it is not present in the project's current resolved dependency tree. Re-review on each dependency update. Third-party license inventory review, exact bundled notices, installer signing, and retained release provenance remain separate release gates; the project-owned-code license selection is recorded in ADR-0005.

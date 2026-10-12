@@ -50,6 +50,8 @@ jobs:
         run: npm run notices
       - name: Test third-party license notice generation
         run: npm run test:notices
+      - name: Test release legal preflight gates
+        run: npm run test:release-gates
       - name: Test Web companion bookmark validation
         run: npm run test:web
       - name: Build and validate Web companion
@@ -145,6 +147,22 @@ jobs:
           gradle-version: '8.9'
       - name: Run Android unit tests and debug build
         run: gradle -p android --no-build-cache --rerun-tasks clean testDebugUnitTest assembleDebug --stacktrace
+      - name: Assert release packaging refuses missing signing credentials
+        shell: bash
+        run: |
+          set +e
+          output="$(gradle -p android bundleRelease 2>&1)"
+          status=$?
+          set -e
+          printf '%s\\n' "$output"
+          if [[ $status -eq 0 ]]; then
+            echo "::error::Android release packaging succeeded without a signing keystore."
+            exit 1
+          fi
+          if ! grep -Fq 'Release packaging requires ANDROID_KEYSTORE_PATH' <<< "$output"; then
+            echo "::error::Release task failed for a reason other than the expected missing-signing guard."
+            exit 1
+          fi
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v7
         with:

@@ -33,12 +33,13 @@ Required checks should include:
 - [ ] No known critical/high issue is left unexplained and accepted.
 - [ ] Security and privacy review completed.
 - [ ] Installer and uninstaller tested on a clean supported Windows environment.
-- [ ] Update package signature/integrity verification tested.
+- [ ] Signed draft-release workflow passes with a trusted Windows certificate and owner-controlled Android keystore; Authenticode, APK/AAB signature verification, and SHA-256 manifests match the release artifacts.
+- [ ] Update package signature/integrity verification tested; a production updater is not implemented yet.
 - [ ] User data migration and rollback/recovery tested.
 - [ ] License notices included.
 - [ ] Download size and minimum system requirements documented.
 - [ ] Known limitations published.
-- [ ] Release artifact checksum and provenance recorded. CI generates `release/SHA256SUMS.txt` for the unsigned Windows installer; retain it with the matching workflow run and artifact.
+- [ ] Release artifact checksum and provenance recorded. CI generates `release/SHA256SUMS.txt` for the unsigned Windows test installer. The tag-triggered signed draft-release workflow generates fresh checksums for signed artifacts; retain those with the matching workflow run and artifact.
 
 ## Incident and rollback
 Document how to stop a release, disable a broken update channel, publish a fixed build, communicate an incident, and preserve relevant evidence. Do not store signing keys in the repository or CI logs.

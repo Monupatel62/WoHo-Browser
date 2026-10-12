@@ -118,6 +118,8 @@ export async function collectInstalledPackages(nodeModulesRoot) {
         version: typeof manifest.version === 'string' ? manifest.version : 'unknown',
         path: relativePackageDirectory,
         declaredLicense: declaredLicense(manifest.license),
+        dependencies: manifest.dependencies && typeof manifest.dependencies === 'object' ? manifest.dependencies : {},
+        optionalDependencies: manifest.optionalDependencies && typeof manifest.optionalDependencies === 'object' ? manifest.optionalDependencies : {},
         licenseFiles: files,
       });
     }
@@ -134,9 +136,9 @@ export function renderNotices(project, packages) {
     `THIRD-PARTY NOTICES — ${project.name} ${project.version}`,
     '',
     'This file is generated from the installed npm dependency tree. It is a starting point for license review, not a legal opinion or a declaration that every distribution obligation has been satisfied.',
-    'Review the accompanying THIRD-PARTY-LICENSE-INVENTORY.json and resolve every missing/unclear license or notice before public distribution.',
+    'Review runtime-package entries in THIRD-PARTY-LICENSE-INVENTORY.json and resolve every missing/unclear shipped license or notice before public distribution. Build-only packages are tracked separately in the inventory.',
     '',
-    `Installed npm packages inventoried: ${packages.length}`,
+    `Runtime npm/Electron packages inventoried: ${packages.length}`,
     '',
   ];
 
@@ -167,46 +169,94 @@ export function renderNotices(project, packages) {
   return sections.join('\n');
 }
 
-export function buildInventory(packages) {
-  const unresolved = [];
-  for (const item of packages) {
-    const hasEmbeddedText = item.licenseFiles.some((file) => file.text !== null);
-    const skippedFiles = item.licenseFiles.filter((file) => file.text === null).map((file) => ({
-      path: file.path,
-      reason: file.skippedReason,
-    }));
-    if (!item.declaredLicense || !hasEmbeddedText || skippedFiles.length > 0) {
-      unresolved.push({
-        name: item.name,
-        version: item.version,
-        path: item.path,
-        declaredLicense: item.declaredLicense || null,
-        licenseFiles: item.licenseFiles.map((file) => file.path),
-        missingOrSkippedTextFiles: skippedFiles,
-        reviewReason: [
-          !item.declaredLicense ? 'No license expression in package.json' : null,
-          !hasEmbeddedText ? 'No readable recognized license text file' : null,
-          skippedFiles.length > 0 ? 'One or more legal files were not embedded' : null,
-        ].filter(Boolean),
-      });
+export function releaseRelevantPackages(project, installedPackages) {
+  const requiredNames = new Set([
+    ...Object.keys(project.dependencies || {}),
+    // Electron is a build dependency in package.json but its runtime binary ships with the app.
+    'electron',
+  ]);
+  const queue = [...requiredNames];
+  while (queue.length > 0) {
+    const name = queue.shift();
+    for (const item of installedPackages.filter((candidate) => candidate.name === name)) {
+      // The npm "electron" package is an install-time downloader/extractor wrapper.
+      // Its own dependencies are build tooling, not application runtime dependencies.
+      // The Electron binary and its exact Chromium notice are reviewed separately.
+      if (item.name === 'electron') continue;
+      for (const dependencyName of Object.keys({
+        ...(item.dependencies || {}),
+        ...(item.optionalDependencies || {}),
+      })) {
+        if (!requiredNames.has(dependencyName)) {
+          requiredNames.add(dependencyName);
+          queue.push(dependencyName);
+        }
+      }
     }
   }
+  return installedPackages.filter((item) => requiredNames.has(item.name));
+}
+
+function reviewPackage(item) {
+  const hasEmbeddedText = item.licenseFiles.some((file) => file.text !== null);
+  const skippedFiles = item.licenseFiles.filter((file) => file.text === null).map((file) => ({
+    path: file.path,
+    reason: file.skippedReason,
+  }));
+  if (item.declaredLicense && hasEmbeddedText && skippedFiles.length === 0) return null;
+  return {
+    name: item.name,
+    version: item.version,
+    path: item.path,
+    declaredLicense: item.declaredLicense || null,
+    licenseFiles: item.licenseFiles.map((file) => file.path),
+    missingOrSkippedTextFiles: skippedFiles,
+    reviewReason: [
+      !item.declaredLicense ? 'No license expression in package.json' : null,
+      !hasEmbeddedText ? 'No readable recognized license text file' : null,
+      skippedFiles.length > 0 ? 'One or more legal files were not embedded' : null,
+    ].filter(Boolean),
+  };
+}
+
+export function buildInventory(packages, runtimePackages = packages) {
+  const allReviews = packages.map(reviewPackage).filter(Boolean);
+  const runtimePaths = new Set(runtimePackages.map((item) => item.path));
+  const runtimeReviews = allReviews.filter((item) => runtimePaths.has(item.path));
+  const electronChromiumNoticeIncluded = Boolean(runtimePackages
+    .find((item) => item.name === 'electron')
+    ?.licenseFiles.some((file) => /LICENSES?\.chromium\.html$/i.test(file.path) && file.text !== null));
   return {
     format: 'woho-third-party-license-inventory',
     version: 1,
-    generatedFrom: 'installed node_modules package manifests and legal text files',
+    generatedFrom: 'installed npm manifests; runtime notice scope is the production dependency closure plus the packaged Electron binary',
     generatedAt: new Date().toISOString(),
     packageCount: packages.length,
+    runtimePackageCount: runtimePackages.length,
     packagesWithDeclaredLicense: packages.filter((item) => Boolean(item.declaredLicense)).length,
     packagesWithReadableLicenseText: packages.filter((item) => item.licenseFiles.some((file) => file.text !== null)).length,
-    packagesRequiringManualReview: unresolved.length,
-    unresolved,
+    packagesRequiringManualReview: runtimeReviews.length,
+    unresolved: runtimeReviews,
+    toolingPackagesRequiringManualReview: allReviews.filter((item) => !runtimePaths.has(item.path)).length,
+    toolingUnresolved: allReviews.filter((item) => !runtimePaths.has(item.path)),
+    requiredBundledNotices: {
+      electronChromiumHtmlIncluded: electronChromiumNoticeIncluded,
+    },
+    runtimePackages: runtimePackages.map((item) => ({
+      name: item.name,
+      version: item.version,
+      path: item.path,
+      declaredLicense: item.declaredLicense || null,
+      licenseFiles: item.licenseFiles.map((file) => file.path),
+    })),
     packages: packages.map((item) => ({
       name: item.name,
       version: item.version,
       path: item.path,
       declaredLicense: item.declaredLicense || null,
       licenseFiles: item.licenseFiles.map((file) => file.path),
+      dependencies: item.dependencies || {},
+      optionalDependencies: item.optionalDependencies || {},
     })),
   };
 }
@@ -220,14 +270,26 @@ export async function generateNotices(root = rootDir) {
   const packages = await collectInstalledPackages(nodeModulesRoot);
   if (packages.length === 0) throw new Error('No installed npm packages were found; run npm ci first.');
 
-  const notices = renderNotices(project, packages);
-  const inventory = buildInventory(packages);
+  const runtimePackages = releaseRelevantPackages(project, packages);
+  if (runtimePackages.length === 0) throw new Error('No shipped runtime packages could be resolved from package.json.');
+  const notices = renderNotices(project, runtimePackages);
+  const inventory = buildInventory(packages, runtimePackages);
   await writeFile(path.join(root, 'THIRD-PARTY-NOTICES.txt'), notices + (notices.endsWith('\n') ? '' : '\n'), 'utf8');
   await writeFile(path.join(root, 'THIRD-PARTY-LICENSE-INVENTORY.json'), JSON.stringify(inventory, null, 2) + '\n', 'utf8');
 
   const electron = packages.find((item) => item.name === 'electron');
   const chromiumNotice = electron?.licenseFiles.find((file) => /LICENSES?\.chromium\.html$/i.test(file.path));
-  process.stdout.write(`Generated third-party notices for ${packages.length} packages. Manual license review required for ${inventory.packagesRequiringManualReview} package(s).\n`);
+  process.stdout.write(`Generated third-party notices for ${packages.length} packages. Manual license review required for ${inventory.packagesRequiringManualReview} shipped runtime package(s); tooling-only review items: ${inventory.toolingPackagesRequiringManualReview}.\n`);
+  if (inventory.unresolved.length > 0) {
+    process.stdout.write('Runtime license items requiring review:\n' + inventory.unresolved
+      .map((item) => `- ${item.name}@${item.version}: ${item.reviewReason.join('; ')}`)
+      .join('\n') + '\n');
+  }
+  if (inventory.toolingUnresolved.length > 0) {
+    process.stdout.write('Build-tooling license items (not shipped as application dependencies):\n' + inventory.toolingUnresolved
+      .map((item) => `- ${item.name}@${item.version}: ${item.reviewReason.join('; ')}`)
+      .join('\\n') + '\\n');
+  }
   if (chromiumNotice?.text !== null && chromiumNotice?.text !== undefined) {
     process.stdout.write('Electron/Chromium bundled third-party notice file was included.\n');
   } else if (chromiumNotice) {
