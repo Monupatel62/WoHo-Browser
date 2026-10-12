@@ -148,7 +148,7 @@ internal object LocalRecordsPolicy {
         }
 
         private fun skipWhitespace() {
-            while (index < source.length && source[index] in charArrayOf(' ', '\\t', '\\n', '\\r')) index++
+            while (index < source.length && source[index] in charArrayOf(' ', '\t', '\n', '\r')) index++
         }
     }
 }
