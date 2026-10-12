@@ -344,7 +344,7 @@ class MainActivity : Activity() {
     private fun showCorruptRecordsWarning(key: String) {
         AlertDialog.Builder(this)
             .setTitle("Saved data needs recovery")
-            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Export a raw backup before clearing app storage.")
+            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Export a raw backup before clearing the damaged store.")
             .setNeutralButton("Export raw backup") { _, _ -> exportCorruptRecords(key) }
             .setNegativeButton("Clear damaged data") { _, _ -> confirmClearCorruptRecords(key) }
             .setPositiveButton("OK", null)
