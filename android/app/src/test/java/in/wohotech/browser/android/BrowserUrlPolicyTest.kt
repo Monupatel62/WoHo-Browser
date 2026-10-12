@@ -15,6 +15,12 @@ class BrowserUrlPolicyTest {
         assertFalse(BrowserUrlPolicy.isAllowedUrl("https://user:pass@example.com"))
         assertFalse(BrowserUrlPolicy.isAllowedUrl("https:///missing-host"))
     }
+    @Test fun historySanitizationRemovesQueryAndFragmentSecrets() {
+        assertEquals("https://example.com/path", BrowserUrlPolicy.sanitizeHistoryUrl("https://example.com/path?access_token=secret#section"))
+        assertEquals("http://localhost:8080/path", BrowserUrlPolicy.sanitizeHistoryUrl("http://localhost:8080/path?debug=1#top"))
+        assertNull(BrowserUrlPolicy.sanitizeHistoryUrl("javascript:alert(1)"))
+        assertNull(BrowserUrlPolicy.sanitizeHistoryUrl("https://user:pass@example.com/path?token=secret"))
+    }
     @Test fun normalizesHostsAndSearchQueries() {
         assertEquals("https://example.com", BrowserUrlPolicy.normalizeAddressInput("example.com"))
         assertEquals("https://www.google.com/search?q=hello%20world", BrowserUrlPolicy.normalizeAddressInput("hello world"))
