@@ -142,3 +142,8 @@ This pass inspected the current CI/dependency policy, navigation policy, trusted
 - [ ] Run clean-machine Windows install, use, restart, upgrade, and uninstall tests; retain results tied to a commit and installer checksum.
 - [ ] Resolve release-owner decisions for signing/updating, licensing/notices, and vulnerability reporting.
 - [ ] Continue auditing all remaining source, tests, docs, and dependency paths; do not mark the project complete solely because CI is green.
+
+
+## Dependency audit evidence clarification — 2026-10-12
+
+Reviewing the uploaded dependency evidence artifact from CI run `38156190168` showed that the issue is broader than the previously named `sprintf-js` advisory: npm reports **8 moderate vulnerability entries**. The resolved build toolchain is `electron-builder@26.17.0`, `app-builder-lib@26.17.0`, `dmg-builder@26.17.0`, nested `@electron/get@3.1.0`, `global-agent@3.0.0`, `roarr@2.15.4`, and `sprintf-js@1.1.3`. npm proposes `electron-builder@26.5.0` as a downgrade-based fix. This recommendation has not been applied; verify the resulting complete dependency graph and full Windows build checks before considering it. A registry command timeout is inconclusive. Keep the build-tool risk open and do not describe the toolchain as vulnerability-free.
