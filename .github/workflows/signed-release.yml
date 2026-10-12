@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*'
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: signed-release-${{ github.ref }}
   cancel-in-progress: false
@@ -20,6 +20,17 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+      - name: Set package version from release tag
+        shell: bash
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag must be vMAJOR.MINOR.PATCH (optional prerelease suffix)."
+            exit 1
+          fi
+          npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version --ignore-scripts
       - name: Install locked dependencies
         run: npm ci
       - name: Enforce production dependency audit
@@ -46,9 +57,6 @@ jobs:
     name: Sign and verify Windows installer
     needs: legal-preflight
     runs-on: windows-latest
-    env:
-      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
@@ -58,6 +66,9 @@ jobs:
           node-version: 24
       - name: Require Windows signing secrets
         shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: |
           if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
             throw 'Set WIN_CSC_LINK (base64 PFX) and WIN_CSC_KEY_PASSWORD in repository Actions secrets before creating a release tag.'
@@ -68,21 +79,67 @@ jobs:
         run: |
           npm run notices
           npm run verify:release-legal
-      - name: Package signed Windows installer with Chromium notices
-        run: npm run package:win
-      - name: Re-check packaged Windows legal notices
+      - name: Build browser application (without signing credentials)
+        run: npm run build
+      - name: Package and sign the staged Windows application
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: npx electron-builder --win --dir --publish never
+      - name: Merge exact packaged Chromium notices
+        run: node scripts/merge-electron-chromium-notices.mjs
+      - name: Verify staged application and bundled notices
         run: npm run verify:release-legal -- --require-chromium
-      - name: Verify installer Authenticode signatures
+      - name: Verify packaged Electron fuses
         shell: pwsh
         run: |
+          $app = Get-ChildItem release/win-unpacked -Filter *.exe -File | Where-Object { $_.Name -notmatch 'uninstaller' } | Select-Object -First 1
+          if (-not $app) { throw 'Could not find the packaged WoHo Browser executable.' }
+          $output = npx --yes @electron/fuses read --app $app.FullName 2>&1
+          $output | Set-Content -Path release/electron-fuses.txt -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read Electron fuses from the packaged executable.' }
+          $report = $output -join "`n"
+          $checks = @(
+            @{ Name = 'RunAsNode'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableCookieEncryption'; State = '(true|enabled|on)' },
+            @{ Name = 'EnableNodeOptionsEnvironmentVariable'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableNodeCliInspectArguments'; State = '(false|disabled|off)' },
+            @{ Name = 'EnableEmbeddedAsarIntegrityValidation'; State = '(true|enabled|on)' },
+            @{ Name = 'OnlyLoadAppFromAsar'; State = '(true|enabled|on)' },
+            @{ Name = 'GrantFileProtocolExtraPrivileges'; State = '(false|disabled|off)' }
+          )
+          foreach ($check in $checks) {
+            if ($report -notmatch ("(?i)" + [regex]::Escape($check.Name) + ".{0,50}" + $check.State)) {
+              throw "Expected Electron fuse $($check.Name) to be $($check.State), but the packaged binary did not report that state."
+            }
+          }
+      - name: Build signed NSIS installer from verified application image
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: npx electron-builder --win nsis --prepackaged release/win-unpacked --publish never
+      - name: Re-check packaged Windows legal notices
+        run: npm run verify:release-legal -- --require-chromium
+      - name: Verify Windows Authenticode signatures
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem release/win-unpacked -Filter *.exe -File | Where-Object { $_.Name -notmatch 'uninstaller' } | Select-Object -First 1
+          if (-not $app) { throw 'No packaged WoHo Browser executable was found.' }
+          $appSignature = Get-AuthenticodeSignature $app.FullName
+          if ($appSignature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
+            throw "Invalid or missing Authenticode signature for app: $($app.Name) — $($appSignature.Status)"
+          }
           $installers = Get-ChildItem release -Filter *.exe -File
           if (-not $installers) { throw 'No Windows installer was produced.' }
-          $evidence = foreach ($installer in $installers) {
+          $evidence = @("$($app.Name): Status=$($appSignature.Status); Subject=$($appSignature.SignerCertificate.Subject); Thumbprint=$($appSignature.SignerCertificate.Thumbprint)")
+          foreach ($installer in $installers) {
             $signature = Get-AuthenticodeSignature $installer.FullName
             if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
               throw "Invalid or missing Authenticode signature: $($installer.Name) — $($signature.Status)"
             }
-            "$($installer.Name): Status=$($signature.Status); Subject=$($signature.SignerCertificate.Subject); Thumbprint=$($signature.SignerCertificate.Thumbprint)"
+            $evidence += "$($installer.Name): Status=$($signature.Status); Subject=$($signature.SignerCertificate.Subject); Thumbprint=$($signature.SignerCertificate.Thumbprint)"
           }
           $evidence | Set-Content -Path release/signing-evidence.txt -Encoding utf8
       - name: Generate signed artifact checksums and stage release files
@@ -109,11 +166,6 @@ jobs:
     name: Sign and verify Android APK and AAB
     needs: legal-preflight
     runs-on: ubuntu-latest
-    env:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
@@ -122,6 +174,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Set package version from release tag
+        shell: bash
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag must be vMAJOR.MINOR.PATCH (optional prerelease suffix)."
+            exit 1
+          fi
+          npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version --ignore-scripts
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -138,6 +205,11 @@ jobs:
           gradle-version: '8.9'
       - name: Require Android signing secrets and create temporary keystore
         shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
@@ -157,16 +229,18 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp THIRD-PARTY-NOTICES.txt android/app/src/main/assets/THIRD-PARTY-NOTICES.txt
           cp THIRD-PARTY-LICENSE-INVENTORY.json android/app/src/main/assets/THIRD-PARTY-LICENSE-INVENTORY.json
+      - name: Run Android unit tests without signing credentials
+        run: gradle -p android clean testDebugUnitTest
       - name: Build signed Android release APK and AAB
         shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Release tag must be vMAJOR.MINOR.PATCH (optional prerelease suffix)."
-            exit 1
-          fi
-          gradle -p android clean testDebugUnitTest bundleRelease assembleRelease             "-PreleaseVersionName=$version" "-PreleaseVersionCode=$GITHUB_RUN_NUMBER"
+          gradle -p android bundleRelease assembleRelease "-PreleaseVersionName=$version" "-PreleaseVersionCode=$GITHUB_RUN_NUMBER"
       - name: Verify Android release signatures and stage checksums
         shell: bash
         run: |
@@ -195,6 +269,9 @@ jobs:
     name: Assemble draft release for human review
     needs: [legal-preflight, windows, android]
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
     steps:
       - name: Download signed Windows files
         uses: actions/download-artifact@v7
