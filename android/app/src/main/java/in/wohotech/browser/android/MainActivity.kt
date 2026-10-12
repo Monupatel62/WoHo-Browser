@@ -346,7 +346,23 @@ class MainActivity : Activity() {
             .setTitle("Saved data needs recovery")
             .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Export a raw backup before clearing app storage.")
             .setNeutralButton("Export raw backup") { _, _ -> exportCorruptRecords(key) }
+            .setNegativeButton("Clear damaged data") { _, _ -> confirmClearCorruptRecords(key) }
             .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun confirmClearCorruptRecords(key: String) {
+        if (LocalRecordsPolicy.recoveryBackupFileName(key) == null || key !in corruptRecordKeys) return
+        AlertDialog.Builder(this)
+            .setTitle("Delete unreadable saved data?")
+            .setMessage("This removes only the damaged $key store from this device. Export a raw backup first if you may need it. This action cannot be undone.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete data") { _, _ ->
+                preferences.edit().remove(key).apply()
+                corruptRecordKeys.remove(key)
+                if (key == "bookmarks") updateActiveBookmarkButton()
+                Toast.makeText(this, "Damaged $key data cleared from this device.", Toast.LENGTH_LONG).show()
+            }
             .show()
     }
 
