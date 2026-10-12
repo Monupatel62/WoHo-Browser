@@ -147,3 +147,18 @@ This pass inspected the current CI/dependency policy, navigation policy, trusted
 ## Dependency audit evidence clarification — 2026-10-12
 
 Reviewing the uploaded dependency evidence artifact from CI run `38156190168` showed that the issue is broader than the previously named `sprintf-js` advisory: npm reports **8 moderate vulnerability entries**. The resolved build toolchain is `electron-builder@26.17.0`, `app-builder-lib@26.17.0`, `dmg-builder@26.17.0`, nested `@electron/get@3.1.0`, `global-agent@3.0.0`, `roarr@2.15.4`, and `sprintf-js@1.1.3`. npm proposes `electron-builder@26.5.0` as a downgrade-based fix. This recommendation has not been applied; verify the resulting complete dependency graph and full Windows build checks before considering it. A registry command timeout is inconclusive. Keep the build-tool risk open and do not describe the toolchain as vulnerability-free.
+
+
+## Fresh-main security verification — 2026-10-12
+
+This supersedes the earlier current-main reference to `8e5998c324062bcf3e6758645c260cbd2801fcdb`; that SHA remains historical evidence.
+
+- **Main commit reviewed:** `39a4a33317e515c317fd2074c50268749a90610c`.
+- **Windows CI:** [38225187086](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38225187086) passed.
+- **CodeQL:** [38225187059](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38225187059) passed.
+- **Secret scanning:** [38225187057](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38225187057) passed.
+- PR #115 fixed a trust-validation inconsistency by rejecting username/password userinfo in the exact `woho://browser/index.html` renderer URL check and in the custom-protocol handler. Credential-bearing custom renderer URL regression tests were added; exact-head CI, CodeQL, and secret scanning passed before merge.
+- The build-tool dependency risk remains open: the captured audit report contains eight moderate findings; see the dependency policy's 2026-10-12 evidence section. The failed Vite 8 Dependabot PR #113 was closed without merging because `npm ci` failed on the declared `electron-vite@5` peer range.
+- PR #112's Android/Web companion foundation remains open and is under further review. Its newest commits add Android history URL redaction/migration, safe download filename handling, and host:port address parsing; do not merge until those exact-head CI, CodeQL, and secret-scan checks pass.
+
+Automated checks above are tied to the named main commit. They do not replace the open manual Windows install/uninstall and platform compatibility gates. This is still a targeted audit, not a declaration that all files and requirements have been fully audited.
