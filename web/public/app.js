@@ -35,6 +35,9 @@ fileInput.addEventListener('change', async () => {
     status.textContent = 'Loaded ' + bookmarks.length + ' bookmark(s). This file was processed locally; no upload was made.';
   } catch (error) {
     status.textContent = 'Import failed: ' + (error instanceof Error ? error.message : 'Invalid bookmark file.');
+  } finally {
+    // Reset so the same file can be selected again after a failed or successful import.
+    fileInput.value = '';
   }
 });
 exportButton.addEventListener('click', () => {
