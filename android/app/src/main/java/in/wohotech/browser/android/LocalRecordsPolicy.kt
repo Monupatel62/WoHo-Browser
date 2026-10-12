@@ -14,10 +14,6 @@ internal object LocalRecordsPolicy {
 
         return try {
             if (!StrictJsonValidator(input).validateTopLevelArray()) null else {
-                // Android's local unit-test android.jar has stubbed org.json methods.
-                // Build the result through the array constructor only on device/runtime;
-                // tests still need to exercise production behavior, so this approach is
-                // replaced below by a strict parse result that is independent of stubs.
                 val canonical = input.substring(1, input.length - 1).let { "[$it]" }
                 JSONArray(canonical)
             }
