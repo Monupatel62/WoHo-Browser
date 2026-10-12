@@ -1,6 +1,7 @@
 package `in`.wohotech.browser.android
 
 import org.json.JSONArray
+import java.io.OutputStream
 
 /** Parsing boundary for user-owned bookmark/history preferences. Null means preserve, do not replace. */
 internal object LocalRecordsPolicy {
@@ -28,6 +29,10 @@ internal object LocalRecordsPolicy {
         } catch (_: Exception) {
             null
         }
+    }
+
+    internal fun writeRawBackup(raw: String, output: OutputStream) {
+        output.use { it.write(raw.toByteArray(Charsets.UTF_8)) }
     }
 
     internal fun recoveryBackupFileName(key: String): String? = when (key) {
