@@ -68,8 +68,10 @@ jobs:
         run: |
           npm run notices
           npm run verify:release-legal
-      - name: Package signed Windows installer
+      - name: Package signed Windows installer with Chromium notices
         run: npm run package:win
+      - name: Re-check packaged Windows legal notices
+        run: npm run verify:release-legal -- --require-chromium
       - name: Verify installer Authenticode signatures
         shell: pwsh
         run: |
@@ -178,8 +180,9 @@ jobs:
           mkdir -p android-release-bundle
           cp "$aab" "$apk" android-release-bundle/
           cp android-aab-signature-verification.txt android-apk-signature-verification.txt android-release-bundle/
-          cp THIRD-PARTY-NOTICES.txt THIRD-PARTY-LICENSE-INVENTORY.json android-release-bundle/
-          (cd android-release-bundle && sha256sum app-release.aab app-release.apk THIRD-PARTY-NOTICES.txt THIRD-PARTY-LICENSE-INVENTORY.json > SHA256SUMS.txt)
+          cp THIRD-PARTY-NOTICES.txt android-release-bundle/Android-THIRD-PARTY-NOTICES.txt
+          cp THIRD-PARTY-LICENSE-INVENTORY.json android-release-bundle/Android-THIRD-PARTY-LICENSE-INVENTORY.json
+          (cd android-release-bundle && sha256sum app-release.aab app-release.apk Android-THIRD-PARTY-NOTICES.txt Android-THIRD-PARTY-LICENSE-INVENTORY.json > SHA256SUMS.txt)
       - name: Upload signed Android release files
         uses: actions/upload-artifact@v7
         with:
