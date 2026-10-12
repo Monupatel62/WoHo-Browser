@@ -12,3 +12,7 @@ Thumbs.db
 android/.gradle/
 android/**/build/
 android/local.properties
+
+# Generated dependency license outputs
+THIRD-PARTY-NOTICES.txt
+THIRD-PARTY-LICENSE-INVENTORY.json
