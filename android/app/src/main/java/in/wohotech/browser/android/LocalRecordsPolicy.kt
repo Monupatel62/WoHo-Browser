@@ -1,6 +1,7 @@
 package `in`.wohotech.browser.android
 
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.OutputStream
 
 /** Parsing boundary for user-owned bookmark/history preferences. Null means preserve, do not replace. */
@@ -31,8 +32,46 @@ internal object LocalRecordsPolicy {
         }
     }
 
+    internal fun recoveryBackupContent(key: String, storedValue: Any?): ByteArray? {
+        if (recoveryBackupFileName(key) == null || storedValue == null) return null
+        if (storedValue is String) return storedValue.toByteArray(Charsets.UTF_8)
+
+        val type: String
+        val value: Any
+        when (storedValue) {
+            is Set<*> -> {
+                if (storedValue.any { it !is String }) return null
+                type = "StringSet"
+                value = JSONArray(storedValue.filterIsInstance<String>().sorted())
+            }
+            is Boolean -> { type = "Boolean"; value = storedValue }
+            is Int -> { type = "Int"; value = storedValue }
+            is Long -> { type = "Long"; value = storedValue }
+            is Float -> {
+                if (!storedValue.isFinite()) return null
+                type = "Float"
+                value = storedValue
+            }
+            else -> return null
+        }
+
+        // SharedPreferences does not expose original serialized bytes for non-String values.
+        // Export a type-tagged representation instead of claiming byte-for-byte recovery.
+        return JSONObject()
+            .put("format", "woho-browser-preference-recovery")
+            .put("key", key)
+            .put("valueType", type)
+            .put("value", value)
+            .toString()
+            .toByteArray(Charsets.UTF_8)
+    }
+
     internal fun writeRawBackup(raw: String, output: OutputStream) {
-        output.use { it.write(raw.toByteArray(Charsets.UTF_8)) }
+        writeBackupContent(raw.toByteArray(Charsets.UTF_8), output)
+    }
+
+    internal fun writeBackupContent(content: ByteArray, output: OutputStream) {
+        output.use { it.write(content) }
     }
 
     internal fun recoveryBackupFileName(key: String): String? = when (key) {
