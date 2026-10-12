@@ -26,4 +26,17 @@ class LocalRecordsPolicyTest {
     @Test fun rejectsOversizedJson() {
         assertNull(LocalRecordsPolicy.parseRecords(" ".repeat(LocalRecordsPolicy.MAX_RECORDS_JSON_CHARS + 1)))
     }
+    @Test fun rejectsNonObjectRecordsAndMissingUrls() {
+        assertNull(LocalRecordsPolicy.parseRecords("""[null]"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""["https://example.com"]"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""[{}]"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"title":"missing URL"}]"""))
+    }
+
+    @Test fun rejectsUnsafeOrNonStringRecordUrlsWithoutReturningAReplacement() {
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"url":7}]"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"url":"javascript:alert(1)"}]"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"url":"https://user:pass@example.com/"}]"""))
+    }
+
 }

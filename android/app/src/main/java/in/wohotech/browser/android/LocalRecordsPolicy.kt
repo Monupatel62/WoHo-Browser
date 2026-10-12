@@ -15,7 +15,15 @@ internal object LocalRecordsPolicy {
         return try {
             if (!StrictJsonValidator(input).validateTopLevelArray()) null else {
                 val canonical = input.substring(1, input.length - 1).let { "[$it]" }
-                JSONArray(canonical)
+                val records = JSONArray(canonical)
+                // Never silently drop a malformed record during the next save.
+                // Invalid shapes or unsafe URLs make the whole store read-only for recovery.
+                for (index in 0 until records.length()) {
+                    val record = records.optJSONObject(index) ?: return null
+                    val rawUrl = record.opt("url") as? String ?: return null
+                    if (!BrowserUrlPolicy.isAllowedUrl(rawUrl)) return null
+                }
+                records
             }
         } catch (_: Exception) {
             null
