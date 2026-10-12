@@ -304,12 +304,12 @@ class MainActivity : Activity() {
     private fun readRecords(key: String): org.json.JSONArray {
         if (key in corruptRecordKeys) return org.json.JSONArray()
         val raw = preferences.getString(key, "[]") ?: "[]"
-        if (raw.length > 2_000_000) {
+        val parsed = LocalRecordsPolicy.parseRecords(raw)
+        if (parsed == null) {
             corruptRecordKeys.add(key)
             return org.json.JSONArray()
         }
         return try {
-            val parsed = org.json.JSONArray(raw)
             val bounded = org.json.JSONArray()
             val start = (parsed.length() - 5000).coerceAtLeast(0)
             var historyNeedsRedaction = false
