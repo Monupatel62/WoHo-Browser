@@ -60,6 +60,6 @@ jobs:
           languages: java-kotlin
           build-mode: manual
       - name: Build Android project for CodeQL
-        run: gradle -p android testDebugUnitTest assembleDebug
+        run: gradle -p android :app:clean testDebugUnitTest assembleDebug --rerun-tasks
       - name: Analyze Kotlin
         uses: github/codeql-action/analyze@v4
