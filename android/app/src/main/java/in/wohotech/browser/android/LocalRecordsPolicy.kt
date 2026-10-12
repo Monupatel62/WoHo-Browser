@@ -12,7 +12,9 @@ internal object LocalRecordsPolicy {
         return try {
             val tokener = JSONTokener(raw)
             val value = tokener.nextValue()
-            if (value !is JSONArray || tokener.nextClean() != '\u0000') null else value
+            val trailing = tokener.nextClean()
+            // org.json JSONTokener uses NUL to represent end-of-input.
+            if (value !is JSONArray || (trailing != '\u0000' && trailing.code != 0)) null else value
         } catch (_: Exception) {
             null
         }
