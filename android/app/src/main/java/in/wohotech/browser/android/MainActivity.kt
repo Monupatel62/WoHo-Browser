@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -303,7 +304,14 @@ class MainActivity : Activity() {
 
     private fun readRecords(key: String): org.json.JSONArray {
         if (key in corruptRecordKeys) return org.json.JSONArray()
-        val raw = preferences.getString(key, "[]") ?: "[]"
+        val raw = try {
+            preferences.getString(key, "[]") ?: "[]"
+        } catch (_: ClassCastException) {
+            // A corrupted or legacy value with the wrong SharedPreferences type
+            // must be treated as damaged data, not allowed to crash the browser.
+            corruptRecordKeys.add(key)
+            return org.json.JSONArray()
+        }
         val parsed = LocalRecordsPolicy.parseRecords(raw)
         if (parsed == null) {
             corruptRecordKeys.add(key)
@@ -341,9 +349,90 @@ class MainActivity : Activity() {
     private fun showCorruptRecordsWarning(key: String) {
         AlertDialog.Builder(this)
             .setTitle("Saved data needs recovery")
-            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Back up the app data before clearing storage.")
+            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Export a raw backup before clearing the damaged store.")
+            .setNeutralButton("Export raw backup") { _, _ -> exportCorruptRecords(key) }
+            .setNegativeButton("Clear damaged data") { _, _ -> confirmClearCorruptRecords(key) }
             .setPositiveButton("OK", null)
             .show()
+    }
+
+    private fun confirmClearCorruptRecords(key: String) {
+        if (LocalRecordsPolicy.recoveryBackupFileName(key) == null || key !in corruptRecordKeys) return
+        AlertDialog.Builder(this)
+            .setTitle("Delete unreadable saved data?")
+            .setMessage("This removes only the damaged $key store from this device. Export a raw backup first if you may need it. This action cannot be undone.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete data") { _, _ ->
+                preferences.edit().remove(key).apply()
+                corruptRecordKeys.remove(key)
+                if (key == "bookmarks") updateActiveBookmarkButton()
+                Toast.makeText(this, "Damaged $key data cleared from this device.", Toast.LENGTH_LONG).show()
+            }
+            .show()
+    }
+
+    private fun exportCorruptRecords(key: String) {
+        val filename = LocalRecordsPolicy.recoveryBackupFileName(key) ?: return
+        if (key !in corruptRecordKeys) return
+        val raw = try {
+            preferences.getString(key, null)
+        } catch (_: ClassCastException) {
+            null
+        }
+        if (raw == null) {
+            Toast.makeText(this, "The original saved data was unavailable for export.", Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                exportCorruptRecordsToDownloads(key, filename, raw)
+            } else {
+                shareCorruptRecordsBackup(filename, raw)
+            }
+        } catch (_: Exception) {
+            Toast.makeText(this, "Could not create the recovery backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun exportCorruptRecordsToDownloads(key: String, filename: String, raw: String) {
+        val values = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/json")
+            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "${android.os.Environment.DIRECTORY_DOWNLOADS}/WoHo Browser")
+            put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: throw IllegalStateException("Could not create a backup file in Downloads.")
+        try {
+            val output = contentResolver.openOutputStream(uri, "wt")
+                ?: throw IllegalStateException("Could not open the recovery backup file.")
+            LocalRecordsPolicy.writeRawBackup(raw, output)
+            val publish = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+            }
+            if (contentResolver.update(uri, publish, null, null) <= 0) {
+                throw IllegalStateException("Could not publish the recovery backup file.")
+            }
+            Toast.makeText(this, "Raw $key backup saved in Downloads/WoHo Browser. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+        } catch (error: Exception) {
+            runCatching { contentResolver.delete(uri, null, null) }
+            throw error
+        }
+    }
+
+    private fun shareCorruptRecordsBackup(filename: String, raw: String) {
+        val file = java.io.File(cacheDir, "recovery/$filename")
+        file.parentFile?.mkdirs()
+        LocalRecordsPolicy.writeRawBackup(raw, file.outputStream())
+        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = android.content.ClipData.newUri(contentResolver, filename, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(shareIntent, "Save recovery backup"))
+        Toast.makeText(this, "Choose an app to save the backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
