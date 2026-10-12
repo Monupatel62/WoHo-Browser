@@ -39,4 +39,10 @@ class LocalRecordsPolicyTest {
         assertNull(LocalRecordsPolicy.parseRecords("""[{"url":"https://user:pass@example.com/"}]"""))
     }
 
+    @Test fun recoveryBackupNamesAreRestrictedToKnownStores() {
+        assertEquals("woho-browser-bookmarks-recovery-backup.json", LocalRecordsPolicy.recoveryBackupFileName("bookmarks"))
+        assertEquals("woho-browser-history-recovery-backup.json", LocalRecordsPolicy.recoveryBackupFileName("history"))
+        assertNull(LocalRecordsPolicy.recoveryBackupFileName("unexpected"))
+    }
+
 }
