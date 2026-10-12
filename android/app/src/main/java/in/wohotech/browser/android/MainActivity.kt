@@ -41,6 +41,7 @@ class MainActivity : Activity() {
     private lateinit var bookmarkButton: Button
     private lateinit var securityStatus: android.widget.TextView
     private val preferences by lazy { getSharedPreferences("browser-local-data", Context.MODE_PRIVATE) }
+    private val corruptRecordKeys = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -228,6 +229,7 @@ class MainActivity : Activity() {
         val url = webView.url ?: return
         if (!BrowserUrlPolicy.isAllowedUrl(url)) return
         val bookmarks = readRecords("bookmarks")
+        if ("bookmarks" in corruptRecordKeys) { showCorruptRecordsWarning("bookmarks"); return }
         val existingIndex = (0 until bookmarks.length()).firstOrNull { bookmarks.optJSONObject(it)?.optString("url") == url }
         if (existingIndex != null) {
             val updated = org.json.JSONArray()
@@ -288,6 +290,7 @@ class MainActivity : Activity() {
         // that may contain signed links, search terms, or access tokens.
         val safeUrl = BrowserUrlPolicy.sanitizeHistoryUrl(url) ?: return
         val history = readRecords("history")
+        if ("history" in corruptRecordKeys) { showCorruptRecordsWarning("history"); return }
         if (history.length() > 0 && history.optJSONObject(history.length() - 1)?.optString("url") == safeUrl) return
         history.put(org.json.JSONObject().put("title", title.take(512)).put("url", safeUrl).put("visitedAt", System.currentTimeMillis()))
         val start = (history.length() - 500).coerceAtLeast(0)
@@ -297,8 +300,12 @@ class MainActivity : Activity() {
     }
 
     private fun readRecords(key: String): org.json.JSONArray {
+        if (key in corruptRecordKeys) return org.json.JSONArray()
         val raw = preferences.getString(key, "[]") ?: "[]"
-        if (raw.length > 2_000_000) return org.json.JSONArray()
+        if (raw.length > 2_000_000) {
+            corruptRecordKeys.add(key)
+            return org.json.JSONArray()
+        }
         return try {
             val parsed = org.json.JSONArray(raw)
             val bounded = org.json.JSONArray()
@@ -318,11 +325,23 @@ class MainActivity : Activity() {
             }
             // Migrate legacy history entries on read so old token-bearing URLs
             // are not left on disk after the privacy fix.
-            if (key == "history" && historyNeedsRedaction) {
+            if (key == "history" && historyNeedsRedaction && key !in corruptRecordKeys) {
                 preferences.edit().putString("history", bounded.toString()).apply()
             }
             bounded
-        } catch (_: Exception) { org.json.JSONArray() }
+        } catch (_: Exception) {
+            // Do not turn malformed saved data into an empty list that later writes can overwrite.
+            corruptRecordKeys.add(key)
+            org.json.JSONArray()
+        }
+    }
+
+    private fun showCorruptRecordsWarning(key: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Saved data needs recovery")
+            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Back up the app data before clearing storage.")
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
