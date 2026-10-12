@@ -43,7 +43,10 @@ export function evaluateReleaseLegalGates({ licenseExists, noticesExists, invent
 
 export async function verifyReleaseLegalGates(root = rootDir, { requireChromiumNotice = process.argv.includes('--require-chromium') } = {}) {
   const licenseExists = await exists(path.join(root, 'LICENSE'));
-  const noticesExists = await exists(path.join(root, 'THIRD-PARTY-NOTICES.txt'));
+  const noticesPath = path.join(root, 'THIRD-PARTY-NOTICES.txt');
+  const noticesExists = await exists(noticesPath);
+  let noticesText = null;
+  if (noticesExists) noticesText = await readFile(noticesPath, 'utf8');
   let inventory = null;
   try {
     inventory = JSON.parse(await readFile(path.join(root, 'THIRD-PARTY-LICENSE-INVENTORY.json'), 'utf8'));
@@ -51,6 +54,26 @@ export async function verifyReleaseLegalGates(root = rootDir, { requireChromiumN
     // The errors below explain the missing or malformed inventory.
   }
   const errors = evaluateReleaseLegalGates({ licenseExists, noticesExists, inventory, requireChromiumNotice });
+  if (requireChromiumNotice && inventory && noticesText !== null) {
+    const digest = inventory.requiredBundledNotices?.sha256;
+    if (inventory.requiredBundledNotices?.electronChromiumHtmlIncluded !== true ||
+        typeof digest !== 'string' || !/^[a-f0-9]{64}$/i.test(digest) ||
+        !noticesText.includes('BEGIN ELECTRON/CHROMIUM LICENSES.chromium.html') ||
+        !noticesText.includes(`SHA-256: ${digest}`) ||
+        !noticesText.includes('END ELECTRON/CHROMIUM LICENSES.chromium.html')) {
+      errors.push('Third-party notice bundle is missing the verifiable Chromium-license appendix or matching SHA-256 evidence.');
+    }
+
+    const packagedNoticePath = path.join(root, 'release', 'win-unpacked', 'resources', 'THIRD-PARTY-NOTICES.txt');
+    try {
+      const packagedNotices = await readFile(packagedNoticePath, 'utf8');
+      if (noticesText !== packagedNotices) {
+        errors.push('Packaged Windows app resource THIRD-PARTY-NOTICES.txt does not exactly match the verified root notice bundle.');
+      }
+    } catch {
+      errors.push('Packaged Windows app resource THIRD-PARTY-NOTICES.txt is missing.');
+    }
+  }
   if (errors.length > 0) {
     process.stderr.write('Release legal preflight BLOCKED:\n' + errors.map((error) => `- ${error}`).join('\n') + '\n');
     return false;
