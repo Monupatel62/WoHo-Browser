@@ -162,3 +162,28 @@ This supersedes the earlier current-main reference to `8e5998c324062bcf3e6758645
 - PR #112's Android/Web companion foundation remains open and is under further review. Its newest commits add Android history URL redaction/migration, safe download filename handling, and host:port address parsing; do not merge until those exact-head CI, CodeQL, and secret-scan checks pass.
 
 Automated checks above are tied to the named main commit. They do not replace the open manual Windows install/uninstall and platform compatibility gates. This is still a targeted audit, not a declaration that all files and requirements have been fully audited.
+
+## Follow-up audit — 2026-10-12 (continuation)
+
+### Exact-head PR verification
+
+- PR #119 (`fix/android-preserve-corrupt-local-data`) remains open. The recorded Android CI run checked merge commit `e88e64495cb53ca5c49c48efeb031597ec86a2b7` / PR head `8cea7d769ffbcd18d671133fbd6dbbd91f190bfb`, not the current PR head `c273db806056863c7369d002735d81f14550d944`. Android tests failed: `LocalRecordsPolicyTest` reported 2 failures (`parsesValidArray`, `rejectsMalformedJsonWithoutReturningAnEmptyReplacement`). Kotlin CodeQL also failed because its build invokes the same unit-test task; JavaScript/TypeScript CodeQL passed and Gitleaks passed on that older run. These results are not exact-head clearance.
+- PR #120 adds stricter JSON token validation and extends tests for malformed, non-array, trailing-content, and oversized records. It also makes Android SDK license acceptance explicit in CI and Kotlin CodeQL workflows. As of this audit pass, the connector exposes no status/workflow result for its latest head `26d7ee461270f4837b17ee6ba9583cf2bfe35066`. Keep it open until exact-head Android tests/build, Windows CI, CodeQL, and Gitleaks report success.
+- PR #121 proposes `android:usesCleartextTraffic="false"` after the main manifest was found to allow cleartext traffic globally. This must be tested on supported Android/WebView versions because the product currently permits HTTP addresses. Do not merge until the HTTP compatibility decision and test results are documented.
+
+### Additional verified security and release findings
+
+- **Android cleartext policy:** main's `AndroidManifest.xml` sets `usesCleartextTraffic="true"`, while `BrowserUrlPolicy` accepts both HTTP and HTTPS. TLS errors are cancelled and WebView mixed content is blocked, but those controls do not disable ordinary top-level cleartext HTTP. PR #121 is the proposed policy hardening; behavior remains unverified.
+- **Live dependency advisory recheck:** GitHub Advisory Database GHSA-hp3w-g68c-fv3c / CVE-2026-97058 (reviewed October 5, 2026) still marks `sprintf-js` versions through 1.1.3 affected, with no patched release listed. The lockfile resolves `sprintf-js@1.1.3` transitively through the Electron build toolchain. This is a build-pipeline dependency exposure; no evidence yet says browser renderer input directly invokes it. Keep all eight reported moderate npm audit entries open for graph-level triage, and do not force a downgrade or override without full packaging validation.
+- **Security report handling:** `SECURITY.md` has no dedicated monitored inbox/contact. Enable GitHub private vulnerability reporting and verify the destination with the owner before production release; document triage owner and response targets.
+- **Licensing/release integrity:** project license is unset (`license: null` and no license metadata on repository), `docs/decisions/ADR-0005-license.md` remains open, and `ADR-0003-updater.md` has no production updater selected. No GitHub releases are published. Signed Windows installer, protected signing key, authenticated updater with anti-downgrade/rollback tests, approved third-party notices, clean-machine install/uninstall/upgrade, physical Android device validation, Android signing, private-mode and permission isolation remain release blockers.
+- **IPC/navigation/download/private session:** reviewed main-process IPC wrapper and sender validator (exact renderer, main frame and expected sender), URL allow-list (HTTP(S), no credentials), popup/frame/redirect guards, private session cleanup (cancel private downloads and clear storage/cache/auth), and save-dialog-gated downloads. Existing unit tests cover several isolated policies, but this is still a targeted inspection, not proof all handlers/events are fully audited. Remaining runtime evidence must cover process crash/close races, permission prompts racing with private-tab disposal, failed cache/storage clearing, duplicate/late download events, and restart/persistence behavior.
+
+### Next loop
+
+1. Recheck exact-head statuses for PRs #119–#121 and fix any failures before merging.
+2. Trace all remaining IPC channels to renderer callers and add boundary tests for wrong sender/frame, wrong types and oversized payloads.
+3. Trace every persistent store's parse/migrate/write paths for corruption, concurrent writes, and restart recovery.
+4. Refresh `npm audit` / SBOM after dependency changes; review the full nested graph, not just `sprintf-js`.
+5. Keep Windows clean-install/uninstall/upgrade, Android physical-device / signing / private-mode tests, security-reporting contact, license/notice, and updater integrity as release blockers until evidence is recorded.
+
