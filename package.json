@@ -17,7 +17,9 @@
     "build:web": "node web/scripts/build.mjs",
     "notices": "node scripts/generate-third-party-notices.mjs",
     "test:notices": "node --test scripts/third-party-notices.test.node.mjs",
-    "prepackage:win": "npm run notices"
+    "prepackage:win": "npm run notices",
+    "verify:release-legal": "node scripts/verify-release-legal-gates.mjs",
+    "test:release-gates": "node --test scripts/verify-release-legal-gates.test.node.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",
