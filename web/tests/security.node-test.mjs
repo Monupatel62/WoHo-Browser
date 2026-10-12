@@ -23,6 +23,15 @@ test('bookmark rendering uses text nodes and performs no network upload', () => 
   assert.doesNotMatch(app, /\bfetch\s*\(|XMLHttpRequest|sendBeacon/);
 });
 
+test('bookmark import resets the file input after success or failure', () => {
+  assert.match(app, /catch \(error\)[\s\S]*finally \{[\s\S]*fileInput\.value = ''/);
+});
+
+test('bookmark export keeps its blob URL alive until the download can start', () => {
+  assert.match(app, /anchor\.click\(\);[\s\S]*setTimeout\(\(\) => URL\.revokeObjectURL\(url\), 1000\)/);
+  assert.doesNotMatch(app, /anchor\.click\(\);\s*URL\.revokeObjectURL\(url\);/);
+});
+
 test('responsive styles respect reduced-motion preferences', () => {
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
