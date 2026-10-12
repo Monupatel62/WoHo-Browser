@@ -221,7 +221,7 @@ export function buildInventory(packages, runtimePackages = packages) {
   const runtimeReviews = allReviews.filter((item) => runtimePaths.has(item.path));
   const electronChromiumNoticeIncluded = Boolean(runtimePackages
     .find((item) => item.name === 'electron')
-    ?.licenseFiles.some((file) => /LICENSES?\\.chromium\\.html$/i.test(file.path) && file.text !== null));
+    ?.licenseFiles.some((file) => /LICENSES?\.chromium\.html$/i.test(file.path) && file.text !== null));
   return {
     format: 'woho-third-party-license-inventory',
     version: 1,
