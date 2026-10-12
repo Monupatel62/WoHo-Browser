@@ -24,6 +24,7 @@ class BrowserUrlPolicyTest {
     }
     @Test fun historySanitizationRemovesQueryAndFragmentSecrets() {
         assertEquals("https://example.com/path", BrowserUrlPolicy.sanitizeHistoryUrl("https://example.com/path?access_token=secret#section"))
+        assertEquals("https://example.com/path", BrowserUrlPolicy.sanitizeHistoryUrl("https://example.com/path#section"))
         assertEquals("http://localhost:8080/path", BrowserUrlPolicy.sanitizeHistoryUrl("http://localhost:8080/path?debug=1#top"))
         assertNull(BrowserUrlPolicy.sanitizeHistoryUrl("javascript:alert(1)"))
         assertNull(BrowserUrlPolicy.sanitizeHistoryUrl("https://user:pass@example.com/path?token=secret"))
