@@ -10,7 +10,17 @@ class LocalRecordsPolicyTest {
     }
 
     @Test fun rejectsMalformedJsonWithoutReturningAnEmptyReplacement() {
-        assertNull(LocalRecordsPolicy.parseRecords("""[{"title":"""))
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"title":]"""))
+    }
+
+    @Test fun rejectsNonArrayJson() {
+        assertNull(LocalRecordsPolicy.parseRecords("""{"title":"Example"}"""))
+        assertNull(LocalRecordsPolicy.parseRecords("null"))
+        assertNull(LocalRecordsPolicy.parseRecords("\"text\""))
+    }
+
+    @Test fun rejectsTrailingGarbage() {
+        assertNull(LocalRecordsPolicy.parseRecords("""[{"title":"Example"}] garbage"""))
     }
 
     @Test fun rejectsOversizedJson() {

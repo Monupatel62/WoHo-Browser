@@ -56,6 +56,6 @@ jobs:
           languages: java-kotlin
           build-mode: manual
       - name: Build Android project for CodeQL
-        run: gradle -p android testDebugUnitTest assembleDebug
+        run: gradle -p android --no-build-cache --rerun-tasks clean testDebugUnitTest assembleDebug --stacktrace
       - name: Analyze Kotlin
         uses: github/codeql-action/analyze@v4
