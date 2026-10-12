@@ -45,6 +45,9 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildUi()
+        // Migrate legacy history URLs before any browsing so query/fragment
+        // tokens are not retained on disk merely because History was not opened.
+        readRecords("history")
         openTab("https://www.google.com")
     }
 
