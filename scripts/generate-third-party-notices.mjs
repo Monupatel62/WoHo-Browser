@@ -275,7 +275,17 @@ export async function generateNotices(root = rootDir) {
 
   const electron = packages.find((item) => item.name === 'electron');
   const chromiumNotice = electron?.licenseFiles.find((file) => /LICENSES?\.chromium\.html$/i.test(file.path));
-  process.stdout.write(`Generated third-party notices for ${packages.length} packages. Manual license review required for ${inventory.packagesRequiringManualReview} package(s).\n`);
+  process.stdout.write(`Generated third-party notices for ${packages.length} packages. Manual license review required for ${inventory.packagesRequiringManualReview} shipped runtime package(s); tooling-only review items: ${inventory.toolingPackagesRequiringManualReview}.\n`);
+  if (inventory.unresolved.length > 0) {
+    process.stdout.write('Runtime license items requiring review:\\n' + inventory.unresolved
+      .map((item) => `- ${item.name}@${item.version}: ${item.reviewReason.join('; ')}`)
+      .join('\\n') + '\\n');
+  }
+  if (inventory.toolingUnresolved.length > 0) {
+    process.stdout.write('Build-tooling license items (not shipped as application dependencies):\\n' + inventory.toolingUnresolved
+      .map((item) => `- ${item.name}@${item.version}: ${item.reviewReason.join('; ')}`)
+      .join('\\n') + '\\n');
+  }
   if (chromiumNotice?.text !== null && chromiumNotice?.text !== undefined) {
     process.stdout.write('Electron/Chromium bundled third-party notice file was included.\n');
   } else if (chromiumNotice) {
