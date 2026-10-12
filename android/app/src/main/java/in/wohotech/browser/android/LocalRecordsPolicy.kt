@@ -12,10 +12,10 @@ internal object LocalRecordsPolicy {
         return try {
             val trimmed = raw.trim()
             if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null
-            val tokener = JSONTokener(trimmed)
-            val value = tokener.nextValue()
-            val trailing = tokener.nextClean()
-            if (value !is JSONArray || trailing != '\u0000') null else value
+            // JSONArray's Android org.json parser validates the array payload. The
+            // explicit boundaries above prevent accepting non-array values or
+            // concatenated trailing content; keep the stored text intact on error.
+            JSONArray(trimmed)
         } catch (_: Exception) {
             null
         }
