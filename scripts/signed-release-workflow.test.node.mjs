@@ -19,7 +19,7 @@ test('release tag sets the same package version for Windows, Android, and legal 
 test('signing secrets are scoped to the exact steps that need them', () => {
   assert.doesNotMatch(workflow, /windows:\n[\s\S]*?runs-on: windows-latest\n    env:/);
   assert.doesNotMatch(workflow, /android:\n[\s\S]*?runs-on: ubuntu-latest\n    env:/);
-  assert.match(workflow, /Package and sign the staged Windows application\n        shell: pwsh\n        env:\n          WIN_CSC_LINK:/);
+  assert.match(workflow, /Sign and stage Windows application\n        shell: pwsh\n        env:\n          WIN_CSC_LINK:/);
   assert.match(workflow, /Build signed NSIS installer from verified application image\n        shell: pwsh\n        env:\n          WIN_CSC_LINK:/);
   assert.match(workflow, /Require Android signing secrets and create temporary keystore\n        shell: bash\n        env:\n          ANDROID_KEYSTORE_BASE64:/);
   assert.match(workflow, /Build signed Android release APK and AAB\n        shell: bash\n        env:\n          ANDROID_KEYSTORE_PASSWORD:/);
