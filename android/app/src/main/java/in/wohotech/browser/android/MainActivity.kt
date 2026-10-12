@@ -383,7 +383,7 @@ class MainActivity : Activity() {
         try {
             val output = contentResolver.openOutputStream(uri, "wt")
                 ?: throw IllegalStateException("Could not open the selected backup file.")
-            output.use { it.write(raw.toByteArray(Charsets.UTF_8)) }
+            LocalRecordsPolicy.writeRawBackup(raw, output)
             Toast.makeText(this, "Raw $key backup exported. Original saved data was not changed.", Toast.LENGTH_LONG).show()
         } catch (_: Exception) {
             Toast.makeText(this, "Could not write the recovery backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
