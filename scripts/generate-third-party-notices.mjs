@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto';
-import { readdir, readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readdir, readFile, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -231,8 +230,10 @@ export async function generateNotices(root = rootDir) {
   process.stdout.write(`Generated third-party notices for ${packages.length} packages. Manual license review required for ${inventory.packagesRequiringManualReview} package(s).\n`);
   if (chromiumNotice?.text !== null && chromiumNotice?.text !== undefined) {
     process.stdout.write('Electron/Chromium bundled third-party notice file was included.\n');
+  } else if (chromiumNotice) {
+    process.stdout.write(`WARNING: Electron/Chromium bundled license HTML was found but not embedded: ${chromiumNotice.skippedReason || 'unknown read issue'}.\n`);
   } else {
-    process.stdout.write('WARNING: Electron/Chromium bundled license HTML was not found/read; release must remain blocked until reviewed.\n');
+    process.stdout.write('WARNING: Electron/Chromium bundled license HTML was not found; release must remain blocked until located and reviewed.\n');
   }
   return inventory;
 }
