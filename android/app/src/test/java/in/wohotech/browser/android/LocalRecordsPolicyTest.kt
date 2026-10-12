@@ -3,6 +3,7 @@ package `in`.wohotech.browser.android
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 
 class LocalRecordsPolicyTest {
     @Test fun parsesValidArray() {
@@ -43,6 +44,13 @@ class LocalRecordsPolicyTest {
         assertEquals("woho-browser-bookmarks-recovery-backup.json", LocalRecordsPolicy.recoveryBackupFileName("bookmarks"))
         assertEquals("woho-browser-history-recovery-backup.json", LocalRecordsPolicy.recoveryBackupFileName("history"))
         assertNull(LocalRecordsPolicy.recoveryBackupFileName("unexpected"))
+    }
+
+    @Test fun recoveryBackupPreservesRawStoredTextWithoutNormalization() {
+        val raw = "[{\"url\":\"https://example.com/?token=secret\"}] trailing-corruption\n"
+        val output = ByteArrayOutputStream()
+        LocalRecordsPolicy.writeRawBackup(raw, output)
+        assertEquals(raw, String(output.toByteArray(), Charsets.UTF_8))
     }
 
 }
