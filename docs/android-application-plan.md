@@ -86,3 +86,9 @@ Cloud sync, accounts, password manager, extensions, ad/tracker blocking, remote 
 ## 9. Definition of done
 
 Before public release, complete automated tests, physical-device checks, privacy review, distribution-policy review, release notes, and verify that the security-reporting contact is monitored.
+
+## Cleartext HTTP policy
+
+WoHo Browser is intended to navigate to user-requested HTTP and HTTPS websites, so the Android manifest currently enables cleartext traffic for WebView navigation. This is a deliberate compatibility tradeoff, not a claim that HTTP is secure. The browser labels HTTP pages as **Not secure**, blocks mixed content, and cancels TLS certificate errors. HTTPS should be preferred whenever the destination supports it.
+
+Do not change `android:usesCleartextTraffic` to `false` as a blanket hardening change without first changing the product contract and proving that normal HTTP browsing still works on supported Android/WebView versions. Physical-device testing must cover HTTP and HTTPS navigation, redirects, mixed content, and TLS failures before release.
