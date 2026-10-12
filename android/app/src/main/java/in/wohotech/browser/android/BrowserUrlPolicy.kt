@@ -1,5 +1,6 @@
 package `in`.wohotech.browser.android
 
+import android.net.Uri
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -10,6 +11,14 @@ object BrowserUrlPolicy {
         val scheme = uri.scheme?.lowercase()
         (scheme == "http" || scheme == "https") && !uri.host.isNullOrBlank() && uri.rawUserInfo == null
     } catch (_: Exception) { false }
+
+    /** Remove query and fragment data from history without altering the live navigation URL. */
+    fun sanitizeHistoryUrl(value: String): String? {
+        if (!isAllowedUrl(value)) return null
+        return try {
+            Uri.parse(value).buildUpon().clearQuery().fragment(null).build().toString().takeIf(::isAllowedUrl)
+        } catch (_: Exception) { null }
+    }
 
     fun normalizeAddressInput(input: String): String? {
         val value = input.trim()
