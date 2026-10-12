@@ -50,6 +50,7 @@ test('notice and inventory disclose packages needing manual license review', asy
   assert.match(notices, /NOT DECLARED — REVIEW REQUIRED/);
   assert.equal(inventory.packageCount, 2);
   assert.equal(inventory.packagesRequiringManualReview, 1);
+  assert.deepEqual(inventory.requiredBundledNotices, { electronChromiumHtmlIncluded: false });
   assert.equal(inventory.unresolved[0].name, 'beta');
 });
 
