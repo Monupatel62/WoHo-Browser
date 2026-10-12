@@ -18,7 +18,7 @@ Evaluate supported Android API levels, security patch cadence, site compatibilit
 
 ## 3. Initial implementation status
 
-The current development foundation includes HTTP/HTTPS address/search validation, multiple tabs, back/forward/reload, local bookmarks and bounded local history with a clear-history action, visible HTTP-versus-HTTPS status, and downloads through Android DownloadManager. WebView file/content access is disabled, mixed content is blocked, Safe Browsing is enabled, no native JavaScript bridge is exposed, and TLS errors are cancelled.
+The current development foundation includes HTTP/HTTPS address/search validation, multiple tabs, back/forward/reload, local bookmarks and bounded local history with a clear-history action; history URLs have query strings and fragments stripped before persistence, including legacy entries on read, visible HTTP-versus-HTTPS status, and downloads through Android DownloadManager. WebView file/content access is disabled, mixed content is blocked, Safe Browsing is enabled, no native JavaScript bridge is exposed, and TLS errors are cancelled.
 
 Not yet implemented or release-verified: private browsing with proven cookie/cache isolation, custom site-permission UI/revocation, settings UI, bookmark import/export, full error/recovery UX, complete TalkBack/accessibility review, supported-device matrix, signing, and production release. The build and unit-test results must be taken from the exact implementation PR, not inferred from this document.
 
