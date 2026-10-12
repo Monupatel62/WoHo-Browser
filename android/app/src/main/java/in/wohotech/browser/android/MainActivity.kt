@@ -281,9 +281,12 @@ class MainActivity : Activity() {
     }
 
     private fun saveHistory(title: String, url: String) {
+        // Keep the live URL untouched, but never persist query/fragment values
+        // that may contain signed links, search terms, or access tokens.
+        val safeUrl = BrowserUrlPolicy.sanitizeHistoryUrl(url) ?: return
         val history = readRecords("history")
-        if (history.length() > 0 && history.optJSONObject(history.length() - 1)?.optString("url") == url) return
-        history.put(org.json.JSONObject().put("title", title.take(512)).put("url", url).put("visitedAt", System.currentTimeMillis()))
+        if (history.length() > 0 && history.optJSONObject(history.length() - 1)?.optString("url") == safeUrl) return
+        history.put(org.json.JSONObject().put("title", title.take(512)).put("url", safeUrl).put("visitedAt", System.currentTimeMillis()))
         val start = (history.length() - 500).coerceAtLeast(0)
         val bounded = org.json.JSONArray()
         for (i in start until history.length()) bounded.put(history.getJSONObject(i))
@@ -297,9 +300,23 @@ class MainActivity : Activity() {
             val parsed = org.json.JSONArray(raw)
             val bounded = org.json.JSONArray()
             val start = (parsed.length() - 5000).coerceAtLeast(0)
+            var historyNeedsRedaction = false
             for (i in start until parsed.length()) {
                 val item = parsed.optJSONObject(i) ?: continue
-                if (BrowserUrlPolicy.isAllowedUrl(item.optString("url"))) bounded.put(item)
+                val rawUrl = item.optString("url")
+                val safeUrl = if (key == "history") BrowserUrlPolicy.sanitizeHistoryUrl(rawUrl) else rawUrl.takeIf(BrowserUrlPolicy::isAllowedUrl)
+                if (safeUrl != null) {
+                    if (key == "history" && safeUrl != rawUrl) {
+                        item.put("url", safeUrl)
+                        historyNeedsRedaction = true
+                    }
+                    bounded.put(item)
+                }
+            }
+            // Migrate legacy history entries on read so old token-bearing URLs
+            // are not left on disk after the privacy fix.
+            if (key == "history" && historyNeedsRedaction) {
+                preferences.edit().putString("history", bounded.toString()).apply()
             }
             bounded
         } catch (_: Exception) { org.json.JSONArray() }
