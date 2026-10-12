@@ -127,8 +127,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: true
       - name: Install Android SDK packages
         run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        env:
+          ANDROID_USER_HOME: ${{ runner.temp }}/android-user-home
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
