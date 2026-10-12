@@ -18,6 +18,8 @@ describe('isTrustedRendererUrl', () => {
     expect(isTrustedRendererUrl('woho://browser/index.html', undefined, expectedPath)).toBe(true);
     expect(isTrustedRendererUrl('woho://browser/other.html', undefined, expectedPath)).toBe(false);
     expect(isTrustedRendererUrl('woho://attacker/index.html', undefined, expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('woho://user@browser/index.html', undefined, expectedPath)).toBe(false);
+    expect(isTrustedRendererUrl('woho://user:password@browser/index.html', undefined, expectedPath)).toBe(false);
     expect(isTrustedRendererUrl('woho://browser/index.html?x=1', undefined, expectedPath)).toBe(false);
   });
 
