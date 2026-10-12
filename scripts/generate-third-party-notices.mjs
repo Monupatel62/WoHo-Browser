@@ -179,6 +179,10 @@ export function releaseRelevantPackages(project, installedPackages) {
   while (queue.length > 0) {
     const name = queue.shift();
     for (const item of installedPackages.filter((candidate) => candidate.name === name)) {
+      // The npm "electron" package is an install-time downloader/extractor wrapper.
+      // Its own dependencies are build tooling, not application runtime dependencies.
+      // The Electron binary and its exact Chromium notice are reviewed separately.
+      if (item.name === 'electron') continue;
       for (const dependencyName of Object.keys({
         ...(item.dependencies || {}),
         ...(item.optionalDependencies || {}),
