@@ -111,3 +111,34 @@ This addendum supersedes the older “latest verified main” SHA and workflow I
 2. For each confirmed defect, add a regression test and record exact source/test evidence.
 3. Keep speculative concerns separate from confirmed defects; do not claim a bug is fixed until the regression test and exact-head CI pass.
 4. Require manual Windows runtime evidence for native permissions, private-session cleanup, navigation policy, storage recovery, install, and uninstall before production sign-off.
+
+
+## Follow-up audit — 2026-10-12
+
+**Current main reviewed:** `8e5998c324062bcf3e6758645c260cbd2801fcdb`. This review expands the previous targeted audit but is still not a proof of total completeness.
+
+### Fresh-main automated evidence
+
+On the reviewed main SHA, the Windows CI run [38156190168](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38156190168), CodeQL run [38156190156](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38156190156), and Secret Scanning run [38156190165](https://github.com/Monupatel62/WoHo-Browser/actions/runs/38156190165) all passed. These checks do not replace hands-on Windows tests or establish production readiness.
+
+### Confirmed current findings
+
+1. **Dependency update PR #113 is incompatible and currently fails installation.** Its proposed Vite 8.3.4 conflicts with `electron-vite@5.0.0`, whose peer range is `^5 || ^6 || ^7`. Exact-head CI failed at `npm ci` with `ERESOLVE`; do not merge this PR or bypass the peer check with `--force` / `--legacy-peer-deps`. Keep Vite on the compatible major until the build-tool chain has a tested Vite 8-compatible release.
+2. **Moderate build-tool dependency advisory remains unresolved.** The repository's existing policy identifies CVE-2026-97058 / GHSA-hp3w-g68c-fv3c through the `electron-builder` dependency chain. It is build-time exposure, not a demonstrated renderer vulnerability, but it still affects the build pipeline. Recheck the advisory and upstream package versions before deciding remediation; do not claim this is fixed.
+3. **Release blockers remain:** unsigned Windows installer, no authenticated auto-updater, no owner-approved project license or third-party notice bundle, and unverified private vulnerability-reporting/inbox ownership.
+4. **Manual platform verification remains open:** clean Windows install/uninstall; tab and navigation compatibility; native permission allow/revoke; private-session cleanup on tab close and app crash; download cancellation and filesystem failures; corrupt-profile recovery and restart persistence. Current CI packaging and startup smoke are useful but do not exercise all of these.
+5. **Feature scope remains incomplete:** no Safe Browsing/reputation service, extensions, sync, password manager, download retry/partial-file cleanup, bookmark folders, or general settings import/export. These are explicit gaps, not hidden assumptions.
+6. **Documentation drift exists:** earlier sections refer to main SHA `269c5b57e897851727568f357a25300a2d2f46b6` and run IDs from the earlier audit cycle. Treat those as historical evidence only; this addendum is the newer main evidence. Continue refreshing this audit after merges.
+
+### Audit limits
+
+This pass inspected the current CI/dependency policy, navigation policy, trusted renderer and IPC helpers, renderer asset path resolver, session and permission lifecycle, download history, selected regression tests, and release documentation. It is **not** a line-by-line audit of every file, every external dependency, or all product requirements. Continue the whole-repository review by tracing each IPC handler to its renderer caller, each persistent store to corruption/concurrency tests, and each native Electron lifecycle event to a Windows runtime test.
+
+### Next actions, in order
+
+- [ ] Reject or replace Vite 8 dependency update PR #113 with a compatible tested toolchain set.
+- [ ] Re-check current advisory metadata and the resolved `sprintf-js` chain; record whether a safe upstream fix exists.
+- [ ] Add/verify regression coverage for every confirmed IPC, navigation, session-lifecycle, and storage failure.
+- [ ] Run clean-machine Windows install, use, restart, upgrade, and uninstall tests; retain results tied to a commit and installer checksum.
+- [ ] Resolve release-owner decisions for signing/updating, licensing/notices, and vulnerability reporting.
+- [ ] Continue auditing all remaining source, tests, docs, and dependency paths; do not mark the project complete solely because CI is green.
