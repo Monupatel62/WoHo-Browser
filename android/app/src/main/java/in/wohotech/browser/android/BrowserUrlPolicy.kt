@@ -23,10 +23,11 @@ object BrowserUrlPolicy {
     fun normalizeAddressInput(input: String): String? {
         val value = input.trim()
         if (value.isEmpty() || value.length > 4096) return null
-        val hasExplicitScheme = Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(value)
+        val isHostWithPort = Regex("^[^/\\s:]+:\\d+(?:/|$)").containsMatchIn(value)
+        val hasExplicitScheme = !isHostWithPort && Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(value)
         val candidate = when {
             hasExplicitScheme -> value
-            value.any(Char::isWhitespace) || !value.contains('.') ->
+            value.any(Char::isWhitespace) || (!value.contains('.') && !isHostWithPort) ->
                 "https://www.google.com/search?q=" + URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20")
             else -> "https://$value"
         }
