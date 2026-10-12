@@ -254,6 +254,7 @@ class MainActivity : Activity() {
 
     private fun showBookmarks() {
         val records = readRecords("bookmarks")
+        if ("bookmarks" in corruptRecordKeys) { showCorruptRecordsWarning("bookmarks"); return }
         if (records.length() == 0) { AlertDialog.Builder(this).setTitle("Bookmarks").setMessage("No bookmarks saved yet.").setPositiveButton("OK", null).show(); return }
         val labels = Array(records.length()) { i -> records.optJSONObject(i)?.optString("title").orEmpty().ifBlank { records.optJSONObject(i)?.optString("url").orEmpty() } }
         AlertDialog.Builder(this).setTitle("Bookmarks").setItems(labels) { _, which ->
@@ -264,6 +265,7 @@ class MainActivity : Activity() {
 
     private fun showHistory() {
         val records = readRecords("history")
+        if ("history" in corruptRecordKeys) { showCorruptRecordsWarning("history"); return }
         if (records.length() == 0) {
             AlertDialog.Builder(this).setTitle("History").setMessage("No browsing history is saved on this device.")
                 .setPositiveButton("OK", null).show()
