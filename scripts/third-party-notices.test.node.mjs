@@ -23,6 +23,8 @@ async function fixture() {
     name: 'beta', version: '3.0.0',
   }));
   await writeFile(path.join(root, 'node_modules', '@scope', 'alpha', 'node_modules', 'beta', 'NOTICE'), 'Beta notice text.\n');
+  await mkdir(path.join(root, 'node_modules', 'build-tool'), { recursive: true });
+  await writeFile(path.join(root, 'node_modules', 'build-tool', 'package.json'), JSON.stringify({ name: 'build-tool', version: '9.0.0' }));
   return root;
 }
 
