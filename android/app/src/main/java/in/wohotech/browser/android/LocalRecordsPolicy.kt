@@ -30,6 +30,12 @@ internal object LocalRecordsPolicy {
         }
     }
 
+    internal fun recoveryBackupFileName(key: String): String? = when (key) {
+        "bookmarks" -> "woho-browser-bookmarks-recovery-backup.json"
+        "history" -> "woho-browser-history-recovery-backup.json"
+        else -> null
+    }
+
     /**
      * Validates JSON grammar before handing data to Android's permissive org.json parser.
      * Prevents malformed preferences from being silently coerced into empty/string values.
