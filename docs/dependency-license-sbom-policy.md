@@ -27,7 +27,7 @@ No public production release until vulnerability triage, owner-approved project 
 
 ## Latest captured npm audit evidence — 2026-10-12 main build
 
-The uploaded CI artifact from run `38237149171` contains an npm audit report with **8 moderate vulnerability entries and zero high/critical entries**. The report identifies the resolved `electron-builder@26.17.0` / `app-builder-lib@26.17.0` / `dmg-builder@26.17.0` toolchain in affected ranges `26.6.0 - 27.0.0-alpha.2`, and a nested `@electron/get@3.1.0` (the root copy is `5.1.0`). The advisory chain also includes `global-agent@3.0.0`, `roarr@2.15.4`, and `sprintf-js@1.1.3`.
+The uploaded CI artifact from run `38238684805` contains an npm audit report with **8 moderate vulnerability entries and zero high/critical entries**. The report identifies the resolved `electron-builder@26.17.0` / `app-builder-lib@26.17.0` / `dmg-builder@26.17.0` toolchain in affected ranges `26.6.0 - 27.0.0-alpha.2`, and a nested `@electron/get@3.1.0` (the root copy is `5.1.0`). The advisory chain also includes `global-agent@3.0.0`, `roarr@2.15.4`, and `sprintf-js@1.1.3`.
 
 npm's report suggests `electron-builder@26.5.0` as a fix, which is a downgrade from the current direct dependency. Do **not** apply this recommendation automatically: first confirm which advisories it actually removes, inspect the resulting lockfile and transitive graph, run the full Windows packaging/smoke/fuse checks, and verify no remaining `sprintf-js` advisory. An earlier timed-out `npm view electron-builder@26.5.0 version` query is inconclusive and does not prove that version exists or is safe; do not treat a timed-out registry query as validation.
 
