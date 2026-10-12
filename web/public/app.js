@@ -46,7 +46,8 @@ exportButton.addEventListener('click', () => {
     anchor.href = url;
     anchor.download = 'woho-bookmarks.json';
     anchor.click();
-    URL.revokeObjectURL(url);
+    // Let the browser start the download before releasing the blob URL.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     status.textContent = 'Sample bookmark file exported locally.';
   } catch (error) {
     status.textContent = 'Export failed: ' + (error instanceof Error ? error.message : 'Could not export bookmarks.');
