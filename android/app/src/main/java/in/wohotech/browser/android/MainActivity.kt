@@ -306,7 +306,14 @@ class MainActivity : Activity() {
 
     private fun readRecords(key: String): org.json.JSONArray {
         if (key in corruptRecordKeys) return org.json.JSONArray()
-        val raw = preferences.getString(key, "[]") ?: "[]"
+        val raw = try {
+            preferences.getString(key, "[]") ?: "[]"
+        } catch (_: ClassCastException) {
+            // A corrupted or legacy value with the wrong SharedPreferences type
+            // must be treated as damaged data, not allowed to crash the browser.
+            corruptRecordKeys.add(key)
+            return org.json.JSONArray()
+        }
         val parsed = LocalRecordsPolicy.parseRecords(raw)
         if (parsed == null) {
             corruptRecordKeys.add(key)
@@ -391,7 +398,11 @@ class MainActivity : Activity() {
         pendingCorruptBackupKey = null
         if (resultCode != RESULT_OK) return
         val uri = data?.data
-        val raw = preferences.getString(key, null)
+        val raw = try {
+            preferences.getString(key, null)
+        } catch (_: ClassCastException) {
+            null
+        }
         if (uri == null || raw == null) {
             Toast.makeText(this, "The original saved data was unavailable for export.", Toast.LENGTH_LONG).show()
             return
