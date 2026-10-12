@@ -1,3 +1,4 @@
+const headers = await readFile(new URL('../public/_headers', import.meta.url), 'utf8');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -35,4 +36,13 @@ test('bookmark export keeps its blob URL alive until the download can start', ()
 test('responsive styles respect reduced-motion preferences', () => {
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
+
+test('static host response headers block framing and unnecessary device permissions', () => {
+  assert.match(headers, /Content-Security-Policy:.*frame-ancestors 'none'/);
+  assert.match(headers, /X-Frame-Options: DENY/);
+  assert.match(headers, /X-Content-Type-Options: nosniff/);
+  assert.match(headers, /Referrer-Policy: no-referrer/);
+  assert.match(headers, /Permissions-Policy: camera=\(\), microphone=\(\), geolocation=\(\)/);
+  assert.match(headers, /Cross-Origin-Opener-Policy: same-origin/);
 });
