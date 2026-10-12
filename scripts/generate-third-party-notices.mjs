@@ -136,7 +136,7 @@ export function renderNotices(project, packages) {
     `THIRD-PARTY NOTICES — ${project.name} ${project.version}`,
     '',
     'This file is generated from the installed npm dependency tree. It is a starting point for license review, not a legal opinion or a declaration that every distribution obligation has been satisfied.',
-    'Review the accompanying THIRD-PARTY-LICENSE-INVENTORY.json and resolve every missing/unclear license or notice before public distribution.',
+    'Review runtime-package entries in THIRD-PARTY-LICENSE-INVENTORY.json and resolve every missing/unclear shipped license or notice before public distribution. Build-only packages are tracked separately in the inventory.',
     '',
     `Runtime npm/Electron packages inventoried: ${packages.length}`,
     '',
