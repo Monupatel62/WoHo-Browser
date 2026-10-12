@@ -10,7 +10,7 @@ class LocalRecordsPolicyTest {
     }
 
     @Test fun rejectsMalformedJsonWithoutReturningAnEmptyReplacement() {
-        assertNull(LocalRecordsPolicy.parseRecords("""[{"title":"""))
+        assertNull(LocalRecordsPolicy.parseRecords("[{\"title\":"))
     }
 
     @Test fun rejectsOversizedJson() {
