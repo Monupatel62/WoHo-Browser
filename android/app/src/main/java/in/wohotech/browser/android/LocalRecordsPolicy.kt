@@ -10,7 +10,7 @@ internal object LocalRecordsPolicy {
     internal fun parseRecords(raw: String): JSONArray? {
         if (raw.length > MAX_RECORDS_JSON_CHARS) return null
         val input = raw.trim()
-        if (input.isEmpty() || input.first() != '[') return null
+        if (input.length < 2 || input.first() != '[' || input.last() != ']') return null
 
         return try {
             if (!StrictJsonValidator(input).validateTopLevelArray()) null
