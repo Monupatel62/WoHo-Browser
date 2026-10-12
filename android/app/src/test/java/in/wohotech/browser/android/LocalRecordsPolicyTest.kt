@@ -6,7 +6,7 @@ import org.junit.Test
 
 class LocalRecordsPolicyTest {
     @Test fun parsesValidArray() {
-        assertEquals(1, LocalRecordsPolicy.parseRecords("""[{"title":"Example","url":"https://example.com"}]""")?.length())
+        assertEquals(1, LocalRecordsPolicy.parseRecords("""[{"title":"Example","url":"https://example.com"}]""")!!.length())
     }
 
     @Test fun rejectsMalformedJsonWithoutReturningAnEmptyReplacement() {
