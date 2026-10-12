@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
-import { evaluateReleaseLegalGates } from './verify-release-legal-gates.mjs';
+import { evaluateReleaseLegalGates, verifyReleaseLegalGates } from './verify-release-legal-gates.mjs';
 
 const inventory = {
   format: 'woho-third-party-license-inventory',
@@ -56,4 +59,43 @@ test('platform-neutral legal preflight does not require the Electron-only Chromi
     noticesExists: true,
     inventory: { ...inventory, requiredBundledNotices: { electronChromiumHtmlIncluded: false } },
   }), []);
+test('release legal preflight verifies the exact Chromium notice digest and staged app resource', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'woho-release-legal-gates-'));
+  try {
+    await mkdir(path.join(root, 'release', 'win-unpacked', 'resources'), { recursive: true });
+    await writeFile(path.join(root, 'LICENSE'), 'Owner-approved project license\\n');
+    const digest = 'a'.repeat(64);
+    const notices = [
+      'THIRD-PARTY NOTICES',
+      'BEGIN ELECTRON/CHROMIUM LICENSES.chromium.html',
+      `SHA-256: ${digest}`,
+      '<html>Chromium notices</html>',
+      'END ELECTRON/CHROMIUM LICENSES.chromium.html',
+      '',
+    ].join('\\n');
+    await writeFile(path.join(root, 'THIRD-PARTY-NOTICES.txt'), notices);
+    await writeFile(path.join(root, 'release', 'win-unpacked', 'resources', 'THIRD-PARTY-NOTICES.txt'), notices);
+    await writeFile(path.join(root, 'THIRD-PARTY-LICENSE-INVENTORY.json'), JSON.stringify({
+      ...inventory,
+      requiredBundledNotices: { electronChromiumHtmlIncluded: true, sha256: digest },
+    }));
+    const originalArgv = process.argv.slice();
+    process.argv = [...originalArgv, '--require-chromium'];
+    try {
+      assert.equal(await verifyReleaseLegalGates(root), true);
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    await writeFile(path.join(root, 'release', 'win-unpacked', 'resources', 'THIRD-PARTY-NOTICES.txt'), 'stale resource\\n');
+    process.argv = [...originalArgv, '--require-chromium'];
+    try {
+      assert.equal(await verifyReleaseLegalGates(root), false);
+    } finally {
+      process.argv = originalArgv;
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
+
