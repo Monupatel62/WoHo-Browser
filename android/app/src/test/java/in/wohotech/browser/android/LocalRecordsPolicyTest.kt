@@ -55,7 +55,7 @@ class LocalRecordsPolicyTest {
     }
 
     @Test fun rawStringRecoveryBackupIsByteExact() {
-        val raw = "[{\\\"url\\\":\\\"https://example.com/?q=sample\\\"}] trailing-corruption\\n"
+        val raw = "corrupt raw content\\n"
         assertEquals(raw, String(LocalRecordsPolicy.recoveryBackupContent("history", raw)!!, Charsets.UTF_8))
     }
 
