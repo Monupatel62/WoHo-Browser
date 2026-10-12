@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -42,6 +43,8 @@ class MainActivity : Activity() {
     private lateinit var securityStatus: android.widget.TextView
     private val preferences by lazy { getSharedPreferences("browser-local-data", Context.MODE_PRIVATE) }
     private val corruptRecordKeys = mutableSetOf<String>()
+    private var pendingCorruptBackupKey: String? = null
+    private val corruptRecordBackupRequestCode = 4207
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -341,9 +344,50 @@ class MainActivity : Activity() {
     private fun showCorruptRecordsWarning(key: String) {
         AlertDialog.Builder(this)
             .setTitle("Saved data needs recovery")
-            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Back up the app data before clearing storage.")
+            .setMessage("The saved $key data could not be read. WoHo Browser has preserved the original data and will not overwrite it automatically. Export a raw backup before clearing app storage.")
+            .setNeutralButton("Export raw backup") { _, _ -> exportCorruptRecords(key) }
             .setPositiveButton("OK", null)
             .show()
+    }
+
+    private fun exportCorruptRecords(key: String) {
+        val filename = LocalRecordsPolicy.recoveryBackupFileName(key) ?: return
+        if (key !in corruptRecordKeys) return
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, filename)
+        }
+        pendingCorruptBackupKey = key
+        try {
+            startActivityForResult(intent, corruptRecordBackupRequestCode)
+        } catch (_: Exception) {
+            pendingCorruptBackupKey = null
+            Toast.makeText(this, "Could not open the backup file picker.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Deprecated("Deprecated Android result API; retained for compatibility with the current Activity foundation")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != corruptRecordBackupRequestCode) return
+        val key = pendingCorruptBackupKey ?: return
+        pendingCorruptBackupKey = null
+        if (resultCode != RESULT_OK) return
+        val uri = data?.data
+        val raw = preferences.getString(key, null)
+        if (uri == null || raw == null) {
+            Toast.makeText(this, "The original saved data was unavailable for export.", Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            val output = contentResolver.openOutputStream(uri, "wt")
+                ?: throw IllegalStateException("Could not open the selected backup file.")
+            output.use { it.write(raw.toByteArray(Charsets.UTF_8)) }
+            Toast.makeText(this, "Raw $key backup exported. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Could not write the recovery backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
