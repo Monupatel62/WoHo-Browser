@@ -338,7 +338,7 @@ class MainActivity : Activity() {
     private fun startDownload(url: String, userAgent: String, contentDisposition: String, mimeType: String) {
         if (!BrowserUrlPolicy.isAllowedUrl(url)) { Toast.makeText(this, "Download URL was blocked.", Toast.LENGTH_SHORT).show(); return }
         try {
-            val guessed = android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType).replace(Regex("[^A-Za-z0-9._ -]"), "_").take(120).ifBlank { "download" }
+            val guessed = BrowserUrlPolicy.sanitizeDownloadFilename(android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType))
             val request = DownloadManager.Request(Uri.parse(url)).apply {
                 setTitle(guessed)
                 setDescription("Download from " + (URI(url).host ?: "website"))
