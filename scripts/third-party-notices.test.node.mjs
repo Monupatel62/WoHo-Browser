@@ -41,9 +41,9 @@ test('collects scoped and nested packages with license files', async () => {
   const root = await fixture();
   const packages = await collectInstalledPackages(path.join(root, 'node_modules'));
   assert.deepEqual(packages.map((item) => item.path), [
+    'node_modules/@electron-internal/extract-zip',
     'node_modules/@scope/alpha',
     'node_modules/@scope/alpha/node_modules/beta',
-    'node_modules/@electron-internal/extract-zip',
     'node_modules/build-tool',
     'node_modules/electron',
   ]);
@@ -69,8 +69,8 @@ test('notice and inventory disclose packages needing manual license review', asy
   assert.equal(inventory.packagesRequiringManualReview, 1);
   assert.equal(inventory.toolingPackagesRequiringManualReview, 2);
   assert.doesNotMatch(notices, /build-tool/);
-  assert.doesNotMatch(notices, /@electron-internal\\/extract-zip/);
-  assert.match(notices, /Electron MIT terms\\./);
+  assert.ok(!notices.includes('@electron-internal/extract-zip'));
+  assert.ok(notices.includes('Electron MIT terms.'));
   assert.deepEqual(inventory.requiredBundledNotices, { electronChromiumHtmlIncluded: false });
   assert.equal(inventory.unresolved[0].name, 'beta');
 });
@@ -85,6 +85,6 @@ test('generation writes notices and a machine-readable inventory', async () => {
   assert.equal(inventory.packageCount, 5);
   assert.equal(inventory.runtimePackageCount, 3);
   assert.doesNotMatch(notices, /build-tool/);
-  assert.doesNotMatch(notices, /@electron-internal\\/extract-zip/);
-  assert.match(notices, /Electron MIT terms\\./);
+  assert.ok(!notices.includes('@electron-internal/extract-zip'));
+  assert.ok(notices.includes('Electron MIT terms.'));
 });
