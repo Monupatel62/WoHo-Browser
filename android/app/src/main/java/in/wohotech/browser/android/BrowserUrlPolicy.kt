@@ -1,6 +1,5 @@
 package `in`.wohotech.browser.android
 
-import android.net.Uri
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -25,9 +24,9 @@ object BrowserUrlPolicy {
     /** Remove query and fragment data from history without altering the live navigation URL. */
     fun sanitizeHistoryUrl(value: String): String? {
         if (!isAllowedUrl(value)) return null
-        return try {
-            Uri.parse(value).buildUpon().clearQuery().fragment(null).build().toString().takeIf(::isAllowedUrl)
-        } catch (_: Exception) { null }
+        // Query and fragment delimiters are structural URL characters; remove
+        // them from the original string to preserve escaped path bytes exactly.
+        return value.substringBefore('#').substringBefore('?').takeIf(::isAllowedUrl)
     }
 
     fun normalizeAddressInput(input: String): String? {
