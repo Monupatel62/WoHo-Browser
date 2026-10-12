@@ -11,7 +11,8 @@ export function isTrustedRendererUrl(value: string, devRendererUrl: string | und
         actual.pathname === expected.pathname && actual.search === expected.search && actual.hash === expected.hash;
     }
     if (actual.protocol === 'woho:' && actual.host === 'browser' &&
-        actual.pathname === '/index.html' && !actual.search && !actual.hash) return true;
+        !actual.username && !actual.password && actual.pathname === '/index.html' &&
+        !actual.search && !actual.hash) return true;
     if (actual.protocol !== 'file:' || actual.search || actual.hash) return false;
     return resolve(fileURLToPath(actual)) === resolve(expectedFilePath);
   } catch {
