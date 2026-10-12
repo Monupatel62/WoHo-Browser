@@ -374,27 +374,29 @@ class MainActivity : Activity() {
     private fun exportCorruptRecords(key: String) {
         val filename = LocalRecordsPolicy.recoveryBackupFileName(key) ?: return
         if (key !in corruptRecordKeys) return
-        val raw = try {
-            preferences.getString(key, null)
-        } catch (_: ClassCastException) {
+        val storedValue = try {
+            preferences.all[key]
+        } catch (_: Exception) {
             null
         }
-        if (raw == null) {
-            Toast.makeText(this, "The original saved data was unavailable for export.", Toast.LENGTH_LONG).show()
+        val backupContent = LocalRecordsPolicy.recoveryBackupContent(key, storedValue)
+        if (backupContent == null) {
+            Toast.makeText(this, "The original saved data could not be represented in a recovery backup.", Toast.LENGTH_LONG).show()
             return
         }
+        val rawText = storedValue is String
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                exportCorruptRecordsToDownloads(key, filename, raw)
+                exportCorruptRecordsToDownloads(key, filename, backupContent, rawText)
             } else {
-                shareCorruptRecordsBackup(filename, raw)
+                shareCorruptRecordsBackup(filename, backupContent, rawText)
             }
         } catch (_: Exception) {
             Toast.makeText(this, "Could not create the recovery backup. Original saved data was not changed.", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun exportCorruptRecordsToDownloads(key: String, filename: String, raw: String) {
+    private fun exportCorruptRecordsToDownloads(key: String, filename: String, content: ByteArray, rawText: Boolean) {
         val values = android.content.ContentValues().apply {
             put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
             put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/json")
@@ -406,24 +408,24 @@ class MainActivity : Activity() {
         try {
             val output = contentResolver.openOutputStream(uri, "wt")
                 ?: throw IllegalStateException("Could not open the recovery backup file.")
-            LocalRecordsPolicy.writeRawBackup(raw, output)
+            LocalRecordsPolicy.writeBackupContent(content, output)
             val publish = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
             }
             if (contentResolver.update(uri, publish, null, null) <= 0) {
                 throw IllegalStateException("Could not publish the recovery backup file.")
             }
-            Toast.makeText(this, "Raw $key backup saved in Downloads/WoHo Browser. Original saved data was not changed.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, (if (rawText) "Raw " else "Typed recovery ") + "$key backup saved in Downloads/WoHo Browser. Original saved data was not changed.", Toast.LENGTH_LONG).show()
         } catch (error: Exception) {
             runCatching { contentResolver.delete(uri, null, null) }
             throw error
         }
     }
 
-    private fun shareCorruptRecordsBackup(filename: String, raw: String) {
+    private fun shareCorruptRecordsBackup(filename: String, content: ByteArray, rawText: Boolean) {
         val file = java.io.File(cacheDir, "recovery/$filename")
         file.parentFile?.mkdirs()
-        LocalRecordsPolicy.writeRawBackup(raw, file.outputStream())
+        LocalRecordsPolicy.writeBackupContent(content, file.outputStream())
         val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/json"
@@ -432,7 +434,8 @@ class MainActivity : Activity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(shareIntent, "Save recovery backup"))
-        Toast.makeText(this, "Choose a trusted app to save or share the backup; it may contain browsing URLs.", Toast.LENGTH_LONG).show()
+        val backupKind = if (rawText) "Raw backup" else "Typed recovery backup"
+        Toast.makeText(this, "$backupKind may contain browsing data. Choose a trusted app to save or share it.", Toast.LENGTH_LONG).show()
     }
 
     private fun boundedJson(records: org.json.JSONArray, maximum: Int): String {
