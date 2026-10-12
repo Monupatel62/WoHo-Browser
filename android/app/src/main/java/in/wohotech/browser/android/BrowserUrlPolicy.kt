@@ -14,7 +14,7 @@ object BrowserUrlPolicy {
 
     /** Return a leaf filename safe to pass to DownloadManager as a relative path. */
     fun sanitizeDownloadFilename(value: String): String {
-        val leaf = value.substringAfterLast('/').substringAfterLast('\\\\')
+        val leaf = value.substringAfterLast('/').substringAfterLast('\\')
         val safe = leaf.replace(Regex("[^A-Za-z0-9._ -]"), "_")
             .trim()
             .trim('.')
