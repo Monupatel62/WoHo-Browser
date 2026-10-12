@@ -20,6 +20,8 @@ Evaluate supported Android API levels, security patch cadence, site compatibilit
 
 The current development foundation includes HTTP/HTTPS address/search validation, multiple tabs, back/forward/reload, local bookmarks and bounded local history with a clear-history action; history URLs have query strings and fragments stripped before persistence, including legacy entries migrated at startup, visible HTTP-versus-HTTPS status, and downloads through Android DownloadManager. WebView file/content access is disabled, mixed content is blocked, Safe Browsing is enabled, no native JavaScript bridge is exposed, and TLS errors are cancelled.
 
+Malformed, oversized, or wrong-type bookmark/history stores are treated as unreadable rather than silently replaced; the recovery warning now offers a user-selected raw backup export. The Android document-picker flow still requires physical-device verification.
+
 Not yet implemented or release-verified: private browsing with proven cookie/cache isolation, custom site-permission UI/revocation, settings UI, bookmark import/export, full error/recovery UX, complete TalkBack/accessibility review, supported-device matrix, signing, and production release. The build and unit-test results must be taken from the exact implementation PR, not inferred from this document.
 
 ## 4. Proposed MVP capabilities
