@@ -200,6 +200,11 @@ export function buildInventory(packages) {
     packagesWithDeclaredLicense: packages.filter((item) => Boolean(item.declaredLicense)).length,
     packagesWithReadableLicenseText: packages.filter((item) => item.licenseFiles.some((file) => file.text !== null)).length,
     packagesRequiringManualReview: unresolved.length,
+    requiredBundledNotices: {
+      electronChromiumHtmlIncluded: Boolean(packages
+        .find((item) => item.name === 'electron')
+        ?.licenseFiles.some((file) => /LICENSES?\\.chromium\\.html$/i.test(file.path) && file.text !== null)),
+    },
     unresolved,
     packages: packages.map((item) => ({
       name: item.name,
