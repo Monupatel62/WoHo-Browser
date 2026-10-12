@@ -47,7 +47,7 @@ class LocalRecordsPolicyTest {
     }
 
     @Test fun recoveryBackupPreservesRawStoredTextWithoutNormalization() {
-        val raw = "[{\"url\":\"https://example.com/?token=secret\"}] trailing-corruption\n"
+        val raw = "[{\"url\":\"https://example.com/?q=sample\"}] trailing-corruption\n"
         val output = ByteArrayOutputStream()
         LocalRecordsPolicy.writeRawBackup(raw, output)
         assertEquals(raw, String(output.toByteArray(), Charsets.UTF_8))
