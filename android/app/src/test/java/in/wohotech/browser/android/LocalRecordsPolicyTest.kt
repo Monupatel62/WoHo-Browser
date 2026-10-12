@@ -17,7 +17,7 @@ class LocalRecordsPolicyTest {
     @Test fun rejectsNonArrayJson() {
         assertNull(LocalRecordsPolicy.parseRecords("""{"title":"Example"}"""))
         assertNull(LocalRecordsPolicy.parseRecords("null"))
-        assertNull(LocalRecordsPolicy.parseRecords(""text""))
+        assertNull(LocalRecordsPolicy.parseRecords("\"text\""))
     }
 
     @Test fun rejectsTrailingGarbage() {
