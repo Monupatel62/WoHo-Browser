@@ -182,7 +182,7 @@ jobs:
           cp android-aab-signature-verification.txt android-apk-signature-verification.txt android-release-bundle/
           cp THIRD-PARTY-NOTICES.txt android-release-bundle/Android-THIRD-PARTY-NOTICES.txt
           cp THIRD-PARTY-LICENSE-INVENTORY.json android-release-bundle/Android-THIRD-PARTY-LICENSE-INVENTORY.json
-          (cd android-release-bundle && sha256sum app-release.aab app-release.apk Android-THIRD-PARTY-NOTICES.txt Android-THIRD-PARTY-LICENSE-INVENTORY.json > SHA256SUMS.txt)
+          (cd android-release-bundle && sha256sum app-release.aab app-release.apk Android-THIRD-PARTY-NOTICES.txt Android-THIRD-PARTY-LICENSE-INVENTORY.json > ANDROID-SHA256SUMS.txt)
       - name: Upload signed Android release files
         uses: actions/upload-artifact@v7
         with:
