@@ -25,6 +25,15 @@ async function fixture() {
   await writeFile(path.join(root, 'node_modules', '@scope', 'alpha', 'node_modules', 'beta', 'NOTICE'), 'Beta notice text.\n');
   await mkdir(path.join(root, 'node_modules', 'build-tool'), { recursive: true });
   await writeFile(path.join(root, 'node_modules', 'build-tool', 'package.json'), JSON.stringify({ name: 'build-tool', version: '9.0.0' }));
+  await mkdir(path.join(root, 'node_modules', 'electron'), { recursive: true });
+  await writeFile(path.join(root, 'node_modules', 'electron', 'package.json'), JSON.stringify({
+    name: 'electron', version: '44.7.0', license: 'MIT', dependencies: { '@electron-internal/extract-zip': '1.0.5' },
+  }));
+  await writeFile(path.join(root, 'node_modules', 'electron', 'LICENSE'), 'Electron MIT terms.\\n');
+  await mkdir(path.join(root, 'node_modules', '@electron-internal', 'extract-zip'), { recursive: true });
+  await writeFile(path.join(root, 'node_modules', '@electron-internal', 'extract-zip', 'package.json'), JSON.stringify({
+    name: '@electron-internal/extract-zip', version: '1.0.5', license: 'BSD-2-Clause',
+  }));
   return root;
 }
 
@@ -34,7 +43,9 @@ test('collects scoped and nested packages with license files', async () => {
   assert.deepEqual(packages.map((item) => item.path), [
     'node_modules/@scope/alpha',
     'node_modules/@scope/alpha/node_modules/beta',
+    'node_modules/@electron-internal/extract-zip',
     'node_modules/build-tool',
+    'node_modules/electron',
   ]);
   assert.equal(packages[0].declaredLicense, 'MIT');
   assert.equal(packages[0].licenseFiles[0].text.trim(), 'Alpha MIT terms.');
@@ -53,11 +64,13 @@ test('notice and inventory disclose packages needing manual license review', asy
   assert.match(notices, /Alpha MIT terms\./);
   assert.match(notices, /Beta notice text\./);
   assert.match(notices, /NOT DECLARED — REVIEW REQUIRED/);
-  assert.equal(inventory.packageCount, 3);
-  assert.equal(inventory.runtimePackageCount, 2);
+  assert.equal(inventory.packageCount, 5);
+  assert.equal(inventory.runtimePackageCount, 3);
   assert.equal(inventory.packagesRequiringManualReview, 1);
-  assert.equal(inventory.toolingPackagesRequiringManualReview, 1);
+  assert.equal(inventory.toolingPackagesRequiringManualReview, 2);
   assert.doesNotMatch(notices, /build-tool/);
+  assert.doesNotMatch(notices, /@electron-internal\\/extract-zip/);
+  assert.match(notices, /Electron MIT terms\\./);
   assert.deepEqual(inventory.requiredBundledNotices, { electronChromiumHtmlIncluded: false });
   assert.equal(inventory.unresolved[0].name, 'beta');
 });
@@ -69,7 +82,9 @@ test('generation writes notices and a machine-readable inventory', async () => {
   const inventory = JSON.parse(await readFile(path.join(root, 'THIRD-PARTY-LICENSE-INVENTORY.json'), 'utf8'));
   assert.match(notices, /Alpha MIT terms\./);
   assert.equal(inventory.format, 'woho-third-party-license-inventory');
-  assert.equal(inventory.packageCount, 3);
-  assert.equal(inventory.runtimePackageCount, 2);
+  assert.equal(inventory.packageCount, 5);
+  assert.equal(inventory.runtimePackageCount, 3);
   assert.doesNotMatch(notices, /build-tool/);
+  assert.doesNotMatch(notices, /@electron-internal\\/extract-zip/);
+  assert.match(notices, /Electron MIT terms\\./);
 });
