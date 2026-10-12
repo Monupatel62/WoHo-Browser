@@ -10,11 +10,12 @@ internal object LocalRecordsPolicy {
     internal fun parseRecords(raw: String): JSONArray? {
         if (raw.length > MAX_RECORDS_JSON_CHARS) return null
         return try {
-            val tokener = JSONTokener(raw)
+            val trimmed = raw.trim()
+            if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null
+            val tokener = JSONTokener(trimmed)
             val value = tokener.nextValue()
             val trailing = tokener.nextClean()
-            // org.json JSONTokener uses NUL to represent end-of-input.
-            if (value !is JSONArray || (trailing != '\u0000' && trailing.code != 0)) null else value
+            if (value !is JSONArray || trailing != '\u0000') null else value
         } catch (_: Exception) {
             null
         }
