@@ -47,10 +47,12 @@ test('collects scoped and nested packages with license files', async () => {
     'node_modules/build-tool',
     'node_modules/electron',
   ]);
-  assert.equal(packages[0].declaredLicense, 'MIT');
-  assert.equal(packages[0].licenseFiles[0].text.trim(), 'Alpha MIT terms.');
-  assert.equal(packages[1].declaredLicense, '');
-  assert.equal(packages[1].licenseFiles[0].text.trim(), 'Beta notice text.');
+  const alpha = packages.find((item) => item.name === '@scope/alpha');
+  const beta = packages.find((item) => item.name === 'beta');
+  assert.equal(alpha?.declaredLicense, 'MIT');
+  assert.equal(alpha?.licenseFiles[0]?.text?.trim(), 'Alpha MIT terms.');
+  assert.equal(beta?.declaredLicense, '');
+  assert.equal(beta?.licenseFiles[0]?.text?.trim(), 'Beta notice text.');
 });
 
 test('notice and inventory disclose packages needing manual license review', async () => {
