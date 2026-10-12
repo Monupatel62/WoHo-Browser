@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 const workflowPath = new URL('../.github/workflows/signed-release.yml', import.meta.url);
-const workflow = await readFile(workflowPath, 'utf8');
+const workflow = (await readFile(workflowPath, 'utf8')).replace(/\r\n/g, '\n');
 
 test('signed release workflow defaults to read-only permissions', () => {
   assert.match(workflow, /^permissions:\n  contents: read$/m);
