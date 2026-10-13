@@ -13,7 +13,7 @@ object BrowserUrlPolicy {
 
     /** Return a leaf filename safe to pass to DownloadManager as a relative path. */
     fun sanitizeDownloadFilename(value: String): String {
-        val leaf = value.substringAfterLast('/').substringAfterLast('\\\\')
+        val leaf = value.substringAfterLast('/').substringAfterLast('\\')
         val safe = leaf.replace(Regex("[^A-Za-z0-9._ -]"), "_")
             .trim()
             .trim('.')
@@ -34,7 +34,7 @@ object BrowserUrlPolicy {
         if (value.isEmpty() || value.length > 4096) return null
         // A host:port is not a URI scheme. Query and fragment delimiters are
         // valid immediately after the port even when the URL has no path.
-        val isHostWithPort = Regex("^[^/\\\\s:]+:\\\\d+(?:[/?#]|$)").containsMatchIn(value)
+        val isHostWithPort = Regex("^[^/\\s:]+:\\d+(?:[/?#]|$)").containsMatchIn(value)
         val hasExplicitScheme = !isHostWithPort && Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(value)
         val candidate = when {
             hasExplicitScheme -> value
