@@ -655,18 +655,34 @@ class MainActivity : Activity() {
         if (!BrowserUrlPolicy.isAllowedUrl(url)) { Toast.makeText(this, "Download URL was blocked.", Toast.LENGTH_SHORT).show(); return }
         try {
             val guessed = BrowserUrlPolicy.sanitizeDownloadFilename(android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType))
+            val host = try { URI(url).host ?: "website" } catch (_: Exception) { "website" }
+            AlertDialog.Builder(this)
+                .setTitle("Download file?")
+                .setMessage("Save \"$guessed\" from $host to your Downloads folder?")
+                .setPositiveButton("Download") { _, _ ->
+                    enqueueDownload(url, userAgent, guessed, host)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } catch (_: Exception) { Toast.makeText(this, "Could not start this download.", Toast.LENGTH_LONG).show() }
+    }
+
+    private fun enqueueDownload(url: String, userAgent: String, filename: String, host: String) {
+        try {
             val request = DownloadManager.Request(Uri.parse(url)).apply {
-                setTitle(guessed)
-                setDescription("Download from " + (URI(url).host ?: "website"))
+                setTitle(filename)
+                setDescription("Download from $host")
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setAllowedOverMetered(true)
                 setAllowedOverRoaming(false)
                 addRequestHeader("User-Agent", userAgent.replace(Regex("[\\r\\n]"), "").take(512))
-                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessed)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
             }
             (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
-            Toast.makeText(this, "Download started. Check notifications for progress.", Toast.LENGTH_SHORT).show()
-        } catch (_: Exception) { Toast.makeText(this, "Could not start this download.", Toast.LENGTH_LONG).show() }
+            Toast.makeText(this, "Download started: $filename", Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Could not enqueue download.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
