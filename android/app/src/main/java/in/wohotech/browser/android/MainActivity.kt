@@ -56,11 +56,12 @@ class MainActivity : Activity() {
 
     private fun buildUi() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        val palette = BrowserPalette
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val palette = if (isDark) BrowserPalette.Dark else BrowserPalette.Light
         window.statusBarColor = palette.background
         window.navigationBarColor = palette.background
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !isDark
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = !isDark
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -76,7 +77,7 @@ class MainActivity : Activity() {
         val brandRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(2), dp(1), dp(2), dp(7))
+            setPadding(dp(4), dp(2), dp(4), dp(6))
             contentDescription = "WoHo Browser brand"
         }
         val brandIcon = ImageView(this).apply {
@@ -84,12 +85,12 @@ class MainActivity : Activity() {
             contentDescription = "WoHo Browser logo"
             scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
         }
-        brandRow.addView(brandIcon, LinearLayout.LayoutParams(dp(30), dp(30)))
+        brandRow.addView(brandIcon, LinearLayout.LayoutParams(dp(28), dp(28)))
         val brandText = android.widget.TextView(this).apply {
             text = "WoHo Browser"
-            textSize = 17f
+            textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(BrowserPalette.text)
+            setTextColor(palette.text)
             setPadding(dp(8), 0, 0, 0)
             contentDescription = "WoHo Browser"
         }
@@ -97,12 +98,13 @@ class MainActivity : Activity() {
         val brandSpacer = View(this)
         brandRow.addView(brandSpacer, LinearLayout.LayoutParams(0, dp(1), 1f))
         val brandCaption = android.widget.TextView(this).apply {
-            text = "BROWSE BETTER"
+            text = "PRIVATE & FAST"
             textSize = 9f
-            setTextColor(BrowserPalette.muted)
+            letterSpacing = 0.08f
+            setTextColor(palette.muted)
         }
         brandRow.addView(brandCaption)
-        root.addView(brandRow, LinearLayout.LayoutParams(-1, dp(38)))
+        root.addView(brandRow, LinearLayout.LayoutParams(-1, dp(36)))
 
         val addressRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -116,8 +118,8 @@ class MainActivity : Activity() {
             setTextSize(14f)
             setTextColor(palette.text)
             setHintTextColor(palette.muted)
-            setPadding(dp(14), 0, dp(10), 0)
-            background = roundedBackground(palette.surface, palette.outline, dp(18))
+            setPadding(dp(16), 0, dp(12), 0)
+            background = roundedBackground(palette.surface, palette.outline, dp(24))
             setSelectAllOnFocus(false)
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) { navigateFromAddress(); true } else false
@@ -127,28 +129,28 @@ class MainActivity : Activity() {
         addressRow.addView(addressBar, addressParams)
         addressRow.addView(button("Go", "Navigate to address", primary = true) { navigateFromAddress() })
         val addTab = button("+", "Open new tab") { openTab("https://www.google.com") }
-        val addParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(6) }
+        val addParams = LinearLayout.LayoutParams(dp(48), dp(48)).apply { marginStart = dp(6) }
         addressRow.addView(addTab, addParams)
         root.addView(addressRow)
 
         securityStatus = android.widget.TextView(this).apply {
             text = "Ready to browse"
             textSize = 11f
-            setPadding(dp(8), dp(5), dp(8), dp(5))
+            setPadding(dp(12), dp(4), dp(12), dp(4))
             contentDescription = "Connection security status"
             setTextColor(palette.muted)
         }
-        root.addView(securityStatus, LinearLayout.LayoutParams(-1, dp(26)))
+        root.addView(securityStatus, LinearLayout.LayoutParams(-1, dp(24)))
 
         val tabsScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
             contentDescription = "Open browser tabs"
             clipToPadding = false
-            setPadding(0, dp(2), 0, dp(5))
+            setPadding(0, dp(2), 0, dp(6))
         }
         tabStrip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         tabsScroll.addView(tabStrip)
-        root.addView(tabsScroll, LinearLayout.LayoutParams(-1, dp(46)))
+        root.addView(tabsScroll, LinearLayout.LayoutParams(-1, dp(52)))
 
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
@@ -185,45 +187,54 @@ class MainActivity : Activity() {
         controls.addView(bookmarkButton)
         controls.addView(toolbarButton("Saved", "Bookmarks") { showBookmarks() })
         controlsScroll.addView(controls)
-        root.addView(controlsScroll, LinearLayout.LayoutParams(-1, dp(48)))
+        root.addView(controlsScroll, LinearLayout.LayoutParams(-1, dp(52)))
         setContentView(root)
     }
 
-    private fun button(label: String, description: String, primary: Boolean = false, action: () -> Unit): Button =
-        Button(this).apply {
+    private fun currentPalette(): PaletteTheme {
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        return if (isDark) BrowserPalette.Dark else BrowserPalette.Light
+    }
+
+    private fun button(label: String, description: String, primary: Boolean = false, action: () -> Unit): Button {
+        val palette = currentPalette()
+        return Button(this).apply {
             text = label
             contentDescription = description
             isAllCaps = false
             textSize = 13f
-            minWidth = dp(if (primary) 58 else 42)
-            minimumWidth = dp(if (primary) 58 else 42)
-            minHeight = dp(44)
-            minimumHeight = dp(44)
+            minWidth = dp(if (primary) 58 else 48)
+            minimumWidth = dp(if (primary) 58 else 48)
+            minHeight = dp(48)
+            minimumHeight = dp(48)
             setPadding(dp(12), 0, dp(12), 0)
-            setTextColor(if (primary) BrowserPalette.onAccent else BrowserPalette.text)
-            background = roundedBackground(if (primary) BrowserPalette.accent else BrowserPalette.surface, if (primary) BrowserPalette.accent else BrowserPalette.outline, dp(14))
+            setTextColor(if (primary) palette.onAccent else palette.text)
+            background = roundedBackground(if (primary) palette.accent else palette.surface, if (primary) palette.accent else palette.outline, dp(16))
             stateListAnimator = null
             setOnClickListener { action() }
         }
+    }
 
-    private fun toolbarButton(label: String, description: String, action: () -> Unit): Button =
-        Button(this).apply {
+    private fun toolbarButton(label: String, description: String, action: () -> Unit): Button {
+        val palette = currentPalette()
+        return Button(this).apply {
             text = label
             contentDescription = description
             isAllCaps = false
-            textSize = if (label.length > 2) 11f else 20f
-            minWidth = dp(if (label.length > 2) 66 else 46)
-            minimumWidth = dp(if (label.length > 2) 66 else 46)
-            minHeight = dp(42)
-            minimumHeight = dp(42)
-            setPadding(dp(7), 0, dp(7), 0)
-            setTextColor(BrowserPalette.text)
-            background = roundedBackground(BrowserPalette.surface, BrowserPalette.outline, dp(14))
+            textSize = if (label.length > 2) 11f else 22f
+            minWidth = dp(if (label.length > 2) 72 else 48)
+            minimumWidth = dp(if (label.length > 2) 72 else 48)
+            minHeight = dp(48)
+            minimumHeight = dp(48)
+            setPadding(dp(8), 0, dp(8), 0)
+            setTextColor(palette.text)
+            background = roundedBackground(palette.surface, palette.outline, dp(14))
             stateListAnimator = null
-            val params = LinearLayout.LayoutParams(-2, dp(42)).apply { marginEnd = dp(6) }
+            val params = LinearLayout.LayoutParams(-2, dp(48)).apply { marginEnd = dp(6) }
             layoutParams = params
             setOnClickListener { action() }
         }
+    }
 
     private fun roundedBackground(fill: Int, stroke: Int, radius: Int): android.graphics.drawable.GradientDrawable =
         android.graphics.drawable.GradientDrawable().apply {
@@ -232,14 +243,36 @@ class MainActivity : Activity() {
             setStroke(dp(1), stroke)
         }
 
+    interface PaletteTheme {
+        val background: Int
+        val surface: Int
+        val text: Int
+        val muted: Int
+        val outline: Int
+        val accent: Int
+        val onAccent: Int
+    }
+
     private object BrowserPalette {
-        val background = 0xFFF4F6FA.toInt()
-        val surface = 0xFFFFFFFF.toInt()
-        val text = 0xFF172033.toInt()
-        val muted = 0xFF65728A.toInt()
-        val outline = 0xFFE0E6EF.toInt()
-        val accent = 0xFF2457D6.toInt()
-        val onAccent = 0xFFFFFFFF.toInt()
+        val Light = object : PaletteTheme {
+            override val background = 0xFFF3F5FA.toInt()
+            override val surface = 0xFFFFFFFF.toInt()
+            override val text = 0xFF141926.toInt()
+            override val muted = 0xFF5D6B82.toInt()
+            override val outline = 0xFFD8E0ED.toInt()
+            override val accent = 0xFF2457D6.toInt()
+            override val onAccent = 0xFFFFFFFF.toInt()
+        }
+
+        val Dark = object : PaletteTheme {
+            override val background = 0xFF0D121F.toInt()
+            override val surface = 0xFF151C2C.toInt()
+            override val text = 0xFFE9EDF5.toInt()
+            override val muted = 0xFF8E9BAE.toInt()
+            override val outline = 0xFF2A354A.toInt()
+            override val accent = 0xFF4D7DF5.toInt()
+            override val onAccent = 0xFFFFFFFF.toInt()
+        }
     }
 
     private fun openTab(initialUrl: String) {
@@ -330,25 +363,26 @@ class MainActivity : Activity() {
     private fun renderTabStrip() {
         if (!::tabStrip.isInitialized) return
         tabStrip.removeAllViews()
+        val palette = currentPalette()
         for (tab in tabs) {
             val active = tab.id == activeTabId
             val group = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                background = roundedBackground(if (active) BrowserPalette.surface else BrowserPalette.background, if (active) BrowserPalette.accent else BrowserPalette.outline, dp(14))
-                setPadding(dp(4), 0, dp(3), 0)
+                background = roundedBackground(if (active) palette.surface else palette.background, if (active) palette.accent else palette.outline, dp(14))
+                setPadding(dp(4), 0, dp(4), 0)
             }
             val select = Button(this).apply {
                 text = tab.title.take(16).ifBlank { "New tab" }
                 contentDescription = "Switch to tab: " + tab.title
                 isAllCaps = false
                 textSize = 12f
-                minWidth = dp(76)
-                minimumWidth = dp(76)
-                minHeight = dp(36)
-                minimumHeight = dp(36)
-                setPadding(dp(8), 0, dp(8), 0)
-                setTextColor(if (active) BrowserPalette.accent else BrowserPalette.text)
+                minWidth = dp(84)
+                minimumWidth = dp(84)
+                minHeight = dp(44)
+                minimumHeight = dp(44)
+                setPadding(dp(10), 0, dp(8), 0)
+                setTextColor(if (active) palette.accent else palette.text)
                 background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
                 stateListAnimator = null
                 setOnClickListener { switchToTab(tab.id) }
@@ -358,18 +392,18 @@ class MainActivity : Activity() {
                 text = "×"
                 contentDescription = "Close tab: " + tab.title
                 isAllCaps = false
-                textSize = 16f
-                minWidth = dp(32)
-                minimumWidth = dp(32)
-                minHeight = dp(36)
-                minimumHeight = dp(36)
-                setTextColor(BrowserPalette.muted)
+                textSize = 18f
+                minWidth = dp(40)
+                minimumWidth = dp(40)
+                minHeight = dp(44)
+                minimumHeight = dp(44)
+                setTextColor(palette.muted)
                 background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
                 stateListAnimator = null
                 setOnClickListener { closeTab(tab.id) }
             }
             group.addView(close)
-            val params = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(7) }
+            val params = LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(8) }
             tabStrip.addView(group, params)
         }
     }
