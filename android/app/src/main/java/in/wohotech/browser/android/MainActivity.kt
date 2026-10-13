@@ -55,56 +55,160 @@ class MainActivity : Activity() {
 
     private fun buildUi() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(4)) }
+        val palette = BrowserPalette
+        window.statusBarColor = palette.background
+        window.navigationBarColor = palette.background
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setBackgroundColor(palette.background)
+        }
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(dp(8) + bars.left, dp(8) + bars.top, dp(8) + bars.right, dp(4) + bars.bottom)
+            view.setPadding(dp(12) + bars.left, dp(8) + bars.top, dp(12) + bars.right, dp(8) + bars.bottom)
             insets
         }
-        val addressRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+
+        val addressRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
         addressBar = EditText(this).apply {
-            setSingleLine(true); hint = "Search or enter address"; imeOptions = EditorInfo.IME_ACTION_GO
-            contentDescription = "Address and search"; setTextSize(14f); setPadding(dp(10), dp(4), dp(10), dp(4))
+            setSingleLine(true)
+            hint = "Search or enter address"
+            imeOptions = EditorInfo.IME_ACTION_GO
+            contentDescription = "Address and search"
+            setTextSize(14f)
+            setTextColor(palette.text)
+            setHintTextColor(palette.muted)
+            setPadding(dp(14), 0, dp(10), 0)
+            background = roundedBackground(palette.surface, palette.outline, dp(18))
+            setSelectAllOnFocus(false)
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) { navigateFromAddress(); true } else false
             }
         }
-        addressRow.addView(addressBar, LinearLayout.LayoutParams(0, dp(48), 1f))
-        addressRow.addView(button("Go", "Navigate to address") { navigateFromAddress() })
-        addressRow.addView(button("+", "Open new tab") { openTab("https://www.google.com") })
+        val addressParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) }
+        addressRow.addView(addressBar, addressParams)
+        addressRow.addView(button("Go", "Navigate to address", primary = true) { navigateFromAddress() })
+        val addTab = button("+", "Open new tab") { openTab("https://www.google.com") }
+        val addParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(6) }
+        addressRow.addView(addTab, addParams)
         root.addView(addressRow)
+
         securityStatus = android.widget.TextView(this).apply {
-            text = "No page loaded"
+            text = "Ready to browse"
             textSize = 11f
-            setPadding(dp(6), dp(2), dp(6), dp(2))
+            setPadding(dp(8), dp(5), dp(8), dp(5))
             contentDescription = "Connection security status"
+            setTextColor(palette.muted)
         }
-        root.addView(securityStatus, LinearLayout.LayoutParams(-1, dp(22)))
+        root.addView(securityStatus, LinearLayout.LayoutParams(-1, dp(26)))
 
-        val tabsScroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; contentDescription = "Open browser tabs" }
-        tabStrip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val tabsScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            contentDescription = "Open browser tabs"
+            clipToPadding = false
+            setPadding(0, dp(2), 0, dp(5))
+        }
+        tabStrip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         tabsScroll.addView(tabStrip)
-        root.addView(tabsScroll, LinearLayout.LayoutParams(-1, dp(42)))
+        root.addView(tabsScroll, LinearLayout.LayoutParams(-1, dp(46)))
 
-        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; visibility = View.GONE; contentDescription = "Page loading progress" }
+        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            visibility = View.GONE
+            contentDescription = "Page loading progress"
+            progressTintList = android.content.res.ColorStateList.valueOf(palette.accent)
+        }
         root.addView(progress, LinearLayout.LayoutParams(-1, dp(3)))
-        webHost = FrameLayout(this)
-        root.addView(webHost, LinearLayout.LayoutParams(-1, 0, 1f))
+        webHost = FrameLayout(this).apply {
+            setBackgroundColor(palette.surface)
+            background = roundedBackground(palette.surface, palette.outline, dp(16))
+            clipToOutline = true
+        }
+        val webParams = LinearLayout.LayoutParams(-1, 0, 1f).apply {
+            topMargin = dp(4)
+            bottomMargin = dp(8)
+        }
+        root.addView(webHost, webParams)
 
-        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        controls.addView(button("‹", "Go back") { activeWebView()?.let { if (it.canGoBack()) it.goBack() } })
-        controls.addView(button("›", "Go forward") { activeWebView()?.let { if (it.canGoForward()) it.goForward() } })
-        controls.addView(button("↻", "Reload page") { activeWebView()?.reload() })
-        controls.addView(button("History", "Show recent browsing history") { showHistory() })
-        bookmarkButton = button("☆", "Save current bookmark") { saveCurrentBookmark() }
+        val controlsScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            clipToPadding = false
+            contentDescription = "Browser navigation toolbar"
+        }
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        controls.addView(toolbarButton("‹", "Back") { activeWebView()?.let { if (it.canGoBack()) it.goBack() } })
+        controls.addView(toolbarButton("›", "Forward") { activeWebView()?.let { if (it.canGoForward()) it.goForward() } })
+        controls.addView(toolbarButton("↻", "Reload") { activeWebView()?.reload() })
+        controls.addView(toolbarButton("History", "History") { showHistory() })
+        bookmarkButton = toolbarButton("☆", "Bookmark") { saveCurrentBookmark() }
         controls.addView(bookmarkButton)
-        controls.addView(button("Bookmarks", "Show saved bookmarks") { showBookmarks() })
-        root.addView(controls)
+        controls.addView(toolbarButton("Saved", "Bookmarks") { showBookmarks() })
+        controlsScroll.addView(controls)
+        root.addView(controlsScroll, LinearLayout.LayoutParams(-1, dp(48)))
         setContentView(root)
     }
 
-    private fun button(label: String, description: String, action: () -> Unit): Button =
-        Button(this).apply { text = label; contentDescription = description; isAllCaps = false; setPadding(dp(8), 0, dp(8), 0); setOnClickListener { action() } }
+    private fun button(label: String, description: String, primary: Boolean = false, action: () -> Unit): Button =
+        Button(this).apply {
+            text = label
+            contentDescription = description
+            isAllCaps = false
+            textSize = 13f
+            minWidth = dp(if (primary) 58 else 42)
+            minimumWidth = dp(if (primary) 58 else 42)
+            minHeight = dp(44)
+            minimumHeight = dp(44)
+            setPadding(dp(12), 0, dp(12), 0)
+            setTextColor(if (primary) BrowserPalette.onAccent else BrowserPalette.text)
+            background = roundedBackground(if (primary) BrowserPalette.accent else BrowserPalette.surface, if (primary) BrowserPalette.accent else BrowserPalette.outline, dp(14))
+            stateListAnimator = null
+            setOnClickListener { action() }
+        }
+
+    private fun toolbarButton(label: String, description: String, action: () -> Unit): Button =
+        Button(this).apply {
+            text = label
+            contentDescription = description
+            isAllCaps = false
+            textSize = if (label.length > 2) 11f else 20f
+            minWidth = dp(if (label.length > 2) 66 else 46)
+            minimumWidth = dp(if (label.length > 2) 66 else 46)
+            minHeight = dp(42)
+            minimumHeight = dp(42)
+            setPadding(dp(7), 0, dp(7), 0)
+            setTextColor(BrowserPalette.text)
+            background = roundedBackground(BrowserPalette.surface, BrowserPalette.outline, dp(14))
+            stateListAnimator = null
+            val params = LinearLayout.LayoutParams(-2, dp(42)).apply { marginEnd = dp(6) }
+            layoutParams = params
+            setOnClickListener { action() }
+        }
+
+    private fun roundedBackground(fill: Int, stroke: Int, radius: Int): android.graphics.drawable.GradientDrawable =
+        android.graphics.drawable.GradientDrawable().apply {
+            setColor(fill)
+            cornerRadius = radius.toFloat()
+            setStroke(dp(1), stroke)
+        }
+
+    private object BrowserPalette {
+        const val background = 0xFFF4F6FA.toInt()
+        const val surface = 0xFFFFFFFF.toInt()
+        const val text = 0xFF172033.toInt()
+        const val muted = 0xFF65728A.toInt()
+        const val outline = 0xFFE0E6EF.toInt()
+        const val accent = 0xFF2457D6.toInt()
+        const val onAccent = 0xFFFFFFFF.toInt()
+    }
 
     private fun openTab(initialUrl: String) {
         val webView = WebView(this)
@@ -195,13 +299,46 @@ class MainActivity : Activity() {
         if (!::tabStrip.isInitialized) return
         tabStrip.removeAllViews()
         for (tab in tabs) {
-            val group = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            val select = button(tab.title.take(18), "Switch to tab: " + tab.title) { switchToTab(tab.id) }
-            select.textSize = 12f
+            val active = tab.id == activeTabId
+            val group = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = roundedBackground(if (active) BrowserPalette.surface else BrowserPalette.background, if (active) BrowserPalette.accent else BrowserPalette.outline, dp(14))
+                setPadding(dp(4), 0, dp(3), 0)
+            }
+            val select = Button(this).apply {
+                text = tab.title.take(16).ifBlank { "New tab" }
+                contentDescription = "Switch to tab: " + tab.title
+                isAllCaps = false
+                textSize = 12f
+                minWidth = dp(76)
+                minimumWidth = dp(76)
+                minHeight = dp(36)
+                minimumHeight = dp(36)
+                setPadding(dp(8), 0, dp(8), 0)
+                setTextColor(if (active) BrowserPalette.accent else BrowserPalette.text)
+                background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+                stateListAnimator = null
+                setOnClickListener { switchToTab(tab.id) }
+            }
             group.addView(select)
-            group.addView(button("×", "Close tab: " + tab.title) { closeTab(tab.id) })
-            if (tab.id == activeTabId) group.setBackgroundColor(0xFFE3ECFA.toInt())
-            tabStrip.addView(group, LinearLayout.LayoutParams(-2, dp(40)))
+            val close = Button(this).apply {
+                text = "×"
+                contentDescription = "Close tab: " + tab.title
+                isAllCaps = false
+                textSize = 16f
+                minWidth = dp(32)
+                minimumWidth = dp(32)
+                minHeight = dp(36)
+                minimumHeight = dp(36)
+                setTextColor(BrowserPalette.muted)
+                background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+                stateListAnimator = null
+                setOnClickListener { closeTab(tab.id) }
+            }
+            group.addView(close)
+            val params = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(7) }
+            tabStrip.addView(group, params)
         }
     }
 
