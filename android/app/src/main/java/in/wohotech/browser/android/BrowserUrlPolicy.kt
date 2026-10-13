@@ -36,9 +36,11 @@ object BrowserUrlPolicy {
         // valid immediately after the port even when the URL has no path.
         val isHostWithPort = Regex("^[^/\\s:]+:\\d+(?:[/?#]|$)").containsMatchIn(value)
         val hasExplicitScheme = !isHostWithPort && Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(value)
+        val isLocalHost = value.equals("localhost", ignoreCase = true) ||
+            value.endsWith(".localhost", ignoreCase = true)
         val candidate = when {
             hasExplicitScheme -> value
-            value.any(Char::isWhitespace) || (!value.contains('.') && !isHostWithPort) ->
+            value.any(Char::isWhitespace) || (!value.contains('.') && !isHostWithPort && !isLocalHost) ->
                 "https://www.google.com/search?q=" + URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20")
             else -> "https://$value"
         }

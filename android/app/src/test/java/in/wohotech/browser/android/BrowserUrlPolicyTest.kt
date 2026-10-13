@@ -31,6 +31,8 @@ class BrowserUrlPolicyTest {
     }
     @Test fun normalizesHostsAndSearchQueries() {
         assertEquals("https://example.com", BrowserUrlPolicy.normalizeAddressInput("example.com"))
+        assertEquals("https://localhost", BrowserUrlPolicy.normalizeAddressInput("localhost"))
+        assertEquals("https://api.localhost", BrowserUrlPolicy.normalizeAddressInput("api.localhost"))
         assertEquals("https://localhost:8080", BrowserUrlPolicy.normalizeAddressInput("localhost:8080"))
         assertEquals("https://example.com:8443/path", BrowserUrlPolicy.normalizeAddressInput("example.com:8443/path"))
         assertEquals("https://example.com:8443?mode=compact", BrowserUrlPolicy.normalizeAddressInput("example.com:8443?mode=compact"))
