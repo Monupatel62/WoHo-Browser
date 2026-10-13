@@ -21,6 +21,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
@@ -71,6 +72,37 @@ class MainActivity : Activity() {
             view.setPadding(dp(12) + bars.left, dp(8) + bars.top, dp(12) + bars.right, dp(8) + bars.bottom)
             insets
         }
+
+        val brandRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(2), dp(1), dp(2), dp(7))
+            contentDescription = "WoHo Browser brand"
+        }
+        val brandIcon = ImageView(this).apply {
+            setImageResource(R.drawable.ic_woho_browser)
+            contentDescription = "WoHo Browser logo"
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+        }
+        brandRow.addView(brandIcon, LinearLayout.LayoutParams(dp(30), dp(30)))
+        val brandText = android.widget.TextView(this).apply {
+            text = "WoHo Browser"
+            textSize = 17f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(BrowserPalette.text)
+            setPadding(dp(8), 0, 0, 0)
+            contentDescription = "WoHo Browser"
+        }
+        brandRow.addView(brandText, LinearLayout.LayoutParams(-2, dp(32)))
+        val brandSpacer = View(this)
+        brandRow.addView(brandSpacer, LinearLayout.LayoutParams(0, dp(1), 1f))
+        val brandCaption = android.widget.TextView(this).apply {
+            text = "BROWSE BETTER"
+            textSize = 9f
+            setTextColor(BrowserPalette.muted)
+        }
+        brandRow.addView(brandCaption)
+        root.addView(brandRow, LinearLayout.LayoutParams(-1, dp(38)))
 
         val addressRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
