@@ -1,6 +1,6 @@
 export const DEFAULT_SEARCH_ENGINE = 'https://www.google.com/search?q=';
 const WEB_PROTOCOLS = new Set(['http:', 'https:']);
-const SCHEME_PREFIX = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
+const SCHEME_PREFIX = /^[a-zA-Z][a-zA-Z\\d+.-]*:/;
 
 export function isSafeWebUrl(value: string): boolean {
   try {
@@ -15,12 +15,14 @@ export function isSafeWebUrl(value: string): boolean {
 export function resolveAddressInput(input: string, searchEngine = DEFAULT_SEARCH_ENGINE): string {
   const value = input.trim();
   if (!value) throw new Error('Enter a website address or search query.');
-  const isHostWithPort = /^[^/\s:]+:\d+(?:\/|$)/.test(value);
+  // A host:port is not a URI scheme. Query and fragment delimiters are valid
+  // immediately after the port even when the URL has no path component.
+  const isHostWithPort = /^[^/\\s:]+:\\d+(?:[/?#]|$)/.test(value);
   if (SCHEME_PREFIX.test(value) && !isHostWithPort) {
     if (!isSafeWebUrl(value)) throw new Error('Only HTTP and HTTPS addresses are supported.');
     return new URL(value).toString();
   }
-  if (/\s/.test(value)) return searchEngine + encodeURIComponent(value);
+  if (/\\s/.test(value)) return searchEngine + encodeURIComponent(value);
   const candidate = 'https://' + value;
   if (isSafeWebUrl(candidate)) return new URL(candidate).toString();
   return searchEngine + encodeURIComponent(value);
