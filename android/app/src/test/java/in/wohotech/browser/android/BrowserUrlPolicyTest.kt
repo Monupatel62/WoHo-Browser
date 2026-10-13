@@ -33,6 +33,8 @@ class BrowserUrlPolicyTest {
         assertEquals("https://example.com", BrowserUrlPolicy.normalizeAddressInput("example.com"))
         assertEquals("https://localhost:8080", BrowserUrlPolicy.normalizeAddressInput("localhost:8080"))
         assertEquals("https://example.com:8443/path", BrowserUrlPolicy.normalizeAddressInput("example.com:8443/path"))
+        assertEquals("https://example.com:8443?mode=compact", BrowserUrlPolicy.normalizeAddressInput("example.com:8443?mode=compact"))
+        assertEquals("https://example.com:8443#section", BrowserUrlPolicy.normalizeAddressInput("example.com:8443#section"))
         assertEquals("https://www.google.com/search?q=hello%20world", BrowserUrlPolicy.normalizeAddressInput("hello world"))
         assertNull(BrowserUrlPolicy.normalizeAddressInput("javascript:alert(1)"))
         assertNull(BrowserUrlPolicy.normalizeAddressInput(""))

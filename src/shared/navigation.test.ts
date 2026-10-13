@@ -11,6 +11,8 @@ describe('resolveAddressInput', () => {
   it('supports localhost and hostnames with ports', () => {
     expect(resolveAddressInput('localhost:5173')).toBe('https://localhost:5173/');
     expect(resolveAddressInput('example.com:8443/path')).toBe('https://example.com:8443/path');
+    expect(resolveAddressInput('example.com:8443?mode=compact')).toBe('https://example.com:8443/?mode=compact');
+    expect(resolveAddressInput('example.com:8443#section')).toBe('https://example.com:8443/#section');
   });
   it('turns text into a search query', () => {
     expect(resolveAddressInput('hello world')).toBe('https://www.google.com/search?q=hello%20world');
