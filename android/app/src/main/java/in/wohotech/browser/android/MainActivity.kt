@@ -201,13 +201,13 @@ class MainActivity : Activity() {
         }
 
     private object BrowserPalette {
-        const val background = 0xFFF4F6FA.toInt()
-        const val surface = 0xFFFFFFFF.toInt()
-        const val text = 0xFF172033.toInt()
-        const val muted = 0xFF65728A.toInt()
-        const val outline = 0xFFE0E6EF.toInt()
-        const val accent = 0xFF2457D6.toInt()
-        const val onAccent = 0xFFFFFFFF.toInt()
+        val background = 0xFFF4F6FA.toInt()
+        val surface = 0xFFFFFFFF.toInt()
+        val text = 0xFF172033.toInt()
+        val muted = 0xFF65728A.toInt()
+        val outline = 0xFFE0E6EF.toInt()
+        val accent = 0xFF2457D6.toInt()
+        val onAccent = 0xFFFFFFFF.toInt()
     }
 
     private fun openTab(initialUrl: String) {
