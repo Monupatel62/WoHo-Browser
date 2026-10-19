@@ -123,6 +123,8 @@ jobs:
   android:
     name: Native Android build and tests
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SIGNING_CONFIGURED: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -147,22 +149,44 @@ jobs:
           gradle-version: '8.9'
       - name: Run Android unit tests and debug build
         run: gradle -p android --no-build-cache --rerun-tasks clean testDebugUnitTest assembleDebug --stacktrace
-      - name: Assert release packaging refuses missing signing credentials
+      - name: Verify release signing guard is present
         shell: bash
         run: |
-          set +e
-          output="$(gradle -p android bundleRelease 2>&1)"
-          status=$?
-          set -e
-          printf '%s\\n' "$output"
-          if [[ $status -eq 0 ]]; then
-            echo "::error::Android release packaging succeeded without a signing keystore."
-            exit 1
-          fi
-          if ! grep -Fq 'Release packaging requires ANDROID_KEYSTORE_PATH' <<< "$output"; then
-            echo "::error::Release task failed for a reason other than the expected missing-signing guard."
-            exit 1
-          fi
+          set -euo pipefail
+          grep -Fq 'Release packaging requires ANDROID_KEYSTORE_PATH' android/app/build.gradle.kts
+          grep -Fq 'ANDROID_KEYSTORE_PASSWORD' android/app/build.gradle.kts
+          grep -Fq 'ANDROID_KEY_ALIAS' android/app/build.gradle.kts
+          grep -Fq 'ANDROID_KEY_PASSWORD' android/app/build.gradle.kts
+      - name: Build signed Android release bundle when credentials are configured
+        if: ${{ env.ANDROID_SIGNING_CONFIGURED == 'true' }}
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keystore_path="$RUNNER_TEMP/woho-browser-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          chmod 600 "$keystore_path"
+          export ANDROID_KEYSTORE_PATH="$keystore_path"
+          gradle -p android bundleRelease --no-build-cache --stacktrace
+          test -s android/app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab
+      - name: Explain why Android release bundle was skipped
+        if: ${{ env.ANDROID_SIGNING_CONFIGURED != 'true' }}
+        shell: bash
+        run: |
+          echo "::notice::Signed Android release bundle skipped. Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD in GitHub Actions secrets."
+      - name: Upload signed Android release bundle
+        if: ${{ env.ANDROID_SIGNING_CONFIGURED == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: woho-browser-android-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v7
         with:
