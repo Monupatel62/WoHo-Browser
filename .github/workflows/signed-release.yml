@@ -284,13 +284,13 @@ jobs:
       contents: write
     steps:
       - name: Download signed Windows files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: signed-windows-release
           path: artifacts/windows
           merge-multiple: true
       - name: Download signed Android files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: signed-android-release
           path: artifacts/android
